@@ -22,6 +22,7 @@ import java.util.TreeMap;
 import ch.autumo.ifacex.studio.core.meta.FieldCatalog;
 import ch.autumo.ifacex.studio.core.meta.FieldDescriptor;
 import ch.autumo.ifacex.studio.core.meta.FieldType;
+import ch.autumo.ifacex.studio.core.meta.InterfaceTypes;
 import ch.autumo.ifacex.studio.core.model.EntityConfig;
 import ch.autumo.ifacex.studio.core.model.FieldMappingRec;
 import ch.autumo.ifacex.studio.core.model.IpcConfig;
@@ -32,6 +33,7 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
@@ -102,7 +104,7 @@ final class FormBuilder {
     private Node root(IpcConfig cfg) {
         final VBox box = new VBox(10);
         box.setPadding(new Insets(8));
-        box.getChildren().add(title("Configuration"));
+        box.getChildren().add(rootHeader());
 
         // --- file metadata (comment header) ------------------------------------------------
         final VBox metaBox = new VBox(10);
@@ -192,7 +194,8 @@ final class FormBuilder {
     private Node rwSection(RwConfig rw) {
         final VBox box = new VBox(6);
         box.setPadding(new Insets(8));
-        box.getChildren().add(title(rw.name() + (rw.isReader() ? "  (reader)" : "  (writer)")));
+        box.getChildren().add(sectionHeader(rw.name(),
+                rw.name() + (rw.isReader() ? "  (reader)" : "  (writer)")));
 
         if (!rw.global().isEmpty()) {
             box.getChildren().add(collapsed("Parameters", mapGrid(rw.global()), true));
@@ -202,7 +205,7 @@ final class FormBuilder {
         }
         for (final Map.Entry<String, EntityConfig> e : rw.entities().entrySet()) {
             box.getChildren().add(collapsed("Entity: " + e.getKey(),
-                    entityBody(e.getValue(), rw.isReader()), false));
+                    entityBody(e.getValue(), rw), false));
         }
         if (box.getChildren().size() == 1) {
             box.getChildren().add(hint("No parameters for this interface."));
@@ -217,29 +220,37 @@ final class FormBuilder {
         }
         final VBox box = new VBox(6);
         box.setPadding(new Insets(8));
-        box.getChildren().add(title("Entity: " + entity + "   (" + rw.name() + ")"));
-        box.getChildren().add(entityBody(ec, rw.isReader()));
+        box.getChildren().add(sectionHeader(rw.name(), "Entity: " + entity + "   (" + rw.name() + ")"));
+        box.getChildren().add(entityBody(ec, rw));
         return box;
     }
 
     /**
-     * The body of an entity form. A <em>reader</em> entity defines the source {@code fields}; a
-     * <em>writer</em> entity defines the destination mapping ({@code mapping_entity} +
-     * {@code mapping_field_NNN}). The mapping editor is shown for every writer entity, so a
-     * mapping can be created even when the file does not contain one yet.
+     * The body of an entity form. A <em>reader</em> entity defines the source {@code fields} (and,
+     * for DB/Mongo readers, the order field); a <em>writer</em> entity defines the destination
+     * mapping ({@code mapping_entity} + {@code mapping_field_NNN}) plus the writer-type specific
+     * destination id field and destination filter fields. The mapping editor is shown for every
+     * writer entity, so a mapping can be created even when the file does not contain one yet.
      */
-    private Node entityBody(EntityConfig ec, boolean reader) {
+    private Node entityBody(EntityConfig ec, RwConfig rw) {
+        final boolean reader = rw.isReader();
         final VBox box = new VBox(10);
         box.setPadding(new Insets(4));
 
-        if (reader || !ec.fields().isEmpty()) {
+        if (reader) {
             box.getChildren().add(sourceFieldList(ec));
+            if (isDbLike(rw)) {
+                box.getChildren().add(destField(ec, "order_field", "Order field"));
+            }
+        } else {
+            if (!ec.fields().isEmpty()) {
+                box.getChildren().add(sourceFieldList(ec));
+            }
+            box.getChildren().add(destinationMapping(ec, rw));
         }
-        if (!reader) {
-            box.getChildren().add(destinationMapping(ec));
-        }
-        if (!ec.settings().isEmpty()) {
-            box.getChildren().add(mapGrid(ec.settings()));
+        final Map<String, String> rest = remainingSettings(ec, rw);
+        if (!rest.isEmpty()) {
+            box.getChildren().add(mapGrid(rest));
         }
         if (box.getChildren().isEmpty()) {
             box.getChildren().add(hint("(empty)"));
@@ -247,12 +258,59 @@ final class FormBuilder {
         return box;
     }
 
+    /** DB-like interfaces (db_*, mongo_*) support an entity order field. */
+    private static boolean isDbLike(RwConfig rw) {
+        final String p = InterfaceTypes.of(rw.name()).prefix();
+        return "db".equals(p) || "mongo".equals(p);
+    }
+
     /**
-     * Destination mapping of a writer entity: the destination entity name plus the field mapping
-     * table. The mapping record is created lazily, so merely opening the form does not change the
-     * configuration.
+     * Entity settings minus the parameters that are edited by dedicated controls (so they are not
+     * rendered twice in the generic settings grid).
      */
-    private Node destinationMapping(EntityConfig ec) {
+    private static Map<String, String> remainingSettings(EntityConfig ec, RwConfig rw) {
+        if (ec.settings().isEmpty()) {
+            return Map.of();
+        }
+        final java.util.Set<String> handled = new java.util.LinkedHashSet<>();
+        if (rw.isReader()) {
+            handled.add("order_field");
+        } else {
+            handled.add("dest_unique_id_field");
+            handled.add("dest_id_path");
+            handled.add("dest_filter_fields");
+        }
+        final Map<String, String> rest = new java.util.TreeMap<>(ec.settings());
+        rest.keySet().removeAll(handled);
+        return rest;
+    }
+
+    /**
+     * A single entity-scoped text parameter bound directly to {@code ec.settings()}. Used for the
+     * writer-type specific destination id field ({@code dest_unique_id_field}, {@code dest_id_path})
+     * and the entity order field.
+     */
+    private Node destField(EntityConfig ec, String key, String label) {
+        final TextField tf = new TextField(ec.settings().getOrDefault(key, ""));
+        tf.textProperty().addListener((o, a, b) -> {
+            if (b == null || b.isEmpty()) {
+                ec.settings().remove(key);
+            } else {
+                ec.settings().put(key, b);
+            }
+            changed();
+        });
+        return labeled(label, tf);
+    }
+
+    /**
+     * Destination mapping of a writer entity: the destination entity name, the writer-type specific
+     * destination id field ({@code dest_unique_id_field} for DB/Mongo, {@code dest_id_path} for
+     * REST), the destination filter fields and the field mapping table. The mapping record is
+     * created lazily, so merely opening the form does not change the configuration.
+     */
+    private Node destinationMapping(EntityConfig ec, RwConfig rw) {
+        final String prefix = InterfaceTypes.of(rw.name()).prefix();
         final String dest = ec.hasMapping() && ec.mapping().destEntity() != null
                 ? ec.mapping().destEntity() : "";
         final TextField destEntity = new TextField(dest);
@@ -264,8 +322,23 @@ final class FormBuilder {
             changed();
         });
 
-        final VBox box = new VBox(6);
+        final VBox box = new VBox(8);
         box.getChildren().add(labeled("Destination entity", destEntity));
+
+        if ("db".equals(prefix) || "mongo".equals(prefix)) {
+            box.getChildren().add(destField(ec, "dest_unique_id_field",
+                    "Destination unique id field"));
+        } else if ("rest".equals(prefix)) {
+            box.getChildren().add(destField(ec, "dest_id_path", "Destination id path"));
+        }
+        if ("db".equals(prefix) || "mongo".equals(prefix) || "rest".equals(prefix)) {
+            final Label ffc = caption("Destination filter fields");
+            ffc.setTooltip(new Tooltip("Only these fields are used to build the destination "
+                    + "filter (DB/Mongo) or the id lookup (REST)."));
+            box.getChildren().add(stringListEditor(ffc, "field name",
+                    commaList(ec.settings(), "dest_filter_fields"), () -> { }));
+        }
+
         box.getChildren().add(caption("Field mapping (destination field \u2190 formula)"));
         box.getChildren().add(mappingTable(ec));
         return box;
@@ -278,7 +351,18 @@ final class FormBuilder {
      */
     private Node sourceFieldList(EntityConfig ec) {
         final ObservableList<String> items = FXCollections.observableList(ec.fields());
+        final Label caption = caption("Fields (source)");
+        caption.setTooltip(new Tooltip("Source entity fields; order matters for CSV/JSON readers."));
+        return stringListEditor(caption, "New field name", items, this::changed);
+    }
 
+    /**
+     * A reusable string-list editor: a caption, the list (double-click to rename), an input row with
+     * <em>+</em> and the remove / move up / move down tools. {@code onEdit} is run after every
+     * mutation that is not already reported by a backing list listener.
+     */
+    private Node stringListEditor(Label caption, String prompt, ObservableList<String> items,
+            Runnable onEdit) {
         final ListView<String> list = new ListView<>(items);
         list.setEditable(true);
         list.setPrefHeight(132);
@@ -289,54 +373,77 @@ final class FormBuilder {
                 list.refresh(); // reject empty names and duplicates
             } else {
                 items.set(ev.getIndex(), v);
-                changed();
+                onEdit.run();
             }
         });
 
         final TextField input = new TextField();
-        input.setPromptText("New field name");
+        input.setPromptText(prompt);
         HBox.setHgrow(input, Priority.ALWAYS);
-        final Runnable addField = () -> {
+        final Runnable addItem = () -> {
             final String v = input.getText() == null ? "" : input.getText().trim();
             if (!v.isEmpty() && !items.contains(v)) {
                 items.add(v);
                 list.getSelectionModel().select(v);
                 list.scrollTo(v);
                 input.clear();
-                changed();
+                onEdit.run();
             }
         };
-        input.setOnAction(e -> addField.run());
+        input.setOnAction(e -> addItem.run());
 
-        final Button add = toolButton("+", "Add field", addField);
-        final Button remove = toolButton("\u2212", "Remove selected field", () -> {
+        final Button add = toolButton("+", "Add", addItem);
+        final Button remove = toolButton("\u2212", "Remove selected", () -> {
             final int i = list.getSelectionModel().getSelectedIndex();
             if (i >= 0) {
                 items.remove(i);
-                changed();
+                onEdit.run();
             }
         });
         final Button up = toolButton("\u2191", "Move up",
-                () -> move(items, list, list.getSelectionModel().getSelectedIndex(), -1));
+                () -> move(items, list, list.getSelectionModel().getSelectedIndex(), -1, onEdit));
         final Button down = toolButton("\u2193", "Move down",
-                () -> move(items, list, list.getSelectionModel().getSelectedIndex(), 1));
-
-        final Label caption = caption("Fields (source)");
-        caption.setTooltip(new Tooltip("Source entity fields; order matters for CSV/JSON readers."));
+                () -> move(items, list, list.getSelectionModel().getSelectedIndex(), 1, onEdit));
 
         final HBox inputRow = new HBox(6, input, add);
         final HBox tools = new HBox(6, remove, up, down);
         return new VBox(4, caption, list, inputRow, tools);
     }
 
-    private void move(ObservableList<String> items, ListView<String> list, int index, int delta) {
+    /**
+     * A live {@link ObservableList} view of a comma separated settings value. Mutations write the
+     * comma joined value back into the settings map (and remove the key when the list becomes
+     * empty), so the model stays consistent.
+     */
+    private ObservableList<String> commaList(Map<String, String> settings, String key) {
+        final List<String> initial = new ArrayList<>();
+        for (final String part : settings.getOrDefault(key, "").split(",")) {
+            final String t = part.trim();
+            if (!t.isEmpty()) {
+                initial.add(t);
+            }
+        }
+        final ObservableList<String> items = FXCollections.observableArrayList(initial);
+        items.addListener((javafx.collections.ListChangeListener<String>) c -> {
+            if (items.isEmpty()) {
+                settings.remove(key);
+            } else {
+                settings.put(key, String.join(",", items));
+            }
+            changed();
+        });
+        return items;
+    }
+
+    private void move(ObservableList<String> items, ListView<String> list, int index, int delta,
+            Runnable onEdit) {
         final int target = index + delta;
         if (index < 0 || target < 0 || target >= items.size()) {
             return;
         }
         items.add(target, items.remove(index));
         list.getSelectionModel().select(target);
-        changed();
+        onEdit.run();
     }
 
     private Button toolButton(String text, String tooltip, Runnable action) {
@@ -469,12 +576,12 @@ final class FormBuilder {
                 new FieldMappingRec(ev.getRowValue().destField(), ev.getNewValue(), ev.getRowValue().insert())));
         colFormula.setPrefWidth(320);
 
-        final TableColumn<FieldMappingRec, Boolean> colInsert = new TableColumn<>("Insert");
+        final TableColumn<FieldMappingRec, Boolean> colInsert = new TableColumn<>("Insert (INS)");
         colInsert.setCellValueFactory(c -> new SimpleBooleanProperty(c.getValue().insert()));
         colInsert.setCellFactory(CheckBoxTableCell.forTableColumn(colInsert));
         colInsert.setOnEditCommit(ev -> replace(ec, rows, ev.getRowValue(),
                 new FieldMappingRec(ev.getRowValue().destField(), ev.getRowValue().formula(), ev.getNewValue())));
-        colInsert.setPrefWidth(70);
+        colInsert.setPrefWidth(90);
 
         table.getColumns().addAll(List.of(colField, colFormula, colInsert));
 
@@ -491,11 +598,31 @@ final class FormBuilder {
                 changed();
             }
         });
-        final HBox buttons = new HBox(6, add, remove);
+        final Button up = toolButton("\u2191", "Move mapping up",
+                () -> moveMapping(ec, rows, table.getSelectionModel().getSelectedIndex(), -1));
+        final Button down = toolButton("\u2193", "Move mapping down",
+                () -> moveMapping(ec, rows, table.getSelectionModel().getSelectedIndex(), 1));
+        final HBox buttons = new HBox(6, add, remove, up, down);
 
         final VBox box = new VBox(4, table, buttons);
         VBox.setVgrow(table, Priority.ALWAYS);
         return box;
+    }
+
+    /** Reorder a mapping row; STD and INS entries are kept in one ordered list. */
+    private void moveMapping(EntityConfig ec, ObservableList<FieldMappingRec> rows, int index,
+            int delta) {
+        if (!ec.hasMapping()) {
+            return;
+        }
+        final List<FieldMappingRec> list = ec.mapping().fields();
+        final int target = index + delta;
+        if (index < 0 || target < 0 || target >= list.size()) {
+            return;
+        }
+        list.add(target, list.remove(index));
+        rows.setAll(list);
+        changed();
     }
 
     private void replace(EntityConfig ec, ObservableList<FieldMappingRec> rows,
@@ -527,6 +654,39 @@ final class FormBuilder {
         final Label l = new Label(text);
         l.getStyleClass().add("section-title");
         return l;
+    }
+
+    /**
+     * A coloured type pill (legacy GUI colours: readers green, writers red, base blue) showing the
+     * interface type (CSV, JSON, DB, Mongo DB, REST, Mail, …). See {@link InterfaceTypes}.
+     */
+    static Label typePill(String rwName) {
+        final InterfaceTypes.InterfaceType t = InterfaceTypes.of(rwName);
+        final Label l = new Label(t.display());
+        l.getStyleClass().add("type-pill");
+        l.setStyle("-fx-background-color: " + t.colorHex() + ";");
+        final String cls = t.engineClass() == null ? "" : "\n" + t.engineClass();
+        l.setTooltip(new Tooltip(t.display() + "  (" + t.rwName() + ")" + cls));
+        return l;
+    }
+
+    /** A type pill followed by the section title, so the interface type is visible at a glance. */
+    private Node sectionHeader(String rwName, String text) {
+        final HBox h = new HBox(8, typePill(rwName), title(text));
+        h.setAlignment(Pos.CENTER_LEFT);
+        return h;
+    }
+
+    /** The base/job pseudo interface header, using the legacy BASE colour (blue). */
+    private Node rootHeader() {
+        final Label pill = new Label("BASE");
+        pill.getStyleClass().add("type-pill");
+        pill.setStyle("-fx-background-color: " + InterfaceTypes.COLOR_BASE + ";");
+        pill.setTooltip(new Tooltip("Global job configuration (source_interface, "
+                + "destination_interfaces, process_source_entities)"));
+        final HBox h = new HBox(8, pill, title("Configuration"));
+        h.setAlignment(Pos.CENTER_LEFT);
+        return h;
     }
 
     private Label caption(String text) {

@@ -44,6 +44,7 @@ import javafx.scene.control.Separator;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.ToolBar;
 import javafx.scene.control.Tooltip;
+import javafx.scene.control.TreeCell;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
 import javafx.scene.image.Image;
@@ -104,12 +105,35 @@ public class MainController {
 
     @FXML
     private void initialize() {
+        navTree.setCellFactory(tv -> navCell());
         navTree.getSelectionModel().selectedItemProperty().addListener(
                 (o, a, b) -> showForm(b));
         formScroll.setContent(FormBuilder.message("Open a .ifacex or .ifcx file to begin."));
         buildToolBar();
         buildMenuIcons();
         setConfigActionsEnabled(false);
+    }
+
+    /**
+     * Tree cell that renders a coloured interface-type pill in front of the node label, so the
+     * reader/writer type (CSV, JSON, DB, Mongo DB, REST, Mail, …) is visible at a glance — the
+     * legacy GUI carried this in the colour-coded tabs. See {@link FormBuilder#typePill(String)}.
+     */
+    private TreeCell<FormBuilder.NavNode> navCell() {
+        return new TreeCell<>() {
+            @Override
+            protected void updateItem(FormBuilder.NavNode item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                    setGraphic(null);
+                    return;
+                }
+                setText(item.label());
+                setGraphic(item.payload() instanceof RwConfig rw
+                        ? FormBuilder.typePill(rw.name()) : null);
+            }
+        };
     }
 
     /**

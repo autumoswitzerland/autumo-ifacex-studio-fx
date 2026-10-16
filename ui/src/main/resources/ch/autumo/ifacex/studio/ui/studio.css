@@ -90,6 +90,17 @@
     -fx-padding: 8 0 4 0;
 }
 
+/* --- interface type pill (readers green, writers red, base blue) ---------- */
+/* The background colour is supplied inline from InterfaceTypes.colorHex();   */
+/* this only provides the pill shape and typography.                          */
+.type-pill {
+    -fx-background-radius: 9;
+    -fx-padding: 1 8 1 8;
+    -fx-font-family: "Inter SemiBold";
+    -fx-font-size: 10.5px;
+    -fx-text-fill: white;
+}
+
 .field-label {
     -fx-font-family: "Inter SemiBold";
     -fx-font-size: 13px;

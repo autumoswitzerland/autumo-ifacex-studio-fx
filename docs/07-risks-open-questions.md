@@ -95,16 +95,18 @@ is no external remote.)*
     registration/licensing UI **later**; development stays in **portable mode**.
 
 ### Editor scope / legacy parity (see doc 11)
-19. **UI layout:** keep the current **nav tree** (General → Source/Dest → entities) or adopt the
-    legacy **tab-per-interface-type** model (BASE + one tab per used reader/writer type)?
-    The type is shown as a **coloured pill** either way (blue = base, green = reader, red = writer).
-20. **`meta_*` keys:** the legacy Studio writes `meta_title` / `meta_author` / `meta_version` /
-    `meta_notes` as *real* keys, but the engine (`repository/autumo-ifacex`) does **not** read
-    them (only the `#` comment header). Write them for parity, or comment-header only?
+19. ~~**UI layout:** nav tree or legacy tab-per-type model?~~ **Decided (2026-10-16):** keep the
+    **nav tree** and add a **coloured type pill** (blue = base, green = reader, red = writer) on the
+    section/nav node — it also scales to plugin/cloud interfaces, which fixed tabs do not.
+20. ~~**`meta_*` keys:** write them for parity?~~ **Decided (2026-10-16): NO.** The legacy
+    `IfacexConfiguration.store0()` explicitly **excludes** `meta*` from the output
+    (`if (!key.startsWith("meta"))`) and persists the metadata only in the **comment header**;
+    `loadComments()` keeps `meta_*` in memory only. Our comment-header-only behaviour is therefore
+    already the legacy parity.
 21. **Interfaces without a legacy editor** (`doc_in`, `file_in`, `file_out`, `null_in`,
     `console_out`, `code`, `exec`, `first_out`, cloud plugins): full editor, read-only, or raw view?
-22. **Priority order** for closing the parity gaps in doc 11 §9 (type pills, complete per-type
-    parameters, destination-mapping editor with STD/INS, drag & drop, new-configuration wizard).
+22. **Priority order** for closing the parity gaps in doc 11 §9 (complete per-type parameters,
+    destination-mapping editor with STD/INS + drag & drop, new-configuration wizard).
 23. **New-configuration workflow:** wizard (reader → writers → entities) or empty model +
     inline "add" actions in the tree?
 
@@ -159,3 +161,6 @@ Access path / location is to be provided by the owner if desired.
 | 2026-10-16 | **Text-only forms are padded** (start-up placeholder, "select an element") so the text does not stick to the top-left | user |
 | 2026-10-16 | **Entity form split by role**: a reader entity edits the source **fields**, a writer entity edits the **destination mapping** (destination entity + mapping table). The mapping editor is shown for **every** writer entity (previously only when the file already contained a mapping, so none could be created); the mapping record is created lazily — rendering a form never mutates the model | user |
 | 2026-10-16 | **The flat key model alone is not enough.** The legacy Swing GUI was analysed in full (doc 11): 12 colour-coded tabs (BASE blue / readers green / writers red), one reader + N writers, `EntityFieldsHolder` (source fields, `order_field`, `uid`/`muid`/`jsonIdPath`, per-writer `dest_filter_fields`) and `DestinationMappingHolder` (**exactly one destination entity per (writer, source entity)**, mapping lines `[STD]`/`[INS] target:{formula}`, drag & drop of a source field into the formula box, auto-map `field:{field}`). The new editor must therefore be **type-driven** with the **destination mapping as a first-class editor**, must be able to **create a new configuration**, and must show the interface **type as a coloured pill** | user |
+| 2026-10-16 | **Layout:** keep the nav tree and show the interface **type as a coloured pill** (blue = base, green = reader, red = writer) instead of the legacy fixed tabs — scales to plugin/cloud interfaces | user |
+| 2026-10-16 | **No `meta_*` keys are written.** The legacy `IfacexConfiguration.store0()` explicitly excludes `meta*` (`if (!key.startsWith("meta")) …`) and persists the metadata **only in the comment header**; `loadComments()` keeps them in memory only. Our comment-header-only behaviour is already the legacy parity — the earlier "write meta_*" answer was based on a wrong premise and is corrected here | assistant (verified against the legacy source) |
+| 2026-10-16 | **Foundation implemented:** core `InterfaceTypes` registry (prefix → kind/display/colour/engine class, legacy colours), coloured **type pills** in the nav tree and on every section/entity form header, **writer-type specific destination fields** (`dest_unique_id_field` for `db_out`/`mongo_out`, `dest_id_path` for `rest_out`, `dest_filter_fields` as a list for db/mongo/rest), reader `order_field` for `db_in`/`mongo_in`, and **up/down reordering** of the mapping rows (STD/INS via the `insert` flag). Building any form does not mutate the model | assistant |

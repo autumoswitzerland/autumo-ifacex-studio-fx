@@ -70,6 +70,18 @@ Candidate layouts (to evaluate in the PoC): a **defaults + overrides table**, or
 - **Search/filter** fields (there are many parameters).
 - **Keyboard navigation** and sensible tab order; accessible labels.
 - **Theme**: light/dark.
+- **Interface type pill**: every reader/writer section and entity form shows a coloured pill
+  with the interface type (`CSV`, `JSON`, `DB`, `Mongo DB`, `REST`, `Mail`, …). The colours
+  follow the legacy Studio: **base blue `#48486b`, readers green `#486b48`, writers red
+  `#6b4848`** (see `InterfaceTypes`). The same pill is rendered in the navigation tree so the
+  type is visible while browsing. This replaces the legacy fixed, colour-coded tabs and scales
+  to plugin/cloud interfaces (`aws_file_in`, `excel_out`, …).
+- **Writer-type specific destination fields** (doc 11 §6): a writer entity shows only the
+  parameters its type actually supports — `dest_unique_id_field` for `db_out`/`mongo_out`,
+  `dest_id_path` for `rest_out`, and `dest_filter_fields` (as a list) for `db_out`/`mongo_out`/
+  `rest_out`; `csv_out`/`json_out`/`mail_out` show none of them. A DB-like *reader* entity shows
+  its `order_field`. The mapping table's `Insert (INS)` flag distinguishes INS from STD, and the
+  mapping rows can be reordered (up/down), matching the legacy `[STD]`/`[INS]` model.
 
 ## 10.6 Extensibility mechanism
 
