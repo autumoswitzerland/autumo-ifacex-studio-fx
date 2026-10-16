@@ -11,15 +11,14 @@ hs_err_pid*
 replay_pid*
 
 # --- IDE / editors ---
+# NOTE: Eclipse project files (.project, .classpath, .settings/) are tracked on
+# purpose (house style; compare autumo-commons, autumo-ui, ...), so they are not
+# ignored here.
 .idea/
 *.iml
 *.ipr
 *.iws
 .vscode/
-.settings/
-.project
-.classpath
-.factorypath
 *.launch
 nbproject/private/
 nb-configuration.xml
