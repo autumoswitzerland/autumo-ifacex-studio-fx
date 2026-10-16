@@ -48,7 +48,7 @@
 .tool-bar-pane {
     -fx-background-color: linear-gradient(to top, #1a1a1a, #2f2f2f);
     -fx-border-color: #111111 transparent #111111 transparent;
-    -fx-border-width: 1 0 1 0;
+    -fx-border-width: 1 0 2 0;
 }
 .left-tool-bar,
 .right-tool-bar {
@@ -78,7 +78,7 @@
     -fx-padding: 4 8 4 8;
     -fx-background-color: #1a1a1a;
     -fx-border-color: #111111 transparent transparent transparent;
-    -fx-border-width: 1 0 0 0;
+    -fx-border-width: 2 0 0 0;
 }
 
 /* --- form section headings ----------------------------------------------- */
