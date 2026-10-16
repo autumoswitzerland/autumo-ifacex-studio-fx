@@ -13,7 +13,8 @@
 #     "Unsupported major.minor version 67.0".
 #
 #  Usage:
-#   bin/run.sh
+#   bin/run.sh                       start with an empty editor
+#   bin/run.sh path/to/config.ifacex open a config file directly
 #
 #------------------------------------------------------------------------------
 #
@@ -59,4 +60,12 @@ echo "-> Building core module ..."
 mvn -B -ntp -q -pl core install -DskipTests
 
 echo "-> Starting ifaceX Studio FX ..."
+if [ "$#" -gt 0 ]
+then
+	case "$1" in
+		-*)	ARGS="$*" ;;
+		*)	ARGS="--open $*" ;;
+	esac
+	exec mvn -B -ntp -pl ui javafx:run -Djavafx.args="$ARGS"
+fi
 exec mvn -B -ntp -pl ui javafx:run

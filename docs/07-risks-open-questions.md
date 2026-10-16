@@ -130,3 +130,6 @@ Access path / location is to be provided by the owner if desired.
 | 2026-10-16 | Spike validated: autumo-ui 1.2.0 built/published to `mavenLocal`; Studio shell subclasses `BaseApp` (portable) and drives `core` on Java 25 + JavaFX 25 | assistant |
 | 2026-10-16 | autumo-ui bumped to **Java 25 + JavaFX 25** (Gradle wrapper 9.7, toolchain 25); build.gradle fixes: `autumo-registration` 1.0.0→1.1.0, API-exposed deps `implementation`→`api` | user + assistant |
 | 2026-10-16 | Shell folded into the **`ui`** module (standalone `StudioFxApp` replaced by `StudioApp extends BaseApp`, portable mode); `core` stays UI-free; `spike/` kept as reference | user |
+| 2026-10-16 | **Root/file form**: clicking the root node edits the comment-header metadata (Title, Version, Author, Description/Notes, Date) plus the job wiring (`source_interface`, `destination_interfaces`, `process_source_entities`) — as in the original Studio. Edits flow into the raw views and exports; writing back to the source file follows later. | user |
+| 2026-10-16 | **Dark theme**: the PoC now loads the autumo-ui base stylesheet (`ch/autumo/ui/style/application.css`) before the Studio `studio.css` overrides; dialogs reuse the same base style | user |
+| 2026-10-16 | `bin/run.sh [file]` opens a config directly (`--open`); run script forces JDK 25 | assistant |

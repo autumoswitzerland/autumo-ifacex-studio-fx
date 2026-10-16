@@ -25,9 +25,13 @@ import ch.autumo.ifacex.studio.core.io.YamlConfigWriter;
 import ch.autumo.ifacex.studio.core.model.IpcConfig;
 import ch.autumo.ifacex.studio.core.model.RwConfig;
 
+import ch.autumo.ui.utils.Helper;
+
 import javafx.fxml.FXML;
+import javafx.scene.Node;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextArea;
@@ -42,6 +46,7 @@ import javafx.stage.Window;
  */
 public class MainController {
 
+    static final String K_ROOT = "ROOT";
     static final String K_GENERAL = "GENERAL";
     static final String K_SOURCE = "SOURCE";
     static final String K_DEST = "DEST";
@@ -124,8 +129,12 @@ public class MainController {
         if (destNode != null) {
             showForm(destNode);
         }
+        final Node rootForm = formBuilder.build(root.getValue());
+        final int rootFormParts = rootForm instanceof javafx.scene.layout.Pane p
+                ? p.getChildren().size() : -1;
         return "nodes=" + countNodes(root)
                 + " forms=" + forms
+                + " rootFormParts=" + rootFormParts
                 + " yamlChars=" + rawYaml.getText().length()
                 + " propsChars=" + rawProps.getText().length()
                 + " formClass=" + (formScroll.getContent() == null
@@ -161,7 +170,7 @@ public class MainController {
 
     private void rebuild() {
         final TreeItem<FormBuilder.NavNode> root = new TreeItem<>(
-                new FormBuilder.NavNode("ROOT", label(), config, null));
+                new FormBuilder.NavNode(K_ROOT, label(), config, null));
         root.setExpanded(true);
 
         root.getChildren().add(new TreeItem<>(
@@ -175,9 +184,7 @@ public class MainController {
         }
 
         navTree.setRoot(root);
-        if (!root.getChildren().isEmpty()) {
-            navTree.getSelectionModel().select(root.getChildren().get(0));
-        }
+        navTree.getSelectionModel().select(root);
         exportIfcxButton.setDisable(false);
         exportIfacexButton.setDisable(false);
         refreshRaw();
@@ -272,6 +279,7 @@ public class MainController {
                 + "Shell: FXML.  Forms: programmatic.\n"
                 + "\u00A9 2026 autumo GmbH");
         alert.initOwner(window());
+        theme(alert);
         alert.showAndWait();
     }
 
@@ -286,7 +294,13 @@ public class MainController {
         alert.setHeaderText(message);
         alert.setContentText(String.valueOf(e.getMessage()));
         alert.initOwner(window());
+        theme(alert);
         alert.showAndWait();
+    }
+
+    /** Apply the autumo-ui dark theme to a dialog so it matches the main window. */
+    private void theme(Dialog<?> dialog) {
+        dialog.getDialogPane().getStylesheets().add(Helper.getBaseStyle());
     }
 
     private Window window() {

@@ -24,6 +24,7 @@ import ch.autumo.ifacex.studio.core.meta.FieldDescriptor;
 import ch.autumo.ifacex.studio.core.meta.FieldType;
 import ch.autumo.ifacex.studio.core.model.EntityConfig;
 import ch.autumo.ifacex.studio.core.model.FieldMappingRec;
+import ch.autumo.ifacex.studio.core.model.IpcConfig;
 import ch.autumo.ifacex.studio.core.model.RwConfig;
 
 import javafx.beans.property.SimpleBooleanProperty;
@@ -78,6 +79,8 @@ final class FormBuilder {
             return hint("Select an element on the left.");
         }
         return switch (node.kind()) {
+            case MainController.K_ROOT ->
+                    root((IpcConfig) node.payload());
             case MainController.K_SOURCE, MainController.K_DEST ->
                     rwSection((RwConfig) node.payload());
             case MainController.K_ENTITY ->
@@ -86,6 +89,102 @@ final class FormBuilder {
                     general((Map<String, String>) node.payload());
             default -> hint("No form for: " + node.label());
         };
+    }
+
+    /**
+     * The root/file node: the comment-header metadata (Title, Version, Author, Notes/Description,
+     * Date) that the original Studio edits on the configuration level, plus the job wiring
+     * ({@code source_interface}, {@code destination_interfaces}, {@code process_source_entities}).
+     * Edits mutate the model and are reflected in the raw views / exports.
+     */
+    private Node root(IpcConfig cfg) {
+        final VBox box = new VBox(10);
+        box.setPadding(new Insets(8));
+        box.getChildren().add(title("Configuration"));
+
+        // --- file metadata (comment header) ------------------------------------------------
+        final VBox metaBox = new VBox(10);
+        metaBox.setPadding(new Insets(4));
+
+        final TextField metaTitle = new TextField(cfg.meta().title());
+        metaTitle.textProperty().addListener((o, a, b) -> {
+            cfg.setMeta(cfg.meta().withTitle(b));
+            changed();
+        });
+        metaBox.getChildren().add(labeled("Title", metaTitle));
+
+        final TextField metaVersion = new TextField(cfg.meta().version());
+        metaVersion.textProperty().addListener((o, a, b) -> {
+            cfg.setMeta(cfg.meta().withVersion(b));
+            changed();
+        });
+        metaBox.getChildren().add(labeled("Version", metaVersion));
+
+        final TextField metaAuthor = new TextField(cfg.meta().author());
+        metaAuthor.textProperty().addListener((o, a, b) -> {
+            cfg.setMeta(cfg.meta().withAuthor(b));
+            changed();
+        });
+        metaBox.getChildren().add(labeled("Author", metaAuthor));
+
+        final TextArea metaNotes = new TextArea(stripTrailingNewline(cfg.meta().notes()));
+        metaNotes.setPrefRowCount(3);
+        metaNotes.textProperty().addListener((o, a, b) -> {
+            cfg.setMeta(cfg.meta().withNotes(b));
+            changed();
+        });
+        metaBox.getChildren().add(labeled("Description / Notes", metaNotes));
+
+        final TextField metaDate = new TextField(cfg.meta().date());
+        metaDate.setEditable(false);
+        metaBox.getChildren().add(labeled("Date (generated)", metaDate));
+
+        box.getChildren().add(collapsed("File metadata (comment header)", metaBox, true));
+
+        // --- job wiring --------------------------------------------------------------------
+        final VBox jobBox = new VBox(10);
+        jobBox.setPadding(new Insets(4));
+
+        final TextField srcIface = new TextField(cfg.sourceInterface());
+        srcIface.textProperty().addListener((o, a, b) -> {
+            cfg.setSourceInterface(b);
+            changed();
+        });
+        jobBox.getChildren().add(labeled("Source interface (reader)", srcIface));
+
+        final TextField destIfaces = new TextField(String.join(", ", cfg.destinationInterfaces()));
+        destIfaces.textProperty().addListener((o, a, b) -> {
+            setList(cfg.destinationInterfaces(), b);
+            changed();
+        });
+        jobBox.getChildren().add(labeled("Destination interfaces (writers, comma separated)", destIfaces));
+
+        final TextField srcEntities = new TextField(String.join(", ", cfg.processSourceEntities()));
+        srcEntities.textProperty().addListener((o, a, b) -> {
+            setList(cfg.processSourceEntities(), b);
+            changed();
+        });
+        jobBox.getChildren().add(labeled("Process source entities (comma separated)", srcEntities));
+
+        box.getChildren().add(collapsed("Job wiring", jobBox, true));
+        return box;
+    }
+
+    private static void setList(List<String> target, String commaSeparated) {
+        target.clear();
+        for (final String part : commaSeparated.split(",")) {
+            final String t = part.trim();
+            if (!t.isEmpty()) {
+                target.add(t);
+            }
+        }
+    }
+
+    private static String stripTrailingNewline(String s) {
+        if (s == null) {
+            return "";
+        }
+        return s.endsWith("\n") ? s.substring(0, s.length() - 1) : s;
     }
 
     private Node rwSection(RwConfig rw) {

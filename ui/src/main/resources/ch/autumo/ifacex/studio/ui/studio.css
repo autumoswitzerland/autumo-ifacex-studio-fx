@@ -12,8 +12,16 @@
  * from autumo GmbH.
  * 
  */
+
+/*
+ * Studio-specific overrides. Loaded after the autumo-ui base theme
+ * (ch/autumo/ui/style/application.css) so these rules win where they overlap.
+ * The base theme supplies the modern dark palette (#1f1f1f / #2F2F2F / #444444,
+ * accent #0E4E74); this file only refines the editor surfaces.
+ */
+
 .root {
-    -fx-font-size: 13px;
+    -fx-font-size: 12px;
 }
 
 .mono {
@@ -21,25 +29,88 @@
     -fx-font-size: 12px;
 }
 
+/* --- status bar ----------------------------------------------------------- */
 .statusBar {
     -fx-padding: 4 8 4 8;
-    -fx-background-color: -fx-control-inner-background-alt;
-    -fx-border-color: -fx-box-border transparent transparent transparent;
+    -fx-background-color: #1a1a1a;
+    -fx-border-color: #111111 transparent transparent transparent;
     -fx-border-width: 1 0 0 0;
 }
 
+/* --- form section headings ----------------------------------------------- */
 .section-title {
     -fx-font-size: 14px;
     -fx-font-weight: bold;
+    -fx-text-fill: #2DC7FE;
     -fx-padding: 8 0 4 0;
 }
 
 .field-label {
     -fx-font-weight: bold;
+    -fx-text-fill: #cccccc;
 }
 
 .field-help {
-    -fx-text-fill: -fx-text-background-color;
-    -fx-opacity: 0.65;
+    -fx-text-fill: #999999;
     -fx-font-size: 11px;
+}
+
+/* --- collapsible section headers (TitledPane) ---------------------------- */
+.titled-pane > .title {
+    -fx-background-color: #2F2F2F;
+    -fx-background-radius: 3 3 0 0;
+}
+.titled-pane > .title > .text {
+    -fx-fill: #dddddd;
+}
+.titled-pane > .title:hover {
+    -fx-background-color: #3a3a3a;
+}
+.titled-pane:expanded > .title {
+    -fx-background-color: #0E4E74;
+}
+.titled-pane:expanded > .title > .text {
+    -fx-fill: #ffffff;
+}
+.titled-pane > .content {
+    -fx-border-color: #3C3C3C;
+    -fx-border-width: 1;
+    -fx-background-color: transparent;
+}
+
+/* --- navigation tree ------------------------------------------------------ */
+.tree-view {
+    -fx-background-color: #232323;
+    -fx-border-color: transparent;
+}
+.tree-cell {
+    -fx-background-color: transparent;
+    -fx-text-fill: #dddddd;
+    -fx-padding: 3 6 3 6;
+}
+.tree-cell:hover {
+    -fx-background-color: #333333;
+}
+.tree-cell:selected {
+    -fx-background-color: #0E4E74;
+    -fx-text-fill: #ffffff;
+}
+.tree-cell > .tree-disclosure-node > .arrow {
+    -fx-background-color: #aaaaaa;
+}
+
+/* --- split pane ----------------------------------------------------------- */
+.split-pane {
+    -fx-background-color: #1f1f1f;
+    -fx-padding: 0;
+}
+.split-pane > .split-pane-divider {
+    -fx-background-color: #111111;
+    -fx-padding: 0 1 0 1;
+}
+
+/* --- text areas (raw views / notes) -------------------------------------- */
+.text-area {
+    -fx-border-radius: 3;
+    -fx-background-radius: 3;
 }

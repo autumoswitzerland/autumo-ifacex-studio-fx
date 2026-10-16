@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Properties;
 
 import ch.autumo.ui.fx.BaseApp;
+import ch.autumo.ui.utils.Helper;
 
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
@@ -64,11 +65,20 @@ public class StudioApp extends BaseApp {
 
     @Override
     protected void initialize(Stage primaryStage, Properties configuration) {
-        // Headless self-test: load a config file, exercise the UI, print a summary and exit.
         final List<String> args = getParameters().getRaw();
+
+        // Build the scene and apply the theme (autumo-ui dark base + our overrides).
+        final Scene scene = new Scene(root, 1100, 720);
+        scene.getStylesheets().add(Helper.getBaseStyle());
+        scene.getStylesheets().add(
+                StudioApp.class.getResource("studio.css").toExternalForm());
+
+        // Headless self-test: load a config file, exercise the UI, print a summary and exit.
         if (args.size() >= 2 && "--selftest".equals(args.get(0))) {
             try {
                 System.out.println("SELFTEST: " + controller.selfTest(Path.of(args.get(1))));
+                System.out.println("SELFTEST-STYLES: count=" + scene.getStylesheets().size()
+                        + " " + scene.getStylesheets());
             } catch (Exception e) {
                 System.out.println("SELFTEST-FAILED: " + e);
             }
@@ -76,11 +86,17 @@ public class StudioApp extends BaseApp {
             return;
         }
 
-        final Scene scene = new Scene(root, 1100, 720);
-        scene.getStylesheets().add(
-                StudioApp.class.getResource("studio.css").toExternalForm());
         primaryStage.setScene(scene);
         primaryStage.show();
+
+        // Optional: preload a configuration file, e.g. "bin/run.sh some.ifacex".
+        if (args.size() >= 2 && "--open".equals(args.get(0))) {
+            try {
+                controller.loadConfig(Path.of(args.get(1)));
+            } catch (Exception e) {
+                System.err.println("Could not open " + args.get(1) + ": " + e);
+            }
+        }
     }
 
     @Override

@@ -118,11 +118,21 @@ on the left and a `TabPane` on the right (tabs: **Form**, **Raw YAML (.ifcx)**,
 **Forms (programmatic).** `FormBuilder` renders a form for the selected navigation node
 from the model + field metadata:
 
+- **root/file** → **File metadata** (comment header: Title, Version, Author,
+  Description/Notes, Date) and **Job wiring** (`source_interface`,
+  `destination_interfaces`, `process_source_entities`) — the same configuration-level
+  fields the original Studio edits;
 - reader/writer section → collapsible **Parameters** (global), **Defaults (\*, all entities)**
   (wildcard) and one collapsible **Entity** per entity;
 - entity → source **fields** (comma separated), **destination entity** + editable **field
   mapping table** (`field` / `formula` / `insert`), and the entity **settings** grid;
+- general → the remaining top-level (non reader/writer) keys;
 - every parameter is shown, even without a descriptor (see `FieldCatalog` inference).
+
+**Theme.** The scene loads the **autumo-ui base stylesheet**
+(`ch/autumo/ui/style/application.css`, a modern **dark** palette) first, then the Studio
+`studio.css` overrides (navigation tree, collapsible headers, status bar, editor surfaces).
+Dialogs reuse the same base stylesheet so they match the main window.
 
 **Metadata.** `core/.../meta/` holds `FieldType`, `FieldDescriptor` and `FieldCatalog`
 (known parameters + best-effort inference for unknown ones). It is UI-free and unit-testable;
@@ -137,5 +147,6 @@ the model round-trips losslessly through `.ifcx` (YAML) and legacy `.ifacex` (pr
 **Per-entity UI (open).** The PoC currently uses collapsible per-entity sections; the
 table-vs-tabs evaluation (§10.8, item 2) is still open and only matters for multi-entity IPCs.
 
-**Not yet done.** Typed validation messages, search/filter, secret encryption toggle, theme,
-plugin/extensibility hooks.
+**Not yet done.** Typed validation messages, search/filter, secret encryption toggle, a
+light/dark theme *switch* (the modern dark palette is now the default), plugin/extensibility
+hooks.
