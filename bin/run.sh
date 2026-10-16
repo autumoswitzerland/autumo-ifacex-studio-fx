@@ -15,6 +15,8 @@
 #  Usage:
 #   bin/run.sh                       start with an empty editor
 #   bin/run.sh path/to/config.ifacex open a config file directly
+#                                    (relative paths are resolved against the
+#                                     directory you invoke the script from)
 #
 #------------------------------------------------------------------------------
 #
@@ -26,6 +28,19 @@ set -e
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(cd "$HERE/.." && pwd)"
+
+# Remember where the user invoked us: "javafx:run" executes with the working
+# directory of the "ui" module, so relative file arguments must be resolved
+# against the caller's directory here (otherwise they are looked up in "ui/").
+INVOKE_DIR="$PWD"
+
+# Turn a (possibly relative) path into an absolute one.
+abspath() {
+	case "$1" in
+		/*)	printf '%s' "$1" ;;
+		*)	printf '%s/%s' "$INVOKE_DIR" "$1" ;;
+	esac
+}
 
 # --- Resolve the JDK 25 required by this project (override an older JAVA_HOME)
 JDK25=""
@@ -64,7 +79,7 @@ if [ "$#" -gt 0 ]
 then
 	case "$1" in
 		-*)	ARGS="$*" ;;
-		*)	ARGS="--open $*" ;;
+		*)	ARGS="--open $(abspath "$1")" ;;
 	esac
 	exec mvn -B -ntp -pl ui javafx:run -Djavafx.args="$ARGS"
 fi
