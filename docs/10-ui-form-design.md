@@ -124,10 +124,14 @@ from the model + field metadata:
   fields the original Studio edits;
 - reader/writer section → collapsible **Parameters** (global), **Defaults (\*, all entities)**
   (wildcard) and one collapsible **Entity** per entity;
-- entity → source **fields** as an editable **list** (Add `+` / Remove `−` / move `↑` `↓`,
-  in-place double-click editing — as in the original Studio, not a comma-separated field),
-  **destination entity** + editable **field mapping table** (`field` / `formula` / `insert`,
-  with `+` / `−` buttons), and the entity **settings** grid;
+- entity (reader) → the source **fields** as an editable **list** (Add `+` / Remove `−` /
+  move `↑` `↓`, in-place double-click editing — as in the original Studio, not a
+  comma-separated field);
+- entity (writer) → **Destination entity** + the editable **field mapping table**
+  (`destination field` / `formula` / `insert`, with `+` / `−` buttons). The editor is shown for
+  **every** writer entity, so a mapping can be created even when the file has none yet; the
+  mapping record is created lazily, so merely opening the form does not change the file;
+- both → the entity **settings** grid (`dest_filter_fields`, `order_field`, …);
 - general → the remaining top-level (non reader/writer) keys;
 - every parameter is shown, even without a descriptor (see `FieldCatalog` inference);
 - a form that has nothing editable to show (start-up placeholder, "select an element") is

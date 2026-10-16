@@ -201,7 +201,8 @@ final class FormBuilder {
             box.getChildren().add(collapsed("Defaults (*, all entities)", mapGrid(rw.wildcard()), false));
         }
         for (final Map.Entry<String, EntityConfig> e : rw.entities().entrySet()) {
-            box.getChildren().add(collapsed("Entity: " + e.getKey(), entityBody(e.getValue()), false));
+            box.getChildren().add(collapsed("Entity: " + e.getKey(),
+                    entityBody(e.getValue(), rw.isReader()), false));
         }
         if (box.getChildren().size() == 1) {
             box.getChildren().add(hint("No parameters for this interface."));
@@ -217,36 +218,56 @@ final class FormBuilder {
         final VBox box = new VBox(6);
         box.setPadding(new Insets(8));
         box.getChildren().add(title("Entity: " + entity + "   (" + rw.name() + ")"));
-        box.getChildren().add(entityBody(ec));
+        box.getChildren().add(entityBody(ec, rw.isReader()));
         return box;
     }
 
-    private Node entityBody(EntityConfig ec) {
+    /**
+     * The body of an entity form. A <em>reader</em> entity defines the source {@code fields}; a
+     * <em>writer</em> entity defines the destination mapping ({@code mapping_entity} +
+     * {@code mapping_field_NNN}). The mapping editor is shown for every writer entity, so a
+     * mapping can be created even when the file does not contain one yet.
+     */
+    private Node entityBody(EntityConfig ec, boolean reader) {
         final VBox box = new VBox(10);
         box.setPadding(new Insets(4));
 
-        if (!ec.fields().isEmpty() || ec.hasMapping()) {
+        if (reader || !ec.fields().isEmpty()) {
             box.getChildren().add(sourceFieldList(ec));
         }
-
-        if (ec.hasMapping()) {
-            final TextField destEntity = new TextField(
-                    ec.mapping().destEntity() == null ? "" : ec.mapping().destEntity());
-            destEntity.textProperty().addListener((o, a, b) -> {
-                ec.mapping().setDestEntity(b.isBlank() ? null : b);
-                changed();
-            });
-            box.getChildren().add(labeled("Destination entity", destEntity));
-            box.getChildren().add(caption("Field mapping (destination field \u2190 formula)"));
-            box.getChildren().add(mappingTable(ec));
+        if (!reader) {
+            box.getChildren().add(destinationMapping(ec));
         }
-
         if (!ec.settings().isEmpty()) {
             box.getChildren().add(mapGrid(ec.settings()));
         }
         if (box.getChildren().isEmpty()) {
             box.getChildren().add(hint("(empty)"));
         }
+        return box;
+    }
+
+    /**
+     * Destination mapping of a writer entity: the destination entity name plus the field mapping
+     * table. The mapping record is created lazily, so merely opening the form does not change the
+     * configuration.
+     */
+    private Node destinationMapping(EntityConfig ec) {
+        final String dest = ec.hasMapping() && ec.mapping().destEntity() != null
+                ? ec.mapping().destEntity() : "";
+        final TextField destEntity = new TextField(dest);
+        destEntity.textProperty().addListener((o, a, b) -> {
+            if (b.isBlank() && !ec.hasMapping()) {
+                return; // nothing to clear yet
+            }
+            ec.ensureMapping().setDestEntity(b.isBlank() ? null : b);
+            changed();
+        });
+
+        final VBox box = new VBox(6);
+        box.getChildren().add(labeled("Destination entity", destEntity));
+        box.getChildren().add(caption("Field mapping (destination field \u2190 formula)"));
+        box.getChildren().add(mappingTable(ec));
         return box;
     }
 
@@ -428,8 +449,8 @@ final class FormBuilder {
     }
 
     private Node mappingTable(EntityConfig ec) {
-        final ObservableList<FieldMappingRec> rows =
-                FXCollections.observableArrayList(new ArrayList<>(ec.mapping().fields()));
+        final ObservableList<FieldMappingRec> rows = FXCollections.observableArrayList(
+                ec.hasMapping() ? new ArrayList<>(ec.mapping().fields()) : new ArrayList<>());
         final TableView<FieldMappingRec> table = new TableView<>(rows);
         table.setEditable(true);
         table.setPrefHeight(180);
@@ -458,14 +479,13 @@ final class FormBuilder {
         table.getColumns().addAll(List.of(colField, colFormula, colInsert));
 
         final Button add = toolButton("+", "Add mapping", () -> {
-            final FieldMappingRec rec = new FieldMappingRec("", "", false);
-            ec.mapping().fields().add(rec);
+            ec.ensureMapping().fields().add(new FieldMappingRec("", "", false));
             rows.setAll(ec.mapping().fields());
             changed();
         });
         final Button remove = toolButton("\u2212", "Remove selected mapping", () -> {
             final FieldMappingRec sel = table.getSelectionModel().getSelectedItem();
-            if (sel != null) {
+            if (sel != null && ec.hasMapping()) {
                 ec.mapping().fields().remove(sel);
                 rows.setAll(ec.mapping().fields());
                 changed();
@@ -480,6 +500,9 @@ final class FormBuilder {
 
     private void replace(EntityConfig ec, ObservableList<FieldMappingRec> rows,
             FieldMappingRec oldRec, FieldMappingRec newRec) {
+        if (!ec.hasMapping()) {
+            return;
+        }
         final int i = ec.mapping().fields().indexOf(oldRec);
         if (i >= 0) {
             ec.mapping().fields().set(i, newRec);
