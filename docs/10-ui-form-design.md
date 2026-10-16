@@ -136,11 +136,18 @@ Dialogs reuse the same base stylesheet so they match the main window. `studio.cs
 raises the base font size to **14px** and enables LCD font smoothing for readability on the
 dark palette.
 
-**Toolbar.** The toolbar mirrors the original Studio editor, rebuilt programmatically with
-the 48px autumo-ui icons (label below the icon) and the ifaceX mark on the right:
-**New · Open · Save · Close | Configuration | Run | External Edit**. `Configuration` selects
-the root node (file metadata + job wiring); `Run` and `External Edit` are placeholders until
-engine integration. The same 16px icons are used in the File menu.
+**Toolbar.** The toolbar mirrors the original Studio editor (same structure as the FX
+reference `autumo-documents-ui`): a `MenuBar` plus a `tool-bar-pane` `BorderPane` holding a
+left and a right `ToolBar` (transparent inner bars; each button is a 48px autumo-ui icon with
+the label underneath). Left: **New · Open · Save · Close | Configuration | Run | External
+Edit**. `Configuration` selects the root node (file metadata + job wiring); `Run` and
+`External Edit` are placeholders until engine integration. Right (as in the original): the
+**ifaceX Studio title logo** (`ifacex-studio-reddot2-40.png`) and the clickable **ifaceX mark
+with the label `ifaceX` underneath**, which opens `url.website`. The same 16px icons are used
+in the File menu. **Save always writes the new `.ifcx` format**; `.ifacex` is export-only.
+
+The toolbar carries the `tool-bar-pane` background/gradient and a top+bottom border, giving a
+**continuous separation line** across the full width (also under the navigation tree).
 
 **Metadata.** `core/.../meta/` holds `FieldType`, `FieldDescriptor` and `FieldCatalog`
 (known parameters + best-effort inference for unknown ones). It is UI-free and unit-testable;

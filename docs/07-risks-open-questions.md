@@ -135,3 +135,7 @@ Access path / location is to be provided by the owner if desired.
 | 2026-10-16 | `bin/run.sh [file]` opens a config directly (`--open`); run script forces JDK 25 | assistant |
 | 2026-10-16 | **Readability:** base font size raised to 14px with LCD font smoothing; mono (raw views) 13px | user |
 | 2026-10-16 | **Toolbar adopted from the original Studio** (icons + labels, ifaceX mark on the right): New · Open · Save · Close · Configuration · Run · External Edit; Run/External Edit are placeholders | user |
+| 2026-10-16 | **Typography = Aileron** (the autumo-ui brand font, bundled); also fixed the autumo-ui dialog-header family name (`Aileron-Semibold` → `Aileron SemiBold`, autumo-ui commit `6d3bc79b`) | user |
+| 2026-10-16 | **Toolbar right side = original:** title logo (`ifacex-studio-reddot2-40.png`) + clickable ifaceX mark with label `ifaceX` (opens `url.website`). Invented Website/Documentation/Purchase links **removed**. Structure per FX reference `autumo-documents-ui` (`tool-bar-pane` + left/right ToolBar) | user |
+| 2026-10-16 | **Save always writes the new `.ifcx` format** (`.ifacex` = export-only) | user |
+| 2026-10-16 | **Editor tabs restyled** for the dark theme; **continuous separation line** under the toolbar (also under the tree) | user |
