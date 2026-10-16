@@ -24,7 +24,7 @@
     <top>
         <VBox>
             <MenuBar styleClass="menu-bar">
-                <Menu text="File">
+                <Menu fx:id="menuFile" text="File">
                     <MenuItem fx:id="miNew" text="New" onAction="#onNew"/>
                     <MenuItem fx:id="miOpen" text="Open…" onAction="#onOpen"/>
                     <MenuItem fx:id="miSave" text="Save As… (.ifcx)" onAction="#onSave"/>
@@ -34,8 +34,8 @@
                     <SeparatorMenuItem/>
                     <MenuItem fx:id="miExit" text="Exit" onAction="#onExit"/>
                 </Menu>
-                <Menu text="Help">
-                    <MenuItem text="About" onAction="#onAbout"/>
+                <Menu fx:id="menuHelp" text="Help">
+                    <MenuItem fx:id="miAbout" text="About" onAction="#onAbout"/>
                 </Menu>
             </MenuBar>
             <BorderPane styleClass="tool-bar-pane">
@@ -55,13 +55,13 @@
         <SplitPane dividerPositions="0.28">
             <TreeView fx:id="navTree" showRoot="true"/>
             <TabPane fx:id="tabPane" tabClosingPolicy="UNAVAILABLE">
-                <Tab text="Form">
+                <Tab fx:id="tabForm" text="Form">
                     <ScrollPane fx:id="formScroll" fitToWidth="true"/>
                 </Tab>
-                <Tab text="Raw YAML (.ifcx)">
+                <Tab fx:id="tabRawYaml" text="Raw YAML (.ifcx)">
                     <TextArea fx:id="rawYaml" editable="false" styleClass="mono"/>
                 </Tab>
-                <Tab text="Raw Properties (.ifacex)">
+                <Tab fx:id="tabRawProps" text="Raw Properties (.ifacex)">
                     <TextArea fx:id="rawProps" editable="false" styleClass="mono"/>
                 </Tab>
             </TabPane>

@@ -15,6 +15,9 @@
 package ch.autumo.ifacex.studio.ui;
 
 import java.util.ArrayList;
+import static ch.autumo.ifacex.studio.core.i18n.Messages.format;
+import static ch.autumo.ifacex.studio.core.i18n.Messages.t;
+
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -106,7 +109,7 @@ final class FormBuilder {
     @SuppressWarnings("unchecked")
     Node build(Object selection) {
         if (!(selection instanceof NavNode node)) {
-            return message("Select an element on the left.");
+            return message(t("Select an element on the left."));
         }
         return switch (node.kind()) {
             case MainController.K_ROOT ->
@@ -117,7 +120,7 @@ final class FormBuilder {
                     entity((RwConfig) node.payload(), (String) node.payload2());
             case MainController.K_GENERAL ->
                     general((Map<String, String>) node.payload());
-            default -> message("No form for: " + node.label());
+            default -> message(format("No form for: {0}", node.label()));
         };
     }
 
@@ -141,21 +144,21 @@ final class FormBuilder {
             cfg.setMeta(cfg.meta().withTitle(b));
             changed();
         });
-        metaBox.getChildren().add(labeled("Title", metaTitle));
+        metaBox.getChildren().add(labeled(t("Title"), metaTitle));
 
         final TextField metaVersion = new TextField(cfg.meta().version());
         metaVersion.textProperty().addListener((o, a, b) -> {
             cfg.setMeta(cfg.meta().withVersion(b));
             changed();
         });
-        metaBox.getChildren().add(labeled("Version", metaVersion));
+        metaBox.getChildren().add(labeled(t("Version"), metaVersion));
 
         final TextField metaAuthor = new TextField(cfg.meta().author());
         metaAuthor.textProperty().addListener((o, a, b) -> {
             cfg.setMeta(cfg.meta().withAuthor(b));
             changed();
         });
-        metaBox.getChildren().add(labeled("Author", metaAuthor));
+        metaBox.getChildren().add(labeled(t("Author"), metaAuthor));
 
         final TextArea metaNotes = new TextArea(stripTrailingNewline(cfg.meta().notes()));
         metaNotes.setPrefRowCount(3);
@@ -163,13 +166,13 @@ final class FormBuilder {
             cfg.setMeta(cfg.meta().withNotes(b));
             changed();
         });
-        metaBox.getChildren().add(labeled("Description / Notes", metaNotes));
+        metaBox.getChildren().add(labeled(t("Description / Notes"), metaNotes));
 
         final TextField metaDate = new TextField(cfg.meta().date());
         metaDate.setEditable(false);
-        metaBox.getChildren().add(labeled("Date (generated)", metaDate));
+        metaBox.getChildren().add(labeled(t("Date (generated)"), metaDate));
 
-        box.getChildren().add(collapsed("File metadata (comment header)", metaBox, true));
+        box.getChildren().add(collapsed(t("File metadata (comment header)"), metaBox, true));
 
         // --- job wiring --------------------------------------------------------------------
         final VBox jobBox = new VBox(10);
@@ -189,24 +192,24 @@ final class FormBuilder {
             cfg.ensureReader(b.trim());
             structureChanged();
         });
-        final Label srcLabel = new Label("Source interface (reader)");
+        final Label srcLabel = new Label(t("Source interface (reader)"));
         srcLabel.getStyleClass().add("field-label");
-        srcLabel.setTooltip(new Tooltip("The single reader of the job; picking one creates its section."));
+        srcLabel.setTooltip(new Tooltip(t("The single reader of the job; picking one creates its section.")));
         jobBox.getChildren().add(new VBox(2, srcLabel, srcIface));
 
         // Destination interfaces = the writers.
-        final Label destLabel = new Label("Destination interfaces (writers)");
+        final Label destLabel = new Label(t("Destination interfaces (writers)"));
         destLabel.getStyleClass().add("field-label");
-        destLabel.setTooltip(new Tooltip("The writers of the job. Add a writer to create its section."));
+        destLabel.setTooltip(new Tooltip(t("The writers of the job. Add a writer to create its section.")));
         jobBox.getChildren().add(new VBox(2, destLabel, stringListEditor(
-                caption(""), "writer (e.g. csv_out)", 
+                caption(""), t("writer (e.g. csv_out)"),
                 FXCollections.observableList(cfg.destinationInterfaces()),
                 this::syncWritersFromList)));
 
-        box.getChildren().add(collapsed("Job wiring", jobBox, true));
+        box.getChildren().add(collapsed(t("Job wiring"), jobBox, true));
 
         // --- source entities (global; the legacy BASE tab list) ----------------------------
-        box.getChildren().add(collapsed("Source entities", sourceEntitiesEditor(cfg), true));
+        box.getChildren().add(collapsed(t("Source entities"), sourceEntitiesEditor(cfg), true));
         return box;
     }
 
@@ -236,7 +239,7 @@ final class FormBuilder {
             final List<String> others = cfg.sourceEntityNames();
             others.removeIf(n -> n.equals(old));
             if (others.contains(v)) {
-                warn(list, "A source entity named '" + v + "' already exists.");
+                warn(list, format("A source entity named {0} already exists.", "'" + v + "'"));
                 list.refresh();
                 return;
             }
@@ -246,7 +249,7 @@ final class FormBuilder {
         });
 
         final TextField input = new TextField();
-        input.setPromptText("New source entity name");
+        input.setPromptText(t("New source entity name"));
         HBox.setHgrow(input, Priority.ALWAYS);
         final Runnable add = () -> {
             final String v = input.getText() == null ? "" : input.getText().trim();
@@ -258,8 +261,8 @@ final class FormBuilder {
         };
         input.setOnAction(e -> add.run());
 
-        final Button addBtn = toolButton("+", "Add source entity", add);
-        final Button removeBtn = toolButton("\u2212", "Remove source entity (fields and mappings)",
+        final Button addBtn = toolButton("+", t("Add source entity"), add);
+        final Button removeBtn = toolButton("\u2212", t("Remove source entity (fields and mappings)"),
                 () -> {
                     final String sel = list.getSelectionModel().getSelectedItem();
                     if (sel != null) {
@@ -267,7 +270,7 @@ final class FormBuilder {
                         structureChanged();
                     }
                 });
-        final Button up = toolButton("\u2191", "Move up", () -> {
+        final Button up = toolButton("\u2191", t("Move up"), () -> {
             final String sel = list.getSelectionModel().getSelectedItem();
             if (sel != null) {
                 cfg.moveSourceEntity(sel, -1);
@@ -276,7 +279,7 @@ final class FormBuilder {
                 structureChanged();
             }
         });
-        final Button down = toolButton("\u2193", "Move down", () -> {
+        final Button down = toolButton("\u2193", t("Move down"), () -> {
             final String sel = list.getSelectionModel().getSelectedItem();
             if (sel != null) {
                 cfg.moveSourceEntity(sel, 1);
@@ -286,8 +289,8 @@ final class FormBuilder {
             }
         });
 
-        final Label help = hint("Source entities are global: their fields are edited on the reader, "
-                + "their output mapping on each writer. Double-click to rename.");
+        final Label help = hint(t("Source entities are global: their fields are edited on the reader, "
+                + "their output mapping on each writer. Double-click to rename."));
         help.setWrapText(true);
         return new VBox(4, list, new HBox(6, input, addBtn),
                 new HBox(6, removeBtn, up, down), help);
@@ -321,16 +324,17 @@ final class FormBuilder {
         final VBox box = new VBox(6);
         box.setPadding(new Insets(8));
         box.getChildren().add(sectionHeader(rw.name(),
-                rw.name() + (rw.isReader() ? "  (reader)" : "  (writer)")));
+                rw.name() + (rw.isReader() ? "  " + t("(reader)") : "  " + t("(writer)"))));
 
         if (!rw.global().isEmpty()) {
-            box.getChildren().add(collapsed("Parameters", mapGrid(rw.global()), true));
+            box.getChildren().add(collapsed(t("Parameters"), mapGrid(rw.global()), true));
         }
         if (!rw.wildcard().isEmpty()) {
-            box.getChildren().add(collapsed("Defaults (*, all entities)", mapGrid(rw.wildcard()), false));
+            box.getChildren().add(collapsed(t("Defaults (*, all entities)"),
+                    mapGrid(rw.wildcard()), false));
         }
         for (final Map.Entry<String, EntityConfig> e : rw.entities().entrySet()) {
-            box.getChildren().add(collapsed("Entity: " + e.getKey(),
+            box.getChildren().add(collapsed(format("Entity: {0}", e.getKey()),
                     entityBody(e.getValue(), rw), false));
         }
         if (!rw.isReader()) {
@@ -340,7 +344,7 @@ final class FormBuilder {
             }
         }
         if (box.getChildren().size() == 1) {
-            box.getChildren().add(hint("No parameters for this interface."));
+            box.getChildren().add(hint(t("No parameters for this interface.")));
         }
         return box;
     }
@@ -361,11 +365,11 @@ final class FormBuilder {
         }
         final ComboBox<String> combo = new ComboBox<>(
                 FXCollections.observableArrayList(unmapped));
-        combo.setPromptText("source entity");
+        combo.setPromptText(t("source entity"));
         combo.setValue(unmapped.get(0));
         combo.setMaxWidth(Double.MAX_VALUE);
         HBox.setHgrow(combo, Priority.ALWAYS);
-        final Button add = toolButton("+", "Add an output mapping for this source entity", () -> {
+        final Button add = toolButton("+", t("Add an output mapping for this source entity"), () -> {
             final String sel = combo.getValue();
             if (sel != null && !sel.isBlank() && !rw.entities().containsKey(sel)) {
                 rw.ensureEntity(sel);
@@ -373,7 +377,7 @@ final class FormBuilder {
             }
         });
         final VBox box = new VBox(4,
-                caption("Add output mapping for a source entity"),
+                caption(t("Add output mapping for a source entity")),
                 new HBox(6, combo, add));
         return box;
     }
@@ -381,11 +385,12 @@ final class FormBuilder {
     private Node entity(RwConfig rw, String entity) {
         final EntityConfig ec = rw.entities().get(entity);
         if (ec == null) {
-            return hint("Entity not found: " + entity);
+            return hint(format("Entity not found: {0}", entity));
         }
         final VBox box = new VBox(6);
         box.setPadding(new Insets(8));
-        box.getChildren().add(sectionHeader(rw.name(), "Entity: " + entity + "   (" + rw.name() + ")"));
+        box.getChildren().add(sectionHeader(rw.name(),
+                format("Entity: {0}   ({1})", entity, rw.name())));
         box.getChildren().add(entityBody(ec, rw));
         return box;
     }
@@ -407,7 +412,7 @@ final class FormBuilder {
         if (rw.isReader()) {
             box.getChildren().add(sourceFieldList(ec));
             if (isDbLike(rw)) {
-                box.getChildren().add(destField(ec, "order_field", "Order field"));
+                box.getChildren().add(destField(ec, "order_field", t("Order field")));
             }
         } else {
             box.getChildren().add(destinationMapping(ec, rw));
@@ -497,7 +502,7 @@ final class FormBuilder {
         final String dest = ec.hasMapping() && ec.mapping().destEntity() != null
                 ? ec.mapping().destEntity() : "";
         final TextField destEntity = new TextField(dest);
-        destEntity.setPromptText("destination entity (e.g. COMPANIES)");
+        destEntity.setPromptText(t("destination entity (e.g. COMPANIES)"));
         destEntity.textProperty().addListener((o, a, b) -> {
             if (b.isBlank() && !ec.hasMapping()) {
                 return; // nothing to clear yet
@@ -505,29 +510,30 @@ final class FormBuilder {
             ec.ensureMapping().setDestEntity(b.isBlank() ? null : b);
             changed();
         });
-        final Label destLabel = new Label("Destination entity");
+        final Label destLabel = new Label(t("Destination entity"));
         destLabel.getStyleClass().add("field-label");
-        destLabel.setTooltip(new Tooltip("The legacy GUI allows exactly one destination entity per "
-                + "source entity. For a second target, use a view or a second processor configuration."));
+        destLabel.setTooltip(new Tooltip(t("The legacy GUI allows exactly one destination entity per "
+                + "source entity. For a second target, use a view or a second processor configuration.")));
         box.getChildren().add(new VBox(2, destLabel, destEntity));
 
         // --- writer-type specific destination fields ----------------------------------------
         if ("db".equals(prefix) || "mongo".equals(prefix)) {
             box.getChildren().add(destField(ec, "dest_unique_id_field",
-                    "Destination unique id field"));
+                    t("Destination unique id field")));
         } else if ("rest".equals(prefix)) {
-            box.getChildren().add(destField(ec, "dest_id_path", "Destination id path"));
+            box.getChildren().add(destField(ec, "dest_id_path", t("Destination id path")));
         }
         if ("db".equals(prefix) || "mongo".equals(prefix) || "rest".equals(prefix)) {
-            final Label ffc = caption("Destination filter fields");
-            ffc.setTooltip(new Tooltip("Only these fields are used to build the destination "
-                    + "filter (DB/Mongo) or the id lookup (REST)."));
-            box.getChildren().add(stringListEditor(ffc, "field name",
+            final Label ffc = caption(t("Destination filter fields"));
+            ffc.setTooltip(new Tooltip(t("Only these fields are used to build the destination "
+                    + "filter (DB/Mongo) or the id lookup (REST).")));
+            box.getChildren().add(stringListEditor(ffc, t("field name"),
                     commaList(ec.settings(), "dest_filter_fields"), () -> { }));
         }
 
         // --- field mapping (source fields -> formula -> mapping table) -----------------------
-        box.getChildren().add(caption("Field mapping \u2014 source entity '" + entity + "'"));
+        box.getChildren().add(caption(format("Field mapping \u2014 source entity {0}",
+                "'" + entity + "'")));
         box.getChildren().add(mappingEditor(ec, rw, entity));
         return box;
     }
@@ -555,11 +561,11 @@ final class FormBuilder {
         final ListView<String> fieldsList = new ListView<>(
                 FXCollections.observableArrayList(sourceFields));
         fieldsList.setPrefHeight(200);
-        fieldsList.setPlaceholder(hint("No source fields for '" + entity + "'."));
-        final Label fieldsCaption = caption("Source fields (" + entity + ")");
-        fieldsCaption.setTooltip(new Tooltip("Drag a field into the formula box below (or "
+        fieldsList.setPlaceholder(hint(format("No source fields for {0}.", "'" + entity + "'")));
+        final Label fieldsCaption = caption(format("Source fields ({0})", entity));
+        fieldsCaption.setTooltip(new Tooltip(t("Drag a field into the formula box below (or "
                 + "double-click it). The fields belong to the source entity and are edited "
-                + "on the reader."));
+                + "on the reader.")));
 
         // The formula box is the drop target.
         final TextArea formula = new TextArea();
@@ -569,11 +575,11 @@ final class FormBuilder {
         wireFieldDrag(fieldsList, formula);
         wireFieldDrop(formula);
 
-        final Button addStd = toolButton("Add standard mapping",
-                "Add the formula above as a standard [STD] mapping",
+        final Button addStd = toolButton(t("Add standard mapping"),
+                t("Add the formula above as a standard [STD] mapping"),
                 () -> addMappingFromBox(ec, rows, formula, false));
-        final Button addIns = toolButton("Add insert mapping",
-                "Add the formula above as an insert-only [INS] mapping",
+        final Button addIns = toolButton(t("Add insert mapping"),
+                t("Add the formula above as an insert-only [INS] mapping"),
                 () -> addMappingFromBox(ec, rows, formula, true));
         final Button all = dndButton(
                 () -> rows.addAll(MappingFormula.standardFor(sourceFields, rows)));
@@ -585,7 +591,7 @@ final class FormBuilder {
         VBox.setVgrow(fieldsList, Priority.ALWAYS);
 
         return new VBox(10, fieldsBox,
-                labeled("Formula (drop source fields here)", formula),
+                labeled(t("Formula (drop source fields here)"), formula),
                 buttons,
                 mappingTable(rows));
     }
@@ -599,7 +605,7 @@ final class FormBuilder {
         final Button b = new Button(null, view);
         b.setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
         b.getStyleClass().add("dnd-button");
-        b.setTooltip(new Tooltip(DND_TOOLTIP));
+        b.setTooltip(new Tooltip(t(DND_TOOLTIP)));
         b.setOnAction(e -> action.run());
         return b;
     }
@@ -670,11 +676,13 @@ final class FormBuilder {
         final String text = formula.getText();
         final FieldMappingRec rec = MappingFormula.parse(text, insert);
         if (rec == null) {
-            warn(formula, "The destination mapping '" + (text == null ? "" : text.trim())
-                    + "' has a wrong format!\n\n"
-                    + "Example: 'target-field:{source-field-1} and {source-field-4} whatever'.\n"
-                    + "First the target field, then ':' and then the value — one or more source "
-                    + "fields enclosed in curly brackets. The line must contain exactly one colon.");
+            // Two messages on purpose: the example contains literal {…} braces, which must not
+            // be fed to MessageFormat (it would read them as argument numbers).
+            warn(formula, format("The destination mapping {0} has a wrong format!",
+                    "'" + (text == null ? "" : text.trim()) + "'") + "\n\n"
+                    + t("Example: 'target-field:{source-field-1} and {source-field-4} whatever'.\n"
+                    + "First the target field, then ':' and then the value \u2014 one or more source "
+                    + "fields enclosed in curly brackets. The line must contain exactly one colon."));
             return;
         }
         rows.add(rec);
@@ -689,9 +697,9 @@ final class FormBuilder {
      */
     private Node sourceFieldList(EntityConfig ec) {
         final ObservableList<String> items = FXCollections.observableList(ec.fields());
-        final Label caption = caption("Fields (source)");
-        caption.setTooltip(new Tooltip("Source entity fields; order matters for CSV/JSON readers."));
-        return stringListEditor(caption, "New field name", items, this::changed);
+        final Label caption = caption(t("Fields (source)"));
+        caption.setTooltip(new Tooltip(t("Source entity fields; order matters for CSV/JSON readers.")));
+        return stringListEditor(caption, t("New field name"), items, this::changed);
     }
 
     /**
@@ -730,17 +738,17 @@ final class FormBuilder {
         };
         input.setOnAction(e -> addItem.run());
 
-        final Button add = toolButton("+", "Add", addItem);
-        final Button remove = toolButton("\u2212", "Remove selected", () -> {
+        final Button add = toolButton("+", t("Add"), addItem);
+        final Button remove = toolButton("\u2212", t("Remove selected"), () -> {
             final int i = list.getSelectionModel().getSelectedIndex();
             if (i >= 0) {
                 items.remove(i);
                 onEdit.run();
             }
         });
-        final Button up = toolButton("\u2191", "Move up",
+        final Button up = toolButton("\u2191", t("Move up"),
                 () -> move(items, list, list.getSelectionModel().getSelectedIndex(), -1, onEdit));
-        final Button down = toolButton("\u2193", "Move down",
+        final Button down = toolButton("\u2193", t("Move down"),
                 () -> move(items, list, list.getSelectionModel().getSelectedIndex(), 1, onEdit));
 
         final HBox inputRow = new HBox(6, input, add);
@@ -799,9 +807,9 @@ final class FormBuilder {
     private Node general(Map<String, String> general) {
         final VBox box = new VBox(6);
         box.setPadding(new Insets(8));
-        box.getChildren().add(title("Overwritten Values"));
+        box.getChildren().add(title(t("Overwritten Values")));
         if (general.isEmpty()) {
-            box.getChildren().add(hint("(none)"));
+            box.getChildren().add(hint(t("(none)")));
         } else {
             box.getChildren().add(mapGrid(general));
         }
@@ -905,24 +913,25 @@ final class FormBuilder {
         final TableView<FieldMappingRec> table = new TableView<>(rows);
         table.setEditable(true);
         table.setPrefHeight(180);
-        table.setPlaceholder(hint(
-                "No mappings yet \u2014 add one with the buttons above (or click the dnd icon)."));
+        table.setPlaceholder(hint(t(
+                "No mappings yet \u2014 add one with the buttons above (or click the dnd icon).")));
 
-        final TableColumn<FieldMappingRec, String> colField = new TableColumn<>("Destination field");
+        final TableColumn<FieldMappingRec, String> colField =
+                new TableColumn<>(t("Destination field"));
         colField.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().destField()));
         colField.setCellFactory(TextFieldTableCell.forTableColumn(new DefaultStringConverter()));
         colField.setOnEditCommit(ev -> replace(rows, ev.getRowValue(),
                 new FieldMappingRec(ev.getNewValue(), ev.getRowValue().formula(), ev.getRowValue().insert())));
         colField.setPrefWidth(240);
 
-        final TableColumn<FieldMappingRec, String> colFormula = new TableColumn<>("Formula");
+        final TableColumn<FieldMappingRec, String> colFormula = new TableColumn<>(t("Formula"));
         colFormula.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().formula()));
         colFormula.setCellFactory(TextFieldTableCell.forTableColumn(new DefaultStringConverter()));
         colFormula.setOnEditCommit(ev -> replace(rows, ev.getRowValue(),
                 new FieldMappingRec(ev.getRowValue().destField(), ev.getNewValue(), ev.getRowValue().insert())));
         colFormula.setPrefWidth(320);
 
-        final TableColumn<FieldMappingRec, Boolean> colInsert = new TableColumn<>("Insert (INS)");
+        final TableColumn<FieldMappingRec, Boolean> colInsert = new TableColumn<>(t("Insert (INS)"));
         colInsert.setCellValueFactory(c -> new SimpleBooleanProperty(c.getValue().insert()));
         colInsert.setCellFactory(CheckBoxTableCell.forTableColumn(colInsert));
         colInsert.setOnEditCommit(ev -> replace(rows, ev.getRowValue(),
@@ -931,19 +940,19 @@ final class FormBuilder {
 
         table.getColumns().addAll(List.of(colField, colFormula, colInsert));
 
-        final Button add = toolButton("+", "Add an empty mapping row", () -> {
+        final Button add = toolButton("+", t("Add an empty mapping row"), () -> {
             rows.add(new FieldMappingRec("", "", false));
             table.getSelectionModel().selectLast();
         });
-        final Button remove = toolButton("\u2212", "Remove the selected mapping", () -> {
+        final Button remove = toolButton("\u2212", t("Remove the selected mapping"), () -> {
             final int i = table.getSelectionModel().getSelectedIndex();
             if (i >= 0) {
                 rows.remove(i);
             }
         });
-        final Button up = toolButton("\u2191", "Move mapping up",
+        final Button up = toolButton("\u2191", t("Move mapping up"),
                 () -> moveMapping(rows, table.getSelectionModel().getSelectedIndex(), -1));
-        final Button down = toolButton("\u2193", "Move mapping down",
+        final Button down = toolButton("\u2193", t("Move mapping down"),
                 () -> moveMapping(rows, table.getSelectionModel().getSelectedIndex(), 1));
         final HBox buttons = new HBox(6, add, remove, up, down);
 
@@ -990,7 +999,7 @@ final class FormBuilder {
     private void warn(Node source, String message) {
         final Alert alert = new Alert(Alert.AlertType.WARNING, message, ButtonType.OK);
         alert.setHeaderText(null);
-        alert.setTitle("Destination mapping");
+        alert.setTitle(t("Destination mapping"));
         if (source != null && source.getScene() != null) {
             alert.initOwner(source.getScene().getWindow());
         }
@@ -1035,9 +1044,9 @@ final class FormBuilder {
         final Label pill = new Label("BASE");
         pill.getStyleClass().add("type-pill");
         pill.setStyle("-fx-background-color: " + InterfaceTypes.COLOR_BASE + ";");
-        pill.setTooltip(new Tooltip("Global job configuration (source_interface, "
-                + "destination_interfaces, process_source_entities)"));
-        final HBox h = new HBox(8, pill, title("Configuration"));
+        pill.setTooltip(new Tooltip(t("Global job configuration (source_interface, "
+                + "destination_interfaces, process_source_entities)")));
+        final HBox h = new HBox(8, pill, title(t("Configuration")));
         h.setAlignment(Pos.CENTER_LEFT);
         return h;
     }

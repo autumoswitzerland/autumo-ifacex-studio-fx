@@ -14,11 +14,15 @@
  */
 package ch.autumo.ifacex.studio.ui;
 
+import static ch.autumo.ifacex.studio.core.i18n.Messages.format;
+import static ch.autumo.ifacex.studio.core.i18n.Messages.t;
+
 import java.io.File;
 import java.nio.file.Path;
 import java.util.Locale;
 import java.util.Objects;
 
+import ch.autumo.ifacex.studio.core.i18n.Messages;
 import ch.autumo.ifacex.studio.core.io.PropertiesConfigReader;
 import ch.autumo.ifacex.studio.core.io.PropertiesConfigWriter;
 import ch.autumo.ifacex.studio.core.io.YamlConfigReader;
@@ -39,9 +43,11 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
+import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Separator;
+import javafx.scene.control.Tab;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.ToolBar;
 import javafx.scene.control.Tooltip;
@@ -96,6 +102,20 @@ public class MainController {
     private MenuItem miExportIfcx;
     @FXML
     private MenuItem miExportIfacex;
+    @FXML
+    private MenuItem miAbout;
+    @FXML
+    private MenuItem miExit;
+    @FXML
+    private Menu menuFile;
+    @FXML
+    private Menu menuHelp;
+    @FXML
+    private Tab tabForm;
+    @FXML
+    private Tab tabRawYaml;
+    @FXML
+    private Tab tabRawProps;
 
     private final FormBuilder formBuilder = new FormBuilder(this::onModelChanged, this::rebuild);
 
@@ -112,10 +132,31 @@ public class MainController {
         navTree.setCellFactory(tv -> navCell());
         navTree.getSelectionModel().selectedItemProperty().addListener(
                 (o, a, b) -> showForm(b));
-        formScroll.setContent(FormBuilder.message("Open a .ifacex or .ifcx file to begin."));
+        applyTexts();
+        formScroll.setContent(FormBuilder.message(t("Open a .ifacex or .ifcx file to begin.")));
         buildToolBar();
         buildMenuIcons();
         setConfigActionsEnabled(false);
+    }
+
+    /**
+     * Applies the translated texts of the static FXML shell. FXML cannot read PO files, so the
+     * labels that live in {@code main.fxml} are (re-)set here from {@link Messages}.
+     */
+    private void applyTexts() {
+        menuFile.setText(t("File"));
+        menuHelp.setText(t("Help"));
+        miNew.setText(t("New"));
+        miOpen.setText(t("Open…"));
+        miSave.setText(t("Save As… (.ifcx)"));
+        miExportIfcx.setText(t("Export .ifcx"));
+        miExportIfacex.setText(t("Export .ifacex"));
+        miExit.setText(t("Exit"));
+        miAbout.setText(t("About"));
+        tabForm.setText(t("Form"));
+        tabRawYaml.setText(t("Raw YAML (.ifcx)"));
+        tabRawProps.setText(t("Raw Properties (.ifacex)"));
+        statusLabel.setText(t("Ready"));
     }
 
     /**
@@ -158,21 +199,21 @@ public class MainController {
      * from the autumo-ui framework (48px, label below).
      */
     private void buildToolBar() {
-        final Button tbNew = toolButton("project-new-48.png", "New",
-                "Create a new, empty configuration", () -> onNew());
-        final Button tbOpen = toolButton("project-open-48.png", "Open",
-                "Open an .ifacex or .ifcx configuration", () -> onOpen());
-        tbSave = toolButton("project-save-48.png", "Save",
-                "Save as .ifcx (new format)", () -> onSave());
-        tbClose = toolButton("project-close-48.png", "Close",
-                "Close the current configuration", () -> onClose());
+        final Button tbNew = toolButton("project-new-48.png", t("New"),
+                t("Create a new, empty configuration"), () -> onNew());
+        final Button tbOpen = toolButton("project-open-48.png", t("Open"),
+                t("Open an .ifacex or .ifcx configuration"), () -> onOpen());
+        tbSave = toolButton("project-save-48.png", t("Save"),
+                t("Save as .ifcx (new format)"), () -> onSave());
+        tbClose = toolButton("project-close-48.png", t("Close"),
+                t("Close the current configuration"), () -> onClose());
 
-        tbConfig = toolButton("settings-48.png", "Configuration",
-                "Edit file metadata and job wiring (selects the root node)", this::selectRoot);
-        final Button tbRun = toolButton("process-48.png", "Run",
-                "Run the IPC — engine integration follows later", null);
-        final Button tbFolder = toolButton("folder-48.png", "External Edit",
-                "Open in an external editor — follows later", null);
+        tbConfig = toolButton("settings-48.png", t("Configuration"),
+                t("Edit file metadata and job wiring (selects the root node)"), this::selectRoot);
+        final Button tbRun = toolButton("process-48.png", t("Run"),
+                t("Run the IPC — engine integration follows later"), null);
+        final Button tbFolder = toolButton("folder-48.png", t("External Edit"),
+                t("Open in an external editor — follows later"), null);
 
         leftToolBar.getItems().addAll(
                 tbNew, tbOpen, tbSave, tbClose,
@@ -203,7 +244,7 @@ public class MainController {
         final Button b = new Button("ifaceX", icon("ifaceX48.png"));
         b.setContentDisplay(ContentDisplay.TOP);
         b.getStyleClass().add("toolbar-button");
-        b.setTooltip(new Tooltip("Visit the ifaceX website"));
+        b.setTooltip(new Tooltip(t("Visit the ifaceX website")));
         b.setOnAction(e -> Helper.openURL(
                 configUrl(Constants.CONFIG_ENTRY_URL_WEB, Constants.DEF_CONFIG_ENTRY_URL_WEB)));
         return b;
@@ -280,7 +321,7 @@ public class MainController {
         config = new IpcConfig();
         sourceFile = null;
         rebuild();
-        status("New configuration");
+        status(t("New configuration"));
     }
 
     @FXML
@@ -291,18 +332,18 @@ public class MainController {
         navTree.setRoot(null);
         rawYaml.clear();
         rawProps.clear();
-        formScroll.setContent(FormBuilder.message("Open a .ifacex or .ifcx file to begin."));
+        formScroll.setContent(FormBuilder.message(t("Open a .ifacex or .ifcx file to begin.")));
         setConfigActionsEnabled(false);
-        status("Closed");
+        status(t("Closed"));
     }
 
     @FXML
     private void onOpen() {
         final FileChooser chooser = new FileChooser();
-        chooser.setTitle("Open configuration");
+        chooser.setTitle(t("Open configuration"));
         chooser.getExtensionFilters().addAll(
-                new FileChooser.ExtensionFilter("ifaceX configuration", "*.ifacex", "*.ifcx", "*.yaml", "*.yml"),
-                new FileChooser.ExtensionFilter("Legacy properties", "*.ifacex"),
+                new FileChooser.ExtensionFilter(t("ifaceX configuration"), "*.ifacex", "*.ifcx", "*.yaml", "*.yml"),
+                new FileChooser.ExtensionFilter(t("Legacy properties"), "*.ifacex"),
                 new FileChooser.ExtensionFilter("YAML", "*.ifcx", "*.yaml", "*.yml"));
         final File file = chooser.showOpenDialog(window());
         if (file != null) {
@@ -314,7 +355,7 @@ public class MainController {
         try {
             loadConfig(path);
         } catch (Exception e) {
-            error("Could not read " + path.getFileName(), e);
+            error(format("Could not read {0}", path.getFileName()), e);
         }
     }
 
@@ -327,10 +368,7 @@ public class MainController {
         sourceFile = path;
         rebuild();
         final boolean legacy = name.endsWith(".ifacex");
-        status((legacy ? "Converted legacy .ifacex: " : "Loaded ") + path.getFileName()
-                + "  \u2014  reader=" + (config.reader() == null ? "-" : config.reader().name())
-                + ", writers=" + config.writers().keySet()
-                + ", entities=" + config.processSourceEntities());
+        status(legacy ? t("Converted from legacy .ifacex") : t("Loaded"));
     }
 
     /** Headless self-test support: load a file and describe what the UI would show. */
@@ -362,10 +400,14 @@ public class MainController {
                 + " formClass=" + (formScroll.getContent() == null
                         ? "null" : formScroll.getContent().getClass().getSimpleName())
                 + " statusFileOk=" + (statusLabel.getText() != null
-                        && statusLabel.getText().startsWith("File: "))
+                        && statusLabel.getText().startsWith(t("File") + ": "))
                 + " rootLabel=\"" + root.getValue().label() + "\""
                 + " title=\"" + (config.meta().title() == null ? "" : config.meta().title()) + "\""
                 + " dndButtons=" + acc[3]
+                + " nav=\"" + root.getChildren().stream()
+                        .map(c -> c.getValue().label()).collect(java.util.stream.Collectors.joining(" | "))
+                        + "\""
+                + " statusText=\"" + (statusLabel.getText() == null ? "" : statusLabel.getText()) + "\""
                 + " statusOk=" + (statusLabel.getText() != null && !statusLabel.getText().isBlank());
     }
 
@@ -431,14 +473,16 @@ public class MainController {
                 new FormBuilder.NavNode(K_ROOT, label(), config, null));
         root.setExpanded(true);
 
-        root.getChildren().add(new TreeItem<>(
-                new FormBuilder.NavNode(K_GENERAL, "Overwritten Values", config.general(), null)));
+        root.getChildren().add(new TreeItem<>(new FormBuilder.NavNode(K_GENERAL,
+                t("Overwritten Values"), config.general(), null)));
 
         for (final RwConfig reader : config.readers().values()) {
-            root.getChildren().add(sectionItem(reader, K_SOURCE, "Source: " + reader.name()));
+            root.getChildren().add(sectionItem(reader, K_SOURCE,
+                    t("Source") + ": " + reader.name()));
         }
         for (final RwConfig writer : config.writers().values()) {
-            root.getChildren().add(sectionItem(writer, K_DEST, "Destination: " + writer.name()));
+            root.getChildren().add(sectionItem(writer, K_DEST,
+                    t("Destination") + ": " + writer.name()));
         }
 
         navTree.setRoot(root);
@@ -496,7 +540,7 @@ public class MainController {
                 return title.trim();
             }
         }
-        return sourceFile == null ? "Configuration" : sourceFile.getFileName().toString();
+        return sourceFile == null ? t("Configuration") : sourceFile.getFileName().toString();
     }
 
     /** Re-derive the root label after a model change, so it follows the title field. */
@@ -535,28 +579,28 @@ public class MainController {
     @FXML
     private void onSave() {
         if (config == null) {
-            status("Nothing to save.");
+            status(t("Nothing to save."));
             return;
         }
         // Save always uses the new YAML format (.ifcx); .ifacex is export-only (legacy).
-        export(YamlConfigWriter.toText(config), ".ifcx", "ifaceX YAML (new format)",
-                "Save as .ifcx");
+        export(YamlConfigWriter.toText(config), ".ifcx", t("ifaceX YAML (new format)"),
+                t("Save as .ifcx"));
     }
 
     @FXML
     private void onExportIfcx() {
-        export(YamlConfigWriter.toText(config), ".ifcx", "ifaceX YAML", "Export .ifcx");
+        export(YamlConfigWriter.toText(config), ".ifcx", t("ifaceX YAML"), t("Export .ifcx"));
     }
 
     @FXML
     private void onExportIfacex() {
-        export(PropertiesConfigWriter.toText(config), ".ifacex", "Legacy properties",
-                "Export .ifacex");
+        export(PropertiesConfigWriter.toText(config), ".ifacex", t("Legacy properties"),
+                t("Export .ifacex"));
     }
 
     private void export(String text, String extension, String description, String title) {
         if (config == null) {
-            status("Nothing to export.");
+            status(t("Nothing to export."));
             return;
         }
         final FileChooser chooser = new FileChooser();
@@ -573,9 +617,9 @@ public class MainController {
         }
         try {
             java.nio.file.Files.writeString(out.toPath(), text);
-            status("Saved " + out.getName() + " (" + extension + ")");
+            status(format("Saved {0} ({1})", out.getName(), extension));
         } catch (Exception e) {
-            error("Could not write " + out.getName(), e);
+            error(format("Could not write {0}", out.getName()), e);
         }
     }
 
@@ -587,10 +631,10 @@ public class MainController {
     @FXML
     private void onAbout() {
         final Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("About");
-        alert.setHeaderText("ifaceX Studio FX — PoC");
-        alert.setContentText("Metadata-driven configuration editor.\n"
-                + "Shell: FXML.  Forms: programmatic.\n"
+        alert.setTitle(t("About"));
+        alert.setHeaderText(t("ifaceX Studio FX — PoC"));
+        alert.setContentText(t("Metadata-driven configuration editor.") + "\n"
+                + t("Shell: FXML.  Forms: programmatic.") + "\n"
                 + "\u00A9 2026 autumo GmbH");
         alert.initOwner(window());
         theme(alert);
@@ -600,9 +644,13 @@ public class MainController {
     /** State shown behind the file: "Loaded", "Converted ...", "Modified", "Saved ...". */
     private String statusState = "";
 
+    /** Whether the shown state is the modified one — compared as a flag, not as translated text. */
+    private boolean modified = false;
+
     /** Sets the state part of the status bar and re-renders it. */
     private void status(String text) {
         statusState = text == null ? "" : text;
+        modified = false;
         renderStatus();
     }
 
@@ -611,22 +659,25 @@ public class MainController {
      * state behind it. Without a loaded file it shows {@code File: -}.
      */
     private void renderStatus() {
-        final String file = sourceFile == null ? "File: -" : "File: " + sourceFile.toAbsolutePath();
+        final String file = sourceFile == null
+                ? t("File") + " -" : t("File") + ": " + sourceFile.toAbsolutePath();
         statusLabel.setText(statusState.isEmpty() ? file : file + "   \u2014   " + statusState);
     }
 
     /** Flag the configuration as changed, without repeating an existing "Modified". */
     private void markModified() {
-        if (statusState.startsWith("Modified")) {
+        if (modified) {
             return;
         }
-        status("Modified");
+        modified = true;
+        statusState = t("Modified");
+        renderStatus();
     }
 
     private void error(String message, Exception e) {
         status(message);
         final Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setTitle("Error");
+        alert.setTitle(t("Error"));
         alert.setHeaderText(message);
         alert.setContentText(String.valueOf(e.getMessage()));
         alert.initOwner(window());

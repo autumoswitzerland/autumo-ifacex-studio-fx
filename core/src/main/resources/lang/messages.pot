@@ -1,0 +1,374 @@
+# Translations for the ifaceX Studio FX.
+# English is the source language: the msgid IS the English text.
+# {0}, {1}, ... are java.text.MessageFormat arguments; keep them.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: autumo-ifacex-studio 0.1.0\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: en\n"
+
+msgid "(none)"
+msgstr ""
+
+msgid "(reader)"
+msgstr ""
+
+msgid "(writer)"
+msgstr ""
+
+msgid "A source entity named {0} already exists."
+msgstr ""
+
+msgid "About"
+msgstr ""
+
+msgid "Add"
+msgstr ""
+
+msgid "Add an empty mapping row"
+msgstr ""
+
+msgid "Add an output mapping for this source entity"
+msgstr ""
+
+msgid "Add insert mapping"
+msgstr ""
+
+msgid "Add output mapping for a source entity"
+msgstr ""
+
+msgid "Add source entity"
+msgstr ""
+
+msgid "Add standard mapping"
+msgstr ""
+
+msgid "Add the formula above as a standard [STD] mapping"
+msgstr ""
+
+msgid "Add the formula above as an insert-only [INS] mapping"
+msgstr ""
+
+msgid "Author"
+msgstr ""
+
+msgid "Close"
+msgstr ""
+
+msgid "Close the current configuration"
+msgstr ""
+
+msgid "Closed"
+msgstr ""
+
+msgid "Configuration"
+msgstr ""
+
+msgid "Converted from legacy .ifacex"
+msgstr ""
+
+msgid "Could not read {0}"
+msgstr ""
+
+msgid "Could not write {0}"
+msgstr ""
+
+msgid "Create a new, empty configuration"
+msgstr ""
+
+msgid "Date (generated)"
+msgstr ""
+
+msgid "Defaults (*, all entities)"
+msgstr ""
+
+msgid "Description / Notes"
+msgstr ""
+
+msgid "Destination"
+msgstr ""
+
+msgid "Destination entity"
+msgstr ""
+
+msgid "Destination field"
+msgstr ""
+
+msgid "Destination filter fields"
+msgstr ""
+
+msgid "Destination id path"
+msgstr ""
+
+msgid "Destination interfaces (writers)"
+msgstr ""
+
+msgid "Destination mapping"
+msgstr ""
+
+msgid "Destination unique id field"
+msgstr ""
+
+msgid "Drag a field into the formula box below (or double-click it). The fields belong to the source entity and are edited on the reader."
+msgstr ""
+
+msgid "Drag single fields from above to destination mapping below.\n\nBy clicking HERE, default mappings will be created with all source fields\nand with target field names equal to source field names:\n\nsource-field-1:{source-field-1}\nsource-field-2:{source-field-2}\nsource-field-3:{source-field-3}\n...\n\nIf there's already a target field name that equals any source field name,\nthe corresponding source field is not taken over."
+msgstr ""
+
+msgid "Edit file metadata and job wiring (selects the root node)"
+msgstr ""
+
+msgid "Entity not found: {0}"
+msgstr ""
+
+msgid "Entity: {0}"
+msgstr ""
+
+msgid "Entity: {0}   ({1})"
+msgstr ""
+
+msgid "Error"
+msgstr ""
+
+msgid "Example: 'target-field:{source-field-1} and {source-field-4} whatever'.\nFirst the target field, then ':' and then the value — one or more source fields enclosed in curly brackets. The line must contain exactly one colon."
+msgstr ""
+
+msgid "Exit"
+msgstr ""
+
+msgid "Export .ifacex"
+msgstr ""
+
+msgid "Export .ifcx"
+msgstr ""
+
+msgid "External Edit"
+msgstr ""
+
+msgid "Field mapping — source entity {0}"
+msgstr ""
+
+msgid "Fields (source)"
+msgstr ""
+
+msgid "File"
+msgstr ""
+
+msgid "File metadata (comment header)"
+msgstr ""
+
+msgid "Form"
+msgstr ""
+
+msgid "Formula"
+msgstr ""
+
+msgid "Formula (drop source fields here)"
+msgstr ""
+
+msgid "Global job configuration (source_interface, destination_interfaces, process_source_entities)"
+msgstr ""
+
+msgid "Help"
+msgstr ""
+
+msgid "Insert (INS)"
+msgstr ""
+
+msgid "Job wiring"
+msgstr ""
+
+msgid "Legacy properties"
+msgstr ""
+
+msgid "Loaded"
+msgstr ""
+
+msgid "Metadata-driven configuration editor."
+msgstr ""
+
+msgid "Modified"
+msgstr ""
+
+msgid "Move down"
+msgstr ""
+
+msgid "Move mapping down"
+msgstr ""
+
+msgid "Move mapping up"
+msgstr ""
+
+msgid "Move up"
+msgstr ""
+
+msgid "New"
+msgstr ""
+
+msgid "New configuration"
+msgstr ""
+
+msgid "New field name"
+msgstr ""
+
+msgid "New source entity name"
+msgstr ""
+
+msgid "No form for: {0}"
+msgstr ""
+
+msgid "No mappings yet — add one with the buttons above (or click the dnd icon)."
+msgstr ""
+
+msgid "No parameters for this interface."
+msgstr ""
+
+msgid "No source fields for {0}."
+msgstr ""
+
+msgid "Nothing to export."
+msgstr ""
+
+msgid "Nothing to save."
+msgstr ""
+
+msgid "Only these fields are used to build the destination filter (DB/Mongo) or the id lookup (REST)."
+msgstr ""
+
+msgid "Open"
+msgstr ""
+
+msgid "Open a .ifacex or .ifcx file to begin."
+msgstr ""
+
+msgid "Open an .ifacex or .ifcx configuration"
+msgstr ""
+
+msgid "Open configuration"
+msgstr ""
+
+msgid "Open in an external editor — follows later"
+msgstr ""
+
+msgid "Open…"
+msgstr ""
+
+msgid "Order field"
+msgstr ""
+
+msgid "Overwritten Values"
+msgstr ""
+
+msgid "Parameters"
+msgstr ""
+
+msgid "Raw Properties (.ifacex)"
+msgstr ""
+
+msgid "Raw YAML (.ifcx)"
+msgstr ""
+
+msgid "Ready"
+msgstr ""
+
+msgid "Remove selected"
+msgstr ""
+
+msgid "Remove source entity (fields and mappings)"
+msgstr ""
+
+msgid "Remove the selected mapping"
+msgstr ""
+
+msgid "Run"
+msgstr ""
+
+msgid "Run the IPC — engine integration follows later"
+msgstr ""
+
+msgid "Save"
+msgstr ""
+
+msgid "Save As… (.ifcx)"
+msgstr ""
+
+msgid "Save as .ifcx"
+msgstr ""
+
+msgid "Save as .ifcx (new format)"
+msgstr ""
+
+msgid "Saved {0} ({1})"
+msgstr ""
+
+msgid "Select an element on the left."
+msgstr ""
+
+msgid "Shell: FXML.  Forms: programmatic."
+msgstr ""
+
+msgid "Source"
+msgstr ""
+
+msgid "Source entities"
+msgstr ""
+
+msgid "Source entities are global: their fields are edited on the reader, their output mapping on each writer. Double-click to rename."
+msgstr ""
+
+msgid "Source entity fields; order matters for CSV/JSON readers."
+msgstr ""
+
+msgid "Source fields ({0})"
+msgstr ""
+
+msgid "Source interface (reader)"
+msgstr ""
+
+msgid "The destination mapping {0} has a wrong format!"
+msgstr ""
+
+msgid "The legacy GUI allows exactly one destination entity per source entity. For a second target, use a view or a second processor configuration."
+msgstr ""
+
+msgid "The single reader of the job; picking one creates its section."
+msgstr ""
+
+msgid "The writers of the job. Add a writer to create its section."
+msgstr ""
+
+msgid "Title"
+msgstr ""
+
+msgid "Version"
+msgstr ""
+
+msgid "Visit the ifaceX website"
+msgstr ""
+
+msgid "destination entity (e.g. COMPANIES)"
+msgstr ""
+
+msgid "field name"
+msgstr ""
+
+msgid "ifaceX Studio FX — PoC"
+msgstr ""
+
+msgid "ifaceX YAML"
+msgstr ""
+
+msgid "ifaceX YAML (new format)"
+msgstr ""
+
+msgid "ifaceX configuration"
+msgstr ""
+
+msgid "source entity"
+msgstr ""
+
+msgid "writer (e.g. csv_out)"
+msgstr ""

@@ -1,0 +1,374 @@
+# Translations for the ifaceX Studio FX.
+# English is the source language: the msgid IS the English text.
+# {0}, {1}, ... are java.text.MessageFormat arguments; keep them.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: autumo-ifacex-studio 0.1.0\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: de\n"
+
+msgid "(none)"
+msgstr "(keine)"
+
+msgid "(reader)"
+msgstr "(Reader)"
+
+msgid "(writer)"
+msgstr "(Writer)"
+
+msgid "A source entity named {0} already exists."
+msgstr "Eine Quell-Entity namens {0} existiert bereits."
+
+msgid "About"
+msgstr "Über"
+
+msgid "Add"
+msgstr "Hinzufügen"
+
+msgid "Add an empty mapping row"
+msgstr "Leere Mapping-Zeile hinzufügen"
+
+msgid "Add an output mapping for this source entity"
+msgstr "Ausgabe-Mapping für diese Quell-Entity hinzufügen"
+
+msgid "Add insert mapping"
+msgstr "Insert-Mapping hinzufügen"
+
+msgid "Add output mapping for a source entity"
+msgstr "Ausgabe-Mapping für eine Quell-Entity hinzufügen"
+
+msgid "Add source entity"
+msgstr "Quell-Entity hinzufügen"
+
+msgid "Add standard mapping"
+msgstr "Standard-Mapping hinzufügen"
+
+msgid "Add the formula above as a standard [STD] mapping"
+msgstr "Die obige Formel als Standard-Mapping [STD] hinzufügen"
+
+msgid "Add the formula above as an insert-only [INS] mapping"
+msgstr "Die obige Formel als reines Insert-Mapping [INS] hinzufügen"
+
+msgid "Author"
+msgstr "Autor"
+
+msgid "Close"
+msgstr "Schließen"
+
+msgid "Close the current configuration"
+msgstr "Aktuelle Konfiguration schließen"
+
+msgid "Closed"
+msgstr "Geschlossen"
+
+msgid "Configuration"
+msgstr "Konfiguration"
+
+msgid "Converted from legacy .ifacex"
+msgstr "Aus Legacy-.ifacex konvertiert"
+
+msgid "Could not read {0}"
+msgstr "{0} konnte nicht gelesen werden"
+
+msgid "Could not write {0}"
+msgstr "{0} konnte nicht geschrieben werden"
+
+msgid "Create a new, empty configuration"
+msgstr "Neue, leere Konfiguration erstellen"
+
+msgid "Date (generated)"
+msgstr "Datum (generiert)"
+
+msgid "Defaults (*, all entities)"
+msgstr "Vorgaben (*, alle Entities)"
+
+msgid "Description / Notes"
+msgstr "Beschreibung / Notizen"
+
+msgid "Destination"
+msgstr "Ziel"
+
+msgid "Destination entity"
+msgstr "Ziel-Entity"
+
+msgid "Destination field"
+msgstr "Zielfeld"
+
+msgid "Destination filter fields"
+msgstr "Ziel-Filterfelder"
+
+msgid "Destination id path"
+msgstr "Ziel-ID-Pfad"
+
+msgid "Destination interfaces (writers)"
+msgstr "Ziel-Interfaces (Writer)"
+
+msgid "Destination mapping"
+msgstr "Ziel-Mapping"
+
+msgid "Destination unique id field"
+msgstr "Ziel-Feld für eindeutige ID"
+
+msgid "Drag a field into the formula box below (or double-click it). The fields belong to the source entity and are edited on the reader."
+msgstr "Ein Feld in das Formelfeld unten ziehen (oder doppelklicken). Die Felder gehören zur Quell-Entity und werden beim Reader bearbeitet."
+
+msgid "Drag single fields from above to destination mapping below.\n\nBy clicking HERE, default mappings will be created with all source fields\nand with target field names equal to source field names:\n\nsource-field-1:{source-field-1}\nsource-field-2:{source-field-2}\nsource-field-3:{source-field-3}\n...\n\nIf there's already a target field name that equals any source field name,\nthe corresponding source field is not taken over."
+msgstr "Einzelne Felder von oben in das Ziel-Mapping unten ziehen.\n\nDurch Klicken HIER werden Standard-Mappings für alle Quellfelder erstellt,\nmit Ziel-Feldnamen gleich den Quell-Feldnamen:\n\nsource-field-1:{source-field-1}\nsource-field-2:{source-field-2}\nsource-field-3:{source-field-3}\n...\n\nExistiert bereits ein Ziel-Feldname, der einem Quell-Feldnamen entspricht,\nwird das entsprechende Quellfeld nicht übernommen."
+
+msgid "Edit file metadata and job wiring (selects the root node)"
+msgstr "Datei-Metadaten und Job-Verdrahtung bearbeiten (wählt den Wurzelknoten)"
+
+msgid "Entity not found: {0}"
+msgstr "Entity nicht gefunden: {0}"
+
+msgid "Entity: {0}"
+msgstr "Entity: {0}"
+
+msgid "Entity: {0}   ({1})"
+msgstr "Entity: {0}   ({1})"
+
+msgid "Error"
+msgstr "Fehler"
+
+msgid "Example: 'target-field:{source-field-1} and {source-field-4} whatever'.\nFirst the target field, then ':' and then the value — one or more source fields enclosed in curly brackets. The line must contain exactly one colon."
+msgstr "Beispiel: 'target-field:{source-field-1} und {source-field-4} whatever'.\nZuerst das Zielfeld, dann ':' und dann der Wert — ein oder mehrere Quellfelder in geschweiften Klammern. Die Zeile muss genau einen Doppelpunkt enthalten."
+
+msgid "Exit"
+msgstr "Beenden"
+
+msgid "Export .ifacex"
+msgstr ".ifacex exportieren"
+
+msgid "Export .ifcx"
+msgstr ".ifcx exportieren"
+
+msgid "External Edit"
+msgstr "Extern bearbeiten"
+
+msgid "Field mapping — source entity {0}"
+msgstr "Feld-Mapping — Quell-Entity {0}"
+
+msgid "Fields (source)"
+msgstr "Felder (Quelle)"
+
+msgid "File"
+msgstr "Datei"
+
+msgid "File metadata (comment header)"
+msgstr "Datei-Metadaten (Kommentar-Kopf)"
+
+msgid "Form"
+msgstr "Formular"
+
+msgid "Formula"
+msgstr "Formel"
+
+msgid "Formula (drop source fields here)"
+msgstr "Formel (Quellfelder hierher ziehen)"
+
+msgid "Global job configuration (source_interface, destination_interfaces, process_source_entities)"
+msgstr "Globale Job-Konfiguration (source_interface, destination_interfaces, process_source_entities)"
+
+msgid "Help"
+msgstr "Hilfe"
+
+msgid "Insert (INS)"
+msgstr "Insert (INS)"
+
+msgid "Job wiring"
+msgstr "Job-Verdrahtung"
+
+msgid "Legacy properties"
+msgstr "Legacy-Properties"
+
+msgid "Loaded"
+msgstr "Geladen"
+
+msgid "Metadata-driven configuration editor."
+msgstr "Metadaten-getriebener Konfigurationseditor."
+
+msgid "Modified"
+msgstr "Geändert"
+
+msgid "Move down"
+msgstr "Nach unten"
+
+msgid "Move mapping down"
+msgstr "Mapping nach unten"
+
+msgid "Move mapping up"
+msgstr "Mapping nach oben"
+
+msgid "Move up"
+msgstr "Nach oben"
+
+msgid "New"
+msgstr "Neu"
+
+msgid "New configuration"
+msgstr "Neue Konfiguration"
+
+msgid "New field name"
+msgstr "Neuer Feldname"
+
+msgid "New source entity name"
+msgstr "Neuer Quell-Entity-Name"
+
+msgid "No form for: {0}"
+msgstr "Kein Formular für: {0}"
+
+msgid "No mappings yet — add one with the buttons above (or click the dnd icon)."
+msgstr "Noch keine Mappings — eines mit den Schaltflächen oben hinzufügen (oder auf das dnd-Symbol klicken)."
+
+msgid "No parameters for this interface."
+msgstr "Keine Parameter für dieses Interface."
+
+msgid "No source fields for {0}."
+msgstr "Keine Quellfelder für {0}."
+
+msgid "Nothing to export."
+msgstr "Nichts zu exportieren."
+
+msgid "Nothing to save."
+msgstr "Nichts zu speichern."
+
+msgid "Only these fields are used to build the destination filter (DB/Mongo) or the id lookup (REST)."
+msgstr "Nur diese Felder werden verwendet, um den Zielfilter (DB/Mongo) bzw. die ID-Suche (REST) zu bilden."
+
+msgid "Open"
+msgstr "Öffnen"
+
+msgid "Open a .ifacex or .ifcx file to begin."
+msgstr "Eine .ifacex- oder .ifcx-Datei öffnen, um zu beginnen."
+
+msgid "Open an .ifacex or .ifcx configuration"
+msgstr "Eine .ifacex- oder .ifcx-Konfiguration öffnen"
+
+msgid "Open configuration"
+msgstr "Konfiguration öffnen"
+
+msgid "Open in an external editor — follows later"
+msgstr "In externem Editor öffnen — folgt später"
+
+msgid "Open…"
+msgstr "Öffnen…"
+
+msgid "Order field"
+msgstr "Sortierfeld"
+
+msgid "Overwritten Values"
+msgstr "Überschriebene Werte"
+
+msgid "Parameters"
+msgstr "Parameter"
+
+msgid "Raw Properties (.ifacex)"
+msgstr "Roh-Properties (.ifacex)"
+
+msgid "Raw YAML (.ifcx)"
+msgstr "Roh-YAML (.ifcx)"
+
+msgid "Ready"
+msgstr "Bereit"
+
+msgid "Remove selected"
+msgstr "Ausgewähltes entfernen"
+
+msgid "Remove source entity (fields and mappings)"
+msgstr "Quell-Entity entfernen (Felder und Mappings)"
+
+msgid "Remove the selected mapping"
+msgstr "Ausgewähltes Mapping entfernen"
+
+msgid "Run"
+msgstr "Ausführen"
+
+msgid "Run the IPC — engine integration follows later"
+msgstr "IPC ausführen — Engine-Integration folgt später"
+
+msgid "Save"
+msgstr "Speichern"
+
+msgid "Save As… (.ifcx)"
+msgstr "Speichern unter… (.ifcx)"
+
+msgid "Save as .ifcx"
+msgstr "Als .ifcx speichern"
+
+msgid "Save as .ifcx (new format)"
+msgstr "Als .ifcx speichern (neues Format)"
+
+msgid "Saved {0} ({1})"
+msgstr "{0} gespeichert ({1})"
+
+msgid "Select an element on the left."
+msgstr "Links ein Element auswählen."
+
+msgid "Shell: FXML.  Forms: programmatic."
+msgstr "Shell: FXML.  Formulare: programmatisch."
+
+msgid "Source"
+msgstr "Quelle"
+
+msgid "Source entities"
+msgstr "Quell-Entities"
+
+msgid "Source entities are global: their fields are edited on the reader, their output mapping on each writer. Double-click to rename."
+msgstr "Quell-Entities sind global: ihre Felder werden beim Reader bearbeitet, ihr Ausgabe-Mapping bei jedem Writer. Doppelklick zum Umbenennen."
+
+msgid "Source entity fields; order matters for CSV/JSON readers."
+msgstr "Felder der Quell-Entity; die Reihenfolge ist für CSV/JSON-Reader relevant."
+
+msgid "Source fields ({0})"
+msgstr "Quellfelder ({0})"
+
+msgid "Source interface (reader)"
+msgstr "Quell-Interface (Reader)"
+
+msgid "The destination mapping {0} has a wrong format!"
+msgstr "Das Ziel-Mapping {0} hat ein falsches Format!"
+
+msgid "The legacy GUI allows exactly one destination entity per source entity. For a second target, use a view or a second processor configuration."
+msgstr "Die Legacy-GUI erlaubt genau eine Ziel-Entity pro Quell-Entity. Für ein zweites Ziel eine View oder eine zweite Processor-Konfiguration verwenden."
+
+msgid "The single reader of the job; picking one creates its section."
+msgstr "Der einzige Reader des Jobs; die Auswahl erstellt dessen Bereich."
+
+msgid "The writers of the job. Add a writer to create its section."
+msgstr "Die Writer des Jobs. Einen Writer hinzufügen, um dessen Bereich zu erstellen."
+
+msgid "Title"
+msgstr "Titel"
+
+msgid "Version"
+msgstr "Version"
+
+msgid "Visit the ifaceX website"
+msgstr "ifaceX-Website besuchen"
+
+msgid "destination entity (e.g. COMPANIES)"
+msgstr "Ziel-Entity (z.B. COMPANIES)"
+
+msgid "field name"
+msgstr "Feldname"
+
+msgid "ifaceX Studio FX — PoC"
+msgstr "ifaceX Studio FX — PoC"
+
+msgid "ifaceX YAML"
+msgstr "ifaceX YAML"
+
+msgid "ifaceX YAML (new format)"
+msgstr "ifaceX YAML (neues Format)"
+
+msgid "ifaceX configuration"
+msgstr "ifaceX-Konfiguration"
+
+msgid "source entity"
+msgstr "Quell-Entity"
+
+msgid "writer (e.g. csv_out)"
+msgstr "Writer (z.B. csv_out)"
