@@ -22,6 +22,7 @@ import java.util.Properties;
 
 import ch.autumo.ifacex.studio.core.i18n.Messages;
 
+import ch.autumo.ui.Constants;
 import ch.autumo.ui.fx.BaseApp;
 import ch.autumo.ui.utils.Helper;
 
@@ -70,9 +71,11 @@ public class StudioApp extends BaseApp {
         instance = this;
         // English is the default and does NOT follow the operating system locale: earlier builds
         // showed German framework texts because autumo-ui resolves its bundle through the JVM
-        // default locale. Override with -Difacex.lang=de or "lang=de" in the app configuration.
-        final String lang = System.getProperty("ifacex.lang",
+        // default locale. Precedence: -Difacex.lang=de > "language=de" in cfg/app.cfg (autumo-ui
+        // convention, Constants.PROP_KEY_LANGUAGE) > the "lang" alias > English.
+        final String configured = configuration.getProperty(Constants.PROP_KEY_LANGUAGE,
                 configuration.getProperty("lang", Messages.LANG_EN));
+        final String lang = System.getProperty("ifacex.lang", configured);
         final int translations = Messages.setLanguage(lang);
         if (translations > 0) {
             System.out.println("[dev] language=" + Messages.getLanguage()
