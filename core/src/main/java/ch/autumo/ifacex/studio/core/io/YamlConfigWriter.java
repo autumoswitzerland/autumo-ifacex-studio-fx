@@ -1,0 +1,148 @@
+/**
+ * Copyright 2026 autumo GmbH, Michael Gasche.
+ * All Rights Reserved.
+ * 
+ * NOTICE: All information contained herein is, and remains
+ * the property of autumo GmbH The intellectual and technical
+ * concepts contained herein are proprietary to autumo GmbH
+ * and are protected by trade secret or copyright law.
+ * 
+ * Dissemination of this information or reproduction of this material
+ * is strictly forbidden unless prior written permission is obtained
+ * from autumo GmbH.
+ * 
+ */
+package ch.autumo.ifacex.studio.core.io;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+import ch.autumo.ifacex.studio.core.model.EntityConfig;
+import ch.autumo.ifacex.studio.core.model.FieldMappingRec;
+import ch.autumo.ifacex.studio.core.model.IpcConfig;
+import ch.autumo.ifacex.studio.core.model.RwConfig;
+
+/**
+ * Writes the model to the new {@code .ifcx} (YAML) format.
+ *
+ * <p>The metadata/comment header is preserved verbatim in front of the YAML body. The body keeps
+ * two kinds of information strictly apart, which is required for lossless round-trips:</p>
+ * <ul>
+ *   <li>the declared job wiring ({@code sourceInterface}, {@code destinationInterfaces},
+ *       {@code processSourceEntities}); a declared interface may have no parameters at all
+ *       (e.g. {@code console_out}),</li>
+ *   <li>the actual reader/writer sections that carry parameters ({@code sources}, {@code destinations}),
+ *       which may include inert leftovers.</li>
+ * </ul>
+ *
+ * <p>See docs/08-config-format.md. Values keep the engine's native parameter names to remain lossless.</p>
+ */
+public final class YamlConfigWriter {
+
+    public static final int FORMAT_VERSION = 1;
+
+    static final String K_FORMAT = "formatVersion";
+    static final String K_SOURCE_INTERFACE = "sourceInterface";
+    static final String K_DESTINATION_INTERFACES = "destinationInterfaces";
+    static final String K_PROCESS_SOURCE_ENTITIES = "processSourceEntities";
+    static final String K_SOURCES = "sources";
+    static final String K_DESTINATIONS = "destinations";
+    static final String K_GENERAL = "general";
+
+    static final String K_NAME = "name";
+    static final String K_PARAMS = "params";
+    static final String K_DEFAULTS = "defaults";
+    static final String K_ENTITIES = "entities";
+
+    static final String K_FIELDS = "fields";
+    static final String K_MAPPING_ENTITY = "mapping_entity";
+    static final String K_MAPPING = "mapping";
+    static final String K_FIELD = "field";
+    static final String K_FORMULA = "formula";
+    static final String K_INSERT = "insert";
+
+    private YamlConfigWriter() {
+    }
+
+    public static void write(Path path, IpcConfig cfg) throws IOException {
+        Files.writeString(path, toText(cfg), StandardCharsets.UTF_8);
+    }
+
+    public static String toText(IpcConfig cfg) {
+        final StringBuilder sb = new StringBuilder();
+        sb.append(CommentHeader.render(cfg.meta()));
+        sb.append('\n');
+        sb.append(YamlEmitter.dump(toTree(cfg)));
+        return sb.toString();
+    }
+
+    public static Map<String, Object> toTree(IpcConfig cfg) {
+        final Map<String, Object> root = new LinkedHashMap<>();
+        root.put(K_FORMAT, FORMAT_VERSION);
+        root.put(K_SOURCE_INTERFACE, cfg.sourceInterface());
+        root.put(K_DESTINATION_INTERFACES, new ArrayList<>(cfg.destinationInterfaces()));
+        root.put(K_PROCESS_SOURCE_ENTITIES, new ArrayList<>(cfg.processSourceEntities()));
+
+        final List<Object> sources = new ArrayList<>();
+        for (final RwConfig rw : cfg.readers().values()) {
+            sources.add(section(rw));
+        }
+        root.put(K_SOURCES, sources);
+
+        final List<Object> destinations = new ArrayList<>();
+        for (final RwConfig rw : cfg.writers().values()) {
+            destinations.add(section(rw));
+        }
+        root.put(K_DESTINATIONS, destinations);
+
+        root.put(K_GENERAL, new LinkedHashMap<>(cfg.general()));
+        return root;
+    }
+
+    private static Map<String, Object> section(RwConfig rw) {
+        final Map<String, Object> m = new LinkedHashMap<>();
+        m.put(K_NAME, rw.name());
+        if (!rw.global().isEmpty()) {
+            m.put(K_PARAMS, new LinkedHashMap<>(rw.global()));
+        }
+        if (!rw.wildcard().isEmpty()) {
+            m.put(K_DEFAULTS, new LinkedHashMap<>(rw.wildcard()));
+        }
+        if (!rw.entities().isEmpty()) {
+            final Map<String, Object> entities = new LinkedHashMap<>();
+            for (final Map.Entry<String, EntityConfig> e : rw.entities().entrySet()) {
+                entities.put(e.getKey(), entity(e.getValue()));
+            }
+            m.put(K_ENTITIES, entities);
+        }
+        return m;
+    }
+
+    private static Map<String, Object> entity(EntityConfig ec) {
+        final Map<String, Object> m = new LinkedHashMap<>(ec.settings());
+        if (!ec.fields().isEmpty()) {
+            m.put(K_FIELDS, new ArrayList<>(ec.fields()));
+        }
+        if (ec.hasMapping()) {
+            if (ec.mapping().destEntity() != null) {
+                m.put(K_MAPPING_ENTITY, ec.mapping().destEntity());
+            }
+            final List<Object> fields = new ArrayList<>();
+            for (final FieldMappingRec rec : ec.mapping().fields()) {
+                final Map<String, Object> r = new LinkedHashMap<>();
+                r.put(K_FIELD, rec.destField());
+                r.put(K_FORMULA, rec.formula());
+                r.put(K_INSERT, rec.insert());
+                fields.add(r);
+            }
+            m.put(K_MAPPING, fields);
+        }
+        return m;
+    }
+}

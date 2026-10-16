@@ -1,0 +1,96 @@
+# 04 — Technology & Libraries
+
+## 4.1 Core Stack
+
+| Area | Choice | Notes |
+| --- | --- | --- |
+| Language | **Java 25** (latest LTS; Azul Zulu builds) | current LTS; JavaFX 25 accordingly |
+| UI toolkit | **JavaFX (OpenJFX) 25** | CSS theming, scenes, bindings; no Chromium |
+| Build | **Maven** (multi-module) | reference uses Maven; keeps tooling familiar |
+| UI markup | **Hybrid**: FXML for the static shell + programmatic (metadata-driven) forms | decided 2026-10-16; see doc 07 §7.3 and doc 10 |
+| App shell / framework | **autumo-ui 1.2.0** (`ch.autumo.commons:autumo-ui`) | lifecycle, installer, licensing/registration, i18n, theming, recent files, update check; **portable mode** for dev. Baseline **Java 25 + JavaFX 25** (framework bumped, D12) |
+| Packaging | `jpackage` / `jlink` | as in the reference |
+
+> **UI foundation (D12, 2026-10-16):** the Studio is built **on top of the autumo-ui framework**
+> (itself extracted from the legacy ifaceX Studio Swing code). The framework supplies the
+> *application shell and product concerns*; the Studio-specific editor UI and the UI-free
+> `core` module remain our own. The framework may be **extended/improved** where it is not well
+> implemented (owner-authorized). See doc 07 §7.5 and the `spike/` module.
+
+## 4.2 Library Mapping (Swing → JavaFX)
+
+### UI libraries that must be replaced
+
+| Reference (Swing) | Purpose | JavaFX replacement |
+| --- | --- | --- |
+| Swing (`javax.swing`) | whole UI | JavaFX |
+| FlatLaf (+ IntelliJ themes) | dark look & feel | JavaFX CSS theme (custom stylesheet) |
+| RSyntaxTextArea / RTextScrollPane | code/config editing with syntax highlighting | **RichTextFX** (+ custom keyword highlighting) |
+| JGoodies Forms | form layouts | JavaFX layout panes (GridPane, etc.) |
+| JGoodies Validation | form validation | JavaFX validation + optional **ControlsFX** |
+| AbsoluteLayout | absolute positioning | JavaFX layout (avoid absolute positioning) |
+| NetBeans GUI Builder output | generated UI | FXML shell + programmatic JavaFX forms |
+
+### Non-UI libraries that carry over
+
+| Reference library | Purpose | Kept? |
+| --- | --- | --- |
+| `ch.autumo.commons:autumo-ui` | rapid JavaFX framework (app shell, installer, licensing UI, i18n, theming) | ✅ **adopted** (D12) |
+| `ch.autumo.commons:autumo-commons` | utils, system, license helpers, crypto usage | ✅ keep (transitive via autumo-ui) |
+| `ch.autumo.registration:autumo-registration` | registration/license | ✅ keep (transitive via autumo-ui) |
+| Gson (`com.google.code.gson`) | JSON formatting | ✅ keep |
+| org.json | JSON handling | ✅ keep |
+| Apache HttpClient / httpcore / httpasyncclient / httpmime | HTTPS to autumo servers | ✅ keep |
+| Log4j2 (api/core/slf4j-impl) | logging | ✅ keep |
+| Apache Commons (lang3, text, codec, compiler) | utilities | ✅ keep |
+| Janino | runtime compilation (if needed) | evaluate — keep if used |
+| Commons Codec | encoding | ✅ keep |
+
+> Note: Some non-UI libraries are only used by UI code today. The migration must verify
+> actual usage in `core` before carrying a dependency over.
+
+## 4.3 New / Additional Libraries (candidates)
+
+| Need | Candidate | Notes |
+| --- | --- | --- |
+| Code editor | RichTextFX (`org.fxmisc.richtext`) | JavaFX-native editor used by many apps |
+| Extra UI controls | ControlsFX | validation decoration, notifications, dialogs |
+| Unit tests | JUnit 5 | replaces the missing test framework |
+| UI tests | TestFX | automated JavaFX UI smoke tests |
+| Settings | plain `Properties` (as today) | keeps compatibility with existing files |
+
+Candidates must be confirmed before adoption (see open questions).
+
+## 4.4 Build & Runtime
+
+- Multi-module Maven: `core`, `ui`, aggregator parent.
+- **autumo-ui dependency:** built with **Gradle 9.7 + JDK 25** (Java 25 / JavaFX 25 toolchain) and
+  published to `mavenLocal` (`./gradlew publishToMavenLocal`); the Studio consumes
+  `ch.autumo.commons:autumo-ui:1.2.0` as a normal Maven dependency.
+  `autumo-commons`/`autumo-registration` come in transitively (compile scope). See the validated
+  integration in the `ui` module and doc 07 §7.3 for the open build-tool question.
+- **Dependency scope:** unlike the reference (everything `provided`), prefer normal
+  compile/runtime scopes and let `jpackage`/`jlink` assemble the runtime. Revisit the
+  `provided` approach deliberately (see open questions).
+- **Runtime modules:** include JavaFX modules (`javafx.controls`, `javafx.fxml`,
+  `javafx.graphics`, etc.); `java.desktop` may no longer be required except for
+  `Desktop`-based OS integration.
+- **Java options:** carry over `-Dfile.encoding=UTF-8 -Xms512m` as a starting point.
+
+## 4.5 Testing Strategy
+
+- `core`: JUnit 5 unit tests for config load/save round-trip, key grouping/sorting,
+  process-runner argument construction, crypto/encoder, settings.
+- `ui`: TestFX smoke tests for startup, opening/binding a config, and run-console flow.
+- CI: Maven build + tests (replaces the current `skipTests=true`).
+
+## 4.6 Continuous Integration
+
+- Adapt the reference GitHub Actions (`.github/workflows/`) for the new module layout.
+- Multi-OS matrix (Windows/macOS/Linux) for `jpackage` release artifacts.
+
+## 4.7 Explicit Non-Choices
+
+- ❌ Electron (and any bundled Chromium) — hard requirement against it.
+- ❌ Web frontend / server backend for the Studio.
+- ❌ Kotlin — Java is retained intentionally for reuse and team familiarity.
