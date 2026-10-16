@@ -25,10 +25,13 @@ import java.util.Map;
  *
  * <p><b>English is the source language and the default.</b> Every message id is the English
  * text itself (the gettext convention), so the application is complete in English without any
- * resource file, and a translation file only replaces texts that were actually translated. The
- * application therefore does <b>not</b> follow the operating system locale: earlier builds
- * showed German framework texts because autumo-ui resolves its bundle with the JVM default
- * locale, which on a {@code de_CH} machine is German.</p>
+ * resource file, and a translation file only replaces texts that were actually translated.
+ * The one exception are the <b>metadata-driven parameter labels</b>: their message id is the
+ * raw configuration key (e.g. {@code data_path}) with the derived English label as the
+ * fallback — see {@link #t(String, String)}. The application does <b>not</b> follow the
+ * operating system locale: earlier builds showed German framework texts because autumo-ui
+ * resolves its bundle with the JVM default locale, which on a {@code de_CH} machine is
+ * German.</p>
  *
  * <p>Pick a language with {@link #setLanguage(String)}; it loads
  * {@code lang/messages.<lang>.po} from the classpath and <em>also</em> sets the JVM default
@@ -75,16 +78,20 @@ public final class Messages {
 
     /** Translates {@code id}; returns {@code id} itself when it is not translated. */
     public static String t(String id) {
-        return t(id, null);
+        return t(id, id);
     }
 
     /**
-     * Translates {@code id} in the given <em>context</em> (PO {@code msgctxt}). Contexts make
-     * an ambiguous English source such as "New" translatable per use.
+     * Translates {@code id} and falls back to {@code english} when there is no translation.
+     *
+     * <p>This is what the metadata-driven parameter labels use: their <b>message id is the raw
+     * configuration key</b> (e.g. {@code data_path}) and the fallback is the English label the
+     * code derives from that key ({@code "Data path"}). A translation file can then translate
+     * the parameter by its key, and everything that is not translated stays as it is.</p>
      */
-    public static String t(String id, String context) {
-        final String translated = table.get(PoFile.key(context, id));
-        return translated == null || translated.isEmpty() ? id : translated;
+    public static String t(String id, String english) {
+        final String translated = table.get(PoFile.key(null, id));
+        return translated == null || translated.isEmpty() ? english : translated;
     }
 
     /** Translates {@code id} and formats it with {@link MessageFormat} ({@code {0}}, {@code {1}}, …). */

@@ -56,6 +56,29 @@ class MessagesTest {
     }
 
     @Test
+    void parameterLabelsUseTheKeyAsMessageIdWithAnEnglishFallback() {
+        Messages.setLanguage("en");
+        // Parameter labels have the raw configuration key as message id and the derived
+        // English label as fallback; in English the fallback is what is shown.
+        assertEquals("Data path", Messages.t("data_path", "Data path"));
+        assertEquals("Field path access", Messages.t("field_path_access", "Field path access"));
+
+        Messages.setLanguage("de");
+        assertEquals("Datenpfad", Messages.t("data_path", "Data path"));
+        assertEquals("Feldpfad-Zugriff", Messages.t("field_path_access", "Field path access"));
+        // Help texts use "<key>.help".
+        assertEquals("Pfad zum Daten-Array in der JSON-Antwort.",
+                Messages.t("data_path.help", "Path to the data array within the JSON response."));
+    }
+
+    @Test
+    void parameterFallbackIsUsedWhenNotTranslated() {
+        Messages.setLanguage("de");
+        // A parameter without a PO entry must stay on its English fallback, not go blank.
+        assertEquals("Some Fallback", Messages.t("not_translated_key", "Some Fallback"));
+    }
+
+    @Test
     void loadsGermanTranslations() {
         final int loaded = Messages.setLanguage("de");
         assertTrue(loaded > 100, "the German PO should carry the whole UI text");

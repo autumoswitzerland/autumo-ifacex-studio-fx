@@ -826,10 +826,14 @@ final class FormBuilder {
         for (final Map.Entry<String, String> e : new TreeMap<>(map).entrySet()) {
             final String key = e.getKey();
             final FieldDescriptor d = FieldCatalog.descriptor(key);
-            final Label label = new Label(d.label());
-            label.getStyleClass().add("field-label");
+            // The raw configuration key is the message id; the derived label is the English
+            // fallback, so a translation file can translate parameters by their key.
+            final Label label = new Label(t(key, d.label()));
+            // "field-label" is the shared CSS class, "param-label" marks an engine parameter
+            // label (as opposed to a caption) and is used by the headless self-test.
+            label.getStyleClass().addAll("field-label", "param-label");
             if (!d.help().isEmpty()) {
-                label.setTooltip(new Tooltip(d.help()));
+                label.setTooltip(new Tooltip(t(key + ".help", d.help())));
             }
             final Node control = control(map, key, d);
             GridPane.setHgrow(control, Priority.ALWAYS);

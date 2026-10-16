@@ -19,14 +19,19 @@ import static ch.autumo.ifacex.studio.core.i18n.Messages.t;
 
 import java.io.File;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.Set;
 
 import ch.autumo.ifacex.studio.core.i18n.Messages;
 import ch.autumo.ifacex.studio.core.io.PropertiesConfigReader;
 import ch.autumo.ifacex.studio.core.io.PropertiesConfigWriter;
 import ch.autumo.ifacex.studio.core.io.YamlConfigReader;
 import ch.autumo.ifacex.studio.core.io.YamlConfigWriter;
+import ch.autumo.ifacex.studio.core.meta.FieldCatalog;
 import ch.autumo.ifacex.studio.core.model.IpcConfig;
 import ch.autumo.ifacex.studio.core.model.RwConfig;
 
@@ -377,8 +382,9 @@ public class MainController {
         final TreeItem<FormBuilder.NavNode> root = navTree.getRoot();
         // exercise the form builder for every nav node
         final int[] acc = new int[4]; // forms, list views (source fields), tables, dnd buttons
+        final List<String> fieldLabels = new ArrayList<>();
         for (final TreeItem<FormBuilder.NavNode> child : root.getChildren()) {
-            countForms(child, acc);
+            countForms(child, acc, fieldLabels);
         }
         final var destNode = firstDestinationEntity(root);
         if (destNode != null) {
@@ -387,6 +393,14 @@ public class MainController {
         final Node rootForm = formBuilder.build(root.getValue());
         final int rootFormParts = rootForm instanceof javafx.scene.layout.Pane p
                 ? p.getChildren().size() : -1;
+        // Parameter labels are rendered through the message lookup; keep only texts that match
+        // a known engine parameter so captions do not pollute the sample.
+        final Set<String> knownLabels = new HashSet<>();
+        for (final String param : FieldCatalog.knownParams()) {
+            knownLabels.add(t(param, FieldCatalog.descriptor(param).label()));
+        }
+        final List<String> paramLabels = fieldLabels.stream().filter(knownLabels::contains)
+                .distinct().sorted().toList();
         return "nodes=" + countNodes(root)
                 + " forms=" + acc[0]
                 + " rootFormParts=" + rootFormParts
@@ -404,6 +418,10 @@ public class MainController {
                 + " rootLabel=\"" + root.getValue().label() + "\""
                 + " title=\"" + (config.meta().title() == null ? "" : config.meta().title()) + "\""
                 + " dndButtons=" + acc[3]
+                // proves the metadata parameter labels go through the message lookup (key =
+                // msgid, derived English label = fallback)
+                + " paramLabels=" + paramLabels.size() + " \"" + paramLabels.stream().limit(6)
+                        .collect(java.util.stream.Collectors.joining(", ")) + "\""
                 + " nav=\"" + root.getChildren().stream()
                         .map(c -> c.getValue().label()).collect(java.util.stream.Collectors.joining(" | "))
                         + "\""
@@ -412,16 +430,41 @@ public class MainController {
     }
 
     /** Builds every nav node's form and accumulates [forms, listViews, tables, dndButtons]. */
-    private void countForms(TreeItem<FormBuilder.NavNode> item, int[] acc) {
+    private void countForms(TreeItem<FormBuilder.NavNode> item, int[] acc, List<String> fieldLabels) {
         final Node n = formBuilder.build(item.getValue());
         if (n != null) {
             acc[0]++;
             acc[1] += count(n, javafx.scene.control.ListView.class);
             acc[2] += count(n, javafx.scene.control.TableView.class);
             acc[3] += countDnd(n);
+            collectFieldLabels(n, fieldLabels);
         }
         for (final TreeItem<FormBuilder.NavNode> c : item.getChildren()) {
-            countForms(c, acc);
+            countForms(c, acc, fieldLabels);
+        }
+    }
+
+    /**
+     * Collects the text of all rendered parameter labels ({@code .param-label}). The walk
+     * descends into {@link javafx.scene.control.TitledPane} content because a control's children
+     * only exist once its skin is built.
+     */
+    private static void collectFieldLabels(Node node, List<String> out) {
+        if (node == null) {
+            return;
+        }
+        if (node instanceof javafx.scene.control.Label l
+                && l.getStyleClass().contains("param-label")) {
+            out.add(l.getText());
+        }
+        if (node instanceof javafx.scene.control.TitledPane tp) {
+            collectFieldLabels(tp.getContent(), out);
+        } else if (node instanceof javafx.scene.control.ScrollPane sp) {
+            collectFieldLabels(sp.getContent(), out);
+        } else if (node instanceof javafx.scene.Parent p) {
+            for (final Node child : p.getChildrenUnmodifiable()) {
+                collectFieldLabels(child, out);
+            }
         }
     }
 

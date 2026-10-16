@@ -14,9 +14,11 @@
  */
 package ch.autumo.ifacex.studio.core.meta;
 
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Catalog of known engine parameters and their form metadata.
@@ -110,6 +112,16 @@ public final class FieldCatalog {
     public static FieldDescriptor descriptor(String param) {
         final FieldDescriptor d = KNOWN.get(param);
         return d != null ? d : infer(param);
+    }
+
+    /**
+     * The parameters with a known descriptor. Used by tooling (e.g. the headless self-test) to
+     * tell a real engine parameter label apart from a plain caption.
+     *
+     * @return unmodifiable set of parameter names, in declaration order
+     */
+    public static Set<String> knownParams() {
+        return Collections.unmodifiableSet(KNOWN.keySet());
     }
 
     private static FieldDescriptor infer(String param) {

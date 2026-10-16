@@ -372,3 +372,227 @@ msgstr ""
 
 msgid "writer (e.g. csv_out)"
 msgstr ""
+
+# ------------------------------------------------------------------------------
+# Engine parameter labels.
+# The message id IS the raw configuration key (e.g. "data_path"); the English
+# label shown when nothing is translated is the "#." comment above the entry.
+# Parameter help texts use the same key plus ".help". Keys, type names and
+# parameter names stay technical and are never translated.
+# ------------------------------------------------------------------------------
+
+#. Host
+msgid "host"
+msgstr ""
+
+#. Port
+msgid "port"
+msgstr ""
+
+#. Protocol
+msgid "protocol"
+msgstr ""
+
+#. User
+msgid "user"
+msgstr ""
+
+#. Password
+msgid "password"
+msgstr ""
+
+#. API key
+msgid "api_key"
+msgstr ""
+
+#. API key name
+msgid "api_key_name"
+msgstr ""
+
+#. URL
+msgid "url"
+msgstr ""
+
+#. Database name
+msgid "db_name"
+msgstr ""
+
+#. Parameters
+msgid "params"
+msgstr ""
+
+#. Data path
+msgid "data_path"
+msgstr ""
+
+#. Path to the data array within the JSON response.
+msgid "data_path.help"
+msgstr ""
+
+#. Sub path
+msgid "sub_path"
+msgstr ""
+
+#. Entities URL
+msgid "entities_url"
+msgstr ""
+
+#. Field path access
+msgid "field_path_access"
+msgstr ""
+
+#. Allow absent fields
+msgid "allow_absent_fields"
+msgstr ""
+
+#. Absent field placeholder
+msgid "absent_field_placeholder"
+msgstr ""
+
+#. Additional headers
+msgid "additional_headers"
+msgstr ""
+
+#. Additional params
+msgid "additional_params"
+msgstr ""
+
+#. Fetch size
+msgid "fetchSize"
+msgstr ""
+
+#. Pagination path
+msgid "pagination_path"
+msgstr ""
+
+#. Pagination items per page
+msgid "pagination_items_per_page"
+msgstr ""
+
+#. Pagination items total
+msgid "pagination_items_total"
+msgstr ""
+
+#. Pagination last page
+msgid "pagination_last_page"
+msgstr ""
+
+#. Pagination after id
+msgid "pagination_after_id"
+msgstr ""
+
+#. Param page name
+msgid "param_pageName"
+msgstr ""
+
+#. Param offset name
+msgid "param_offsetName"
+msgstr ""
+
+#. Param fetch size
+msgid "param_fetchSize"
+msgstr ""
+
+#. Auth host
+msgid "auth_host"
+msgstr ""
+
+#. Auth URL
+msgid "auth_url"
+msgstr ""
+
+#. Auth method
+msgid "auth_method"
+msgstr ""
+
+#. Auth body
+msgid "auth_body"
+msgstr ""
+
+#. Auth grant type
+msgid "auth_grant_type"
+msgstr ""
+
+#. Auth
+msgid "auth"
+msgstr ""
+
+#. Read from folder
+msgid "read_from_folder"
+msgstr ""
+
+#. Read from writer
+msgid "read_from_writer"
+msgstr ""
+
+#. Delete files after processing
+msgid "delete_files_after_processing"
+msgstr ""
+
+#. Header size
+msgid "header_size"
+msgstr ""
+
+#. Files folder
+msgid "files_folder"
+msgstr ""
+
+#. File
+msgid "file"
+msgstr ""
+
+#. Encoding
+msgid "encoding"
+msgstr ""
+
+#. Fields
+msgid "fields"
+msgstr ""
+
+#. Destination filter fields
+msgid "dest_filter_fields"
+msgstr ""
+
+#. Destination unique id field
+msgid "dest_unique_id_field"
+msgstr ""
+
+#. Exclusion filter class
+msgid "exclusion_filter_class"
+msgstr ""
+
+#. Data mapper class
+msgid "data_mapper_class"
+msgstr ""
+
+#. Extended insert mapping
+msgid "ext_insert_mapping"
+msgstr ""
+
+#. Single id filter
+msgid "single_id_filter"
+msgstr ""
+
+#. Subject
+msgid "subject"
+msgstr ""
+
+#. Body
+msgid "body"
+msgstr ""
+
+#. To
+msgid "to"
+msgstr ""
+
+#. TLS enable
+msgid "tls_enable"
+msgstr ""
+
+#. Job id
+msgid "job_id"
+msgstr ""
+
+#. Log level
+msgid "log_level"
+msgstr ""

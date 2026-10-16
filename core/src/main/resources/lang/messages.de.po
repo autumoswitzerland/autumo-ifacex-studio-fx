@@ -372,3 +372,227 @@ msgstr "Quell-Entity"
 
 msgid "writer (e.g. csv_out)"
 msgstr "Writer (z.B. csv_out)"
+
+# ------------------------------------------------------------------------------
+# Engine parameter labels.
+# The message id IS the raw configuration key (e.g. "data_path"); the English
+# label shown when nothing is translated is the "#." comment above the entry.
+# Parameter help texts use the same key plus ".help". Keys, type names and
+# parameter names stay technical and are never translated.
+# ------------------------------------------------------------------------------
+
+#. Host
+msgid "host"
+msgstr "Host"
+
+#. Port
+msgid "port"
+msgstr "Port"
+
+#. Protocol
+msgid "protocol"
+msgstr "Protokoll"
+
+#. User
+msgid "user"
+msgstr "Benutzer"
+
+#. Password
+msgid "password"
+msgstr "Passwort"
+
+#. API key
+msgid "api_key"
+msgstr "API-Schlüssel"
+
+#. API key name
+msgid "api_key_name"
+msgstr "API-Schlüssel-Name"
+
+#. URL
+msgid "url"
+msgstr "URL"
+
+#. Database name
+msgid "db_name"
+msgstr "Datenbankname"
+
+#. Parameters
+msgid "params"
+msgstr "Parameter"
+
+#. Data path
+msgid "data_path"
+msgstr "Datenpfad"
+
+#. Path to the data array within the JSON response.
+msgid "data_path.help"
+msgstr "Pfad zum Daten-Array in der JSON-Antwort."
+
+#. Sub path
+msgid "sub_path"
+msgstr "Unterpfad"
+
+#. Entities URL
+msgid "entities_url"
+msgstr "Entitäten-URL"
+
+#. Field path access
+msgid "field_path_access"
+msgstr "Feldpfad-Zugriff"
+
+#. Allow absent fields
+msgid "allow_absent_fields"
+msgstr "Fehlende Felder erlauben"
+
+#. Absent field placeholder
+msgid "absent_field_placeholder"
+msgstr "Platzhalter für fehlende Felder"
+
+#. Additional headers
+msgid "additional_headers"
+msgstr "Zusätzliche Header"
+
+#. Additional params
+msgid "additional_params"
+msgstr "Zusätzliche Parameter"
+
+#. Fetch size
+msgid "fetchSize"
+msgstr "Abrufgröße"
+
+#. Pagination path
+msgid "pagination_path"
+msgstr "Paginierungspfad"
+
+#. Pagination items per page
+msgid "pagination_items_per_page"
+msgstr "Paginierung Elemente pro Seite"
+
+#. Pagination items total
+msgid "pagination_items_total"
+msgstr "Paginierung Elemente gesamt"
+
+#. Pagination last page
+msgid "pagination_last_page"
+msgstr "Paginierung letzte Seite"
+
+#. Pagination after id
+msgid "pagination_after_id"
+msgstr "Paginierung nach ID"
+
+#. Param page name
+msgid "param_pageName"
+msgstr "Parameter Seitenname"
+
+#. Param offset name
+msgid "param_offsetName"
+msgstr "Parameter Offset-Name"
+
+#. Param fetch size
+msgid "param_fetchSize"
+msgstr "Parameter Abrufgröße"
+
+#. Auth host
+msgid "auth_host"
+msgstr "Auth-Host"
+
+#. Auth URL
+msgid "auth_url"
+msgstr "Auth-URL"
+
+#. Auth method
+msgid "auth_method"
+msgstr "Auth-Methode"
+
+#. Auth body
+msgid "auth_body"
+msgstr "Auth-Body"
+
+#. Auth grant type
+msgid "auth_grant_type"
+msgstr "Auth-Grant-Typ"
+
+#. Auth
+msgid "auth"
+msgstr "Authentifizierung"
+
+#. Read from folder
+msgid "read_from_folder"
+msgstr "Aus Ordner lesen"
+
+#. Read from writer
+msgid "read_from_writer"
+msgstr "Von Writer lesen"
+
+#. Delete files after processing
+msgid "delete_files_after_processing"
+msgstr "Dateien nach Verarbeitung löschen"
+
+#. Header size
+msgid "header_size"
+msgstr "Kopfzeilengröße"
+
+#. Files folder
+msgid "files_folder"
+msgstr "Dateiordner"
+
+#. File
+msgid "file"
+msgstr "Datei"
+
+#. Encoding
+msgid "encoding"
+msgstr "Kodierung"
+
+#. Fields
+msgid "fields"
+msgstr "Felder"
+
+#. Destination filter fields
+msgid "dest_filter_fields"
+msgstr "Zielfilter-Felder"
+
+#. Destination unique id field
+msgid "dest_unique_id_field"
+msgstr "Ziel-Feld für eindeutige ID"
+
+#. Exclusion filter class
+msgid "exclusion_filter_class"
+msgstr "Ausschlussfilter-Klasse"
+
+#. Data mapper class
+msgid "data_mapper_class"
+msgstr "Daten-Mapper-Klasse"
+
+#. Extended insert mapping
+msgid "ext_insert_mapping"
+msgstr "Erweitertes Insert-Mapping"
+
+#. Single id filter
+msgid "single_id_filter"
+msgstr "Einzel-ID-Filter"
+
+#. Subject
+msgid "subject"
+msgstr "Betreff"
+
+#. Body
+msgid "body"
+msgstr "Textkörper"
+
+#. To
+msgid "to"
+msgstr "An"
+
+#. TLS enable
+msgid "tls_enable"
+msgstr "TLS aktivieren"
+
+#. Job id
+msgid "job_id"
+msgstr "Job-ID"
+
+#. Log level
+msgid "log_level"
+msgstr "Log-Stufe"
