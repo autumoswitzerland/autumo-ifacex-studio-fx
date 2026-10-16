@@ -31,6 +31,7 @@ will be produced until explicitly instructed.
 | [08-config-format.md](08-config-format.md) | Proposal for the new configuration format (YAML), incl. dual serialization |
 | [09-engine-config-model.md](09-engine-config-model.md) | Fact base: the ifaceX engine's configuration model (readers/writers/mapping/encryption) |
 | [10-ui-form-design.md](10-ui-form-design.md) | Design of the modern, metadata-driven reader/writer forms |
+| [11-legacy-studio-gui-analysis.md](11-legacy-studio-gui-analysis.md) | Source-of-truth analysis of the legacy Swing GUI: tabs, types, colours, per-type parameters, destination mapping, drag & drop, serialization |
 
 ## Status
 

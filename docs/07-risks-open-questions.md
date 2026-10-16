@@ -94,6 +94,20 @@ is no external remote.)*
 15a. ~~Installer/licensing activation~~ → **resolved:** wire the autumo-ui installer +
     registration/licensing UI **later**; development stays in **portable mode**.
 
+### Editor scope / legacy parity (see doc 11)
+19. **UI layout:** keep the current **nav tree** (General → Source/Dest → entities) or adopt the
+    legacy **tab-per-interface-type** model (BASE + one tab per used reader/writer type)?
+    The type is shown as a **coloured pill** either way (blue = base, green = reader, red = writer).
+20. **`meta_*` keys:** the legacy Studio writes `meta_title` / `meta_author` / `meta_version` /
+    `meta_notes` as *real* keys, but the engine (`repository/autumo-ifacex`) does **not** read
+    them (only the `#` comment header). Write them for parity, or comment-header only?
+21. **Interfaces without a legacy editor** (`doc_in`, `file_in`, `file_out`, `null_in`,
+    `console_out`, `code`, `exec`, `first_out`, cloud plugins): full editor, read-only, or raw view?
+22. **Priority order** for closing the parity gaps in doc 11 §9 (type pills, complete per-type
+    parameters, destination-mapping editor with STD/INS, drag & drop, new-configuration wizard).
+23. **New-configuration workflow:** wizard (reader → writers → entities) or empty model +
+    inline "add" actions in the tree?
+
 ### Process / repository
 16. **Versioning scheme** for the new app (e.g. `3.0.0` or `1.0.0`)?
 17. **Application name/bundle id:** keep "ifaceX Studio" or mark as FX edition?
@@ -144,3 +158,4 @@ Access path / location is to be provided by the owner if desired.
 | 2026-10-16 | **Form fields have rounded corners** (`-fx-background-radius: 6` for text field/area/password/combo box, `4` for check box, `6` for the table) | user |
 | 2026-10-16 | **Text-only forms are padded** (start-up placeholder, "select an element") so the text does not stick to the top-left | user |
 | 2026-10-16 | **Entity form split by role**: a reader entity edits the source **fields**, a writer entity edits the **destination mapping** (destination entity + mapping table). The mapping editor is shown for **every** writer entity (previously only when the file already contained a mapping, so none could be created); the mapping record is created lazily — rendering a form never mutates the model | user |
+| 2026-10-16 | **The flat key model alone is not enough.** The legacy Swing GUI was analysed in full (doc 11): 12 colour-coded tabs (BASE blue / readers green / writers red), one reader + N writers, `EntityFieldsHolder` (source fields, `order_field`, `uid`/`muid`/`jsonIdPath`, per-writer `dest_filter_fields`) and `DestinationMappingHolder` (**exactly one destination entity per (writer, source entity)**, mapping lines `[STD]`/`[INS] target:{formula}`, drag & drop of a source field into the formula box, auto-map `field:{field}`). The new editor must therefore be **type-driven** with the **destination mapping as a first-class editor**, must be able to **create a new configuration**, and must show the interface **type as a coloured pill** | user |
