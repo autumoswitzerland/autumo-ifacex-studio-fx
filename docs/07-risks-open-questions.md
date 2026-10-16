@@ -133,3 +133,5 @@ Access path / location is to be provided by the owner if desired.
 | 2026-10-16 | **Root/file form**: clicking the root node edits the comment-header metadata (Title, Version, Author, Description/Notes, Date) plus the job wiring (`source_interface`, `destination_interfaces`, `process_source_entities`) — as in the original Studio. Edits flow into the raw views and exports; writing back to the source file follows later. | user |
 | 2026-10-16 | **Dark theme**: the PoC now loads the autumo-ui base stylesheet (`ch/autumo/ui/style/application.css`) before the Studio `studio.css` overrides; dialogs reuse the same base style | user |
 | 2026-10-16 | `bin/run.sh [file]` opens a config directly (`--open`); run script forces JDK 25 | assistant |
+| 2026-10-16 | **Readability:** base font size raised to 14px with LCD font smoothing; mono (raw views) 13px | user |
+| 2026-10-16 | **Toolbar adopted from the original Studio** (icons + labels, ifaceX mark on the right): New · Open · Save · Close · Configuration · Run · External Edit; Run/External Edit are placeholders | user |

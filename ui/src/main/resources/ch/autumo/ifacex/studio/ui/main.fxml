@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.Menu?>
 <?import javafx.scene.control.MenuBar?>
@@ -26,22 +25,20 @@
         <VBox>
             <MenuBar>
                 <Menu text="File">
-                    <MenuItem text="Open…" onAction="#onOpen"/>
+                    <MenuItem fx:id="miNew" text="New" onAction="#onNew"/>
+                    <MenuItem fx:id="miOpen" text="Open…" onAction="#onOpen"/>
+                    <MenuItem fx:id="miSave" text="Save As…" onAction="#onSave"/>
                     <SeparatorMenuItem/>
-                    <MenuItem text="Export .ifcx" onAction="#onExportIfcx"/>
-                    <MenuItem text="Export .ifacex" onAction="#onExportIfacex"/>
+                    <MenuItem fx:id="miExportIfcx" text="Export .ifcx" onAction="#onExportIfcx"/>
+                    <MenuItem fx:id="miExportIfacex" text="Export .ifacex" onAction="#onExportIfacex"/>
                     <SeparatorMenuItem/>
-                    <MenuItem text="Exit" onAction="#onExit"/>
+                    <MenuItem fx:id="miExit" text="Exit" onAction="#onExit"/>
                 </Menu>
                 <Menu text="Help">
                     <MenuItem text="About" onAction="#onAbout"/>
                 </Menu>
             </MenuBar>
-            <ToolBar>
-                <Button text="Open" onAction="#onOpen"/>
-                <Button fx:id="exportIfcxButton" text="Export .ifcx" onAction="#onExportIfcx" disable="true"/>
-                <Button fx:id="exportIfacexButton" text="Export .ifacex" onAction="#onExportIfacex" disable="true"/>
-            </ToolBar>
+            <ToolBar fx:id="toolBar"/>
         </VBox>
     </top>
 

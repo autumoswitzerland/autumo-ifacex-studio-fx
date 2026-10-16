@@ -21,12 +21,43 @@
  */
 
 .root {
-    -fx-font-size: 12px;
+    -fx-font-size: 14px;
+    -fx-font-smoothing-type: lcd;
+}
+
+/* Crisper/bolder text on the dark palette (LCD sub-pixel smoothing where supported). */
+.label,
+.button,
+.tree-cell,
+.titled-pane > .title,
+.text-field,
+.text-area,
+.check-box,
+.combo-box {
+    -fx-font-smoothing-type: lcd;
 }
 
 .mono {
     -fx-font-family: "Menlo", "Consolas", "DejaVu Sans Mono", monospace;
+    -fx-font-size: 13px;
+}
+
+/* --- toolbar (icons with the label underneath, as in the original Studio) - */
+.tool-bar {
+    -fx-padding: 2 6 2 6;
+}
+.toolbar-button {
+    -fx-padding: 4 10 4 10;
     -fx-font-size: 12px;
+    -fx-text-fill: #e6e6e6;
+}
+.toolbar-button:hover {
+    -fx-background-color: #0E4E74;
+    -fx-background-radius: 4;
+    -fx-text-fill: #ffffff;
+}
+.toolbar-button:disabled {
+    -fx-opacity: 0.45;
 }
 
 /* --- status bar ----------------------------------------------------------- */
@@ -39,20 +70,21 @@
 
 /* --- form section headings ----------------------------------------------- */
 .section-title {
-    -fx-font-size: 14px;
+    -fx-font-size: 15px;
     -fx-font-weight: bold;
     -fx-text-fill: #2DC7FE;
     -fx-padding: 8 0 4 0;
 }
 
 .field-label {
+    -fx-font-size: 13px;
     -fx-font-weight: bold;
-    -fx-text-fill: #cccccc;
+    -fx-text-fill: #d8d8d8;
 }
 
 .field-help {
-    -fx-text-fill: #999999;
-    -fx-font-size: 11px;
+    -fx-text-fill: #a0a0a0;
+    -fx-font-size: 12px;
 }
 
 /* --- collapsible section headers (TitledPane) ---------------------------- */

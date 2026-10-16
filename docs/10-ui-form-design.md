@@ -132,7 +132,15 @@ from the model + field metadata:
 **Theme.** The scene loads the **autumo-ui base stylesheet**
 (`ch/autumo/ui/style/application.css`, a modern **dark** palette) first, then the Studio
 `studio.css` overrides (navigation tree, collapsible headers, status bar, editor surfaces).
-Dialogs reuse the same base stylesheet so they match the main window.
+Dialogs reuse the same base stylesheet so they match the main window. `studio.css` also
+raises the base font size to **14px** and enables LCD font smoothing for readability on the
+dark palette.
+
+**Toolbar.** The toolbar mirrors the original Studio editor, rebuilt programmatically with
+the 48px autumo-ui icons (label below the icon) and the ifaceX mark on the right:
+**New · Open · Save · Close | Configuration | Run | External Edit**. `Configuration` selects
+the root node (file metadata + job wiring); `Run` and `External Edit` are placeholders until
+engine integration. The same 16px icons are used in the File menu.
 
 **Metadata.** `core/.../meta/` holds `FieldType`, `FieldDescriptor` and `FieldCatalog`
 (known parameters + best-effort inference for unknown ones). It is UI-free and unit-testable;
