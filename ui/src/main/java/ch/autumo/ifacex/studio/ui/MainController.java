@@ -17,6 +17,7 @@ package ch.autumo.ifacex.studio.ui;
 import java.io.File;
 import java.nio.file.Path;
 import java.util.Locale;
+import java.util.Objects;
 
 import ch.autumo.ifacex.studio.core.io.PropertiesConfigReader;
 import ch.autumo.ifacex.studio.core.io.PropertiesConfigWriter;
@@ -68,6 +69,9 @@ public class MainController {
     static final String K_DEST = "DEST";
     static final String K_ENTITY = "ENTITY";
 
+    /** Style class that renders a navigation entry in bold (see studio.css). */
+    private static final String NAV_EMPHASIS = "nav-emphasis";
+
     @FXML
     private TreeView<FormBuilder.NavNode> navTree;
     @FXML
@@ -93,7 +97,7 @@ public class MainController {
     @FXML
     private MenuItem miExportIfacex;
 
-    private final FormBuilder formBuilder = new FormBuilder(this::onModelChanged);
+    private final FormBuilder formBuilder = new FormBuilder(this::onModelChanged, this::rebuild);
 
     private IpcConfig config;
     private Path sourceFile;
@@ -127,11 +131,23 @@ public class MainController {
                 if (empty || item == null) {
                     setText(null);
                     setGraphic(null);
+                    getStyleClass().remove(NAV_EMPHASIS);
                     return;
                 }
                 setText(item.label());
                 setGraphic(item.payload() instanceof RwConfig rw
                         ? FormBuilder.typePill(rw.name()) : null);
+                // The global values and the section headers stand out, as asked for.
+                final boolean bold = K_GENERAL.equals(item.kind())
+                        || K_SOURCE.equals(item.kind())
+                        || K_DEST.equals(item.kind());
+                if (bold) {
+                    if (!getStyleClass().contains(NAV_EMPHASIS)) {
+                        getStyleClass().add(NAV_EMPHASIS);
+                    }
+                } else {
+                    getStyleClass().remove(NAV_EMPHASIS);
+                }
             }
         };
     }
@@ -322,7 +338,7 @@ public class MainController {
         loadConfig(path);
         final TreeItem<FormBuilder.NavNode> root = navTree.getRoot();
         // exercise the form builder for every nav node
-        final int[] acc = new int[3]; // forms, list views (source fields), tables (mapping)
+        final int[] acc = new int[4]; // forms, list views (source fields), tables, dnd buttons
         for (final TreeItem<FormBuilder.NavNode> child : root.getChildren()) {
             countForms(child, acc);
         }
@@ -345,20 +361,37 @@ public class MainController {
                 + " propsChars=" + rawProps.getText().length()
                 + " formClass=" + (formScroll.getContent() == null
                         ? "null" : formScroll.getContent().getClass().getSimpleName())
+                + " statusFileOk=" + (statusLabel.getText() != null
+                        && statusLabel.getText().startsWith("File: "))
+                + " rootLabel=\"" + root.getValue().label() + "\""
+                + " title=\"" + (config.meta().title() == null ? "" : config.meta().title()) + "\""
+                + " dndButtons=" + acc[3]
                 + " statusOk=" + (statusLabel.getText() != null && !statusLabel.getText().isBlank());
     }
 
-    /** Builds every nav node's form and accumulates [forms, listViews, tables]. */
+    /** Builds every nav node's form and accumulates [forms, listViews, tables, dndButtons]. */
     private void countForms(TreeItem<FormBuilder.NavNode> item, int[] acc) {
         final Node n = formBuilder.build(item.getValue());
         if (n != null) {
             acc[0]++;
             acc[1] += count(n, javafx.scene.control.ListView.class);
             acc[2] += count(n, javafx.scene.control.TableView.class);
+            acc[3] += countDnd(n);
         }
         for (final TreeItem<FormBuilder.NavNode> c : item.getChildren()) {
             countForms(c, acc);
         }
+    }
+
+    /** Counts the auto-mapping drag-and-drop buttons ({@code .dnd-button}). */
+    private static int countDnd(Node node) {
+        int n = node.getStyleClass().contains("dnd-button") ? 1 : 0;
+        if (node instanceof javafx.scene.Parent p) {
+            for (final Node child : p.getChildrenUnmodifiable()) {
+                n += countDnd(child);
+            }
+        }
+        return n;
     }
 
     private static int count(Node node, Class<?> type) {
@@ -390,12 +423,16 @@ public class MainController {
     }
 
     private void rebuild() {
+        final TreeItem<FormBuilder.NavNode> selected = navTree.getSelectionModel().getSelectedItem();
+        final FormBuilder.NavNode prev = selected == null ? null : selected.getValue();
+        formBuilder.setConfig(config);
+
         final TreeItem<FormBuilder.NavNode> root = new TreeItem<>(
                 new FormBuilder.NavNode(K_ROOT, label(), config, null));
         root.setExpanded(true);
 
         root.getChildren().add(new TreeItem<>(
-                new FormBuilder.NavNode(K_GENERAL, "General", config.general(), null)));
+                new FormBuilder.NavNode(K_GENERAL, "Overwritten Values", config.general(), null)));
 
         for (final RwConfig reader : config.readers().values()) {
             root.getChildren().add(sectionItem(reader, K_SOURCE, "Source: " + reader.name()));
@@ -406,9 +443,34 @@ public class MainController {
 
         navTree.setRoot(root);
         rootItem = root;
-        navTree.getSelectionModel().select(root);
+        final TreeItem<FormBuilder.NavNode> restore = findNode(root, prev);
+        navTree.getSelectionModel().select(restore != null ? restore : root);
         setConfigActionsEnabled(true);
         refreshRaw();
+    }
+
+    /**
+     * Re-find a previously selected node after a structural rebuild (add/remove/rename of a section
+     * or entity), so the user stays where they were working.
+     */
+    private TreeItem<FormBuilder.NavNode> findNode(TreeItem<FormBuilder.NavNode> start,
+            FormBuilder.NavNode target) {
+        if (target == null) {
+            return null;
+        }
+        final FormBuilder.NavNode v = start.getValue();
+        if (v != null && v.kind().equals(target.kind())
+                && Objects.equals(v.label(), target.label())
+                && Objects.equals(v.payload2(), target.payload2())) {
+            return start;
+        }
+        for (final TreeItem<FormBuilder.NavNode> c : start.getChildren()) {
+            final TreeItem<FormBuilder.NavNode> found = findNode(c, target);
+            if (found != null) {
+                return found;
+            }
+        }
+        return null;
     }
 
     private TreeItem<FormBuilder.NavNode> sectionItem(RwConfig rw, String kind, String label) {
@@ -422,11 +484,31 @@ public class MainController {
         return item;
     }
 
+    /**
+     * The root navigation entry shows the configuration <em>title</em> ({@code meta.title}),
+     * falling back to the file name / a default. It is re-derived on every model change so it
+     * tracks the title typed in the form.
+     */
     private String label() {
-        if (sourceFile == null) {
-            return "Configuration";
+        if (config != null) {
+            final String title = config.meta().title();
+            if (title != null && !title.isBlank()) {
+                return title.trim();
+            }
         }
-        return sourceFile.getFileName().toString();
+        return sourceFile == null ? "Configuration" : sourceFile.getFileName().toString();
+    }
+
+    /** Re-derive the root label after a model change, so it follows the title field. */
+    private void refreshRootLabel() {
+        if (rootItem == null || config == null) {
+            return;
+        }
+        final String next = label();
+        final FormBuilder.NavNode value = rootItem.getValue();
+        if (value != null && !next.equals(value.label())) {
+            rootItem.setValue(new FormBuilder.NavNode(K_ROOT, next, config, null));
+        }
     }
 
     private void showForm(TreeItem<FormBuilder.NavNode> item) {
@@ -438,9 +520,8 @@ public class MainController {
 
     private void onModelChanged() {
         refreshRaw();
-        if (statusLabel.getText() != null && !statusLabel.getText().startsWith("Modified")) {
-            statusLabel.setText("Modified — " + statusLabel.getText());
-        }
+        refreshRootLabel();
+        markModified();
     }
 
     private void refreshRaw() {
@@ -516,8 +597,30 @@ public class MainController {
         alert.showAndWait();
     }
 
+    /** State shown behind the file: "Loaded", "Converted ...", "Modified", "Saved ...". */
+    private String statusState = "";
+
+    /** Sets the state part of the status bar and re-renders it. */
     private void status(String text) {
-        statusLabel.setText(text);
+        statusState = text == null ? "" : text;
+        renderStatus();
+    }
+
+    /**
+     * The status bar reads like the original Studio: {@code File: <absolute path>} first, the
+     * state behind it. Without a loaded file it shows {@code File: -}.
+     */
+    private void renderStatus() {
+        final String file = sourceFile == null ? "File: -" : "File: " + sourceFile.toAbsolutePath();
+        statusLabel.setText(statusState.isEmpty() ? file : file + "   \u2014   " + statusState);
+    }
+
+    /** Flag the configuration as changed, without repeating an existing "Modified". */
+    private void markModified() {
+        if (statusState.startsWith("Modified")) {
+            return;
+        }
+        status("Modified");
     }
 
     private void error(String message, Exception e) {

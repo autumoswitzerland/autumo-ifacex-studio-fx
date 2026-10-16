@@ -45,6 +45,12 @@
     -fx-font-size: 13px;
 }
 
+/* --- tooltips: a bit larger than the body text ---------------------------- */
+.tooltip {
+    -fx-font-family: "Inter";
+    -fx-font-size: 15px;
+}
+
 /* --- toolbar (icons with the label underneath, as in the original Studio) - */
 .tool-bar-pane {
     -fx-background-color: linear-gradient(to top, #1a1a1a, #2f2f2f);
@@ -56,7 +62,7 @@
     -fx-background-color: transparent;
     -fx-border-color: transparent;
     -fx-focus-color: transparent;
-    -fx-padding: 2 6 2 6;
+    -fx-padding: 6 6 6 6;
 }
 .toolbar-button {
     -fx-padding: 4 10 4 10;
@@ -260,4 +266,23 @@
 /* --- dialogs use the bundled Inter SemiBold for their headers ------------- */
 .dialog-pane:header .header-panel .label {
     -fx-font-family: "Inter SemiBold";
+}
+
+/* --- navigation entries that stand out: the global values and the sections */
+.nav-emphasis {
+    -fx-font-family: "Inter SemiBold";
+    -fx-font-size: 14.5px;
+}
+
+/* --- the original Studio's drag-and-drop icon (auto-mapping) -------------- */
+.dnd-button {
+    -fx-background-color: transparent;
+    -fx-padding: 2;
+    -fx-background-radius: 6;
+}
+.dnd-button:hover {
+    -fx-background-color: #0E4E74;
+}
+.dnd-button:disabled {
+    -fx-opacity: 0.45;
 }

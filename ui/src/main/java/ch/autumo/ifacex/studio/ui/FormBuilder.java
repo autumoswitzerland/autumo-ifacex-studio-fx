@@ -26,7 +26,9 @@ import ch.autumo.ifacex.studio.core.meta.InterfaceTypes;
 import ch.autumo.ifacex.studio.core.model.EntityConfig;
 import ch.autumo.ifacex.studio.core.model.FieldMappingRec;
 import ch.autumo.ifacex.studio.core.model.IpcConfig;
+import ch.autumo.ifacex.studio.core.model.MappingFormula;
 import ch.autumo.ifacex.studio.core.model.RwConfig;
+import ch.autumo.ifacex.studio.core.model.WriterMapping;
 
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -35,9 +37,12 @@ import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.PasswordField;
@@ -50,6 +55,12 @@ import javafx.scene.control.Tooltip;
 import javafx.scene.control.cell.CheckBoxTableCell;
 import javafx.scene.control.cell.TextFieldListCell;
 import javafx.scene.control.cell.TextFieldTableCell;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.input.ClipboardContent;
+import javafx.scene.input.DataFormat;
+import javafx.scene.input.Dragboard;
+import javafx.scene.input.TransferMode;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -71,10 +82,25 @@ final class FormBuilder {
         }
     }
 
+    /** Data format used for dragging a source field into the mapping formula box. */
+    private static final DataFormat FIELD_FORMAT = new DataFormat("application/x-ifacex-field");
+
     private final Runnable onChange;
+    private final Runnable onStructureChange;
+    private IpcConfig cfg;
 
     FormBuilder(Runnable onChange) {
+        this(onChange, null);
+    }
+
+    FormBuilder(Runnable onChange, Runnable onStructureChange) {
         this.onChange = onChange;
+        this.onStructureChange = onStructureChange;
+    }
+
+    /** The current configuration (needed to reach the shared source fields from a writer). */
+    void setConfig(IpcConfig cfg) {
+        this.cfg = cfg;
     }
 
     @SuppressWarnings("unchecked")
@@ -149,39 +175,139 @@ final class FormBuilder {
         final VBox jobBox = new VBox(10);
         jobBox.setPadding(new Insets(4));
 
-        final TextField srcIface = new TextField(cfg.sourceInterface());
-        srcIface.textProperty().addListener((o, a, b) -> {
-            cfg.setSourceInterface(b);
-            changed();
+        // Source interface = the reader. Picking one creates the reader section (new configuration).
+        final ComboBox<String> srcIface = new ComboBox<>(
+                FXCollections.observableArrayList(InterfaceTypes.readerNames()));
+        srcIface.setEditable(true);
+        srcIface.setMaxWidth(Double.MAX_VALUE);
+        srcIface.setValue(cfg.sourceInterface());
+        srcIface.valueProperty().addListener((o, a, b) -> {
+            if (b == null || b.isBlank()) {
+                return;
+            }
+            cfg.setSourceInterface(b.trim());
+            cfg.ensureReader(b.trim());
+            structureChanged();
         });
-        jobBox.getChildren().add(labeled("Source interface (reader)", srcIface));
+        final Label srcLabel = new Label("Source interface (reader)");
+        srcLabel.getStyleClass().add("field-label");
+        srcLabel.setTooltip(new Tooltip("The single reader of the job; picking one creates its section."));
+        jobBox.getChildren().add(new VBox(2, srcLabel, srcIface));
 
-        final TextField destIfaces = new TextField(String.join(", ", cfg.destinationInterfaces()));
-        destIfaces.textProperty().addListener((o, a, b) -> {
-            setList(cfg.destinationInterfaces(), b);
-            changed();
-        });
-        jobBox.getChildren().add(labeled("Destination interfaces (writers, comma separated)", destIfaces));
-
-        final TextField srcEntities = new TextField(String.join(", ", cfg.processSourceEntities()));
-        srcEntities.textProperty().addListener((o, a, b) -> {
-            setList(cfg.processSourceEntities(), b);
-            changed();
-        });
-        jobBox.getChildren().add(labeled("Process source entities (comma separated)", srcEntities));
+        // Destination interfaces = the writers.
+        final Label destLabel = new Label("Destination interfaces (writers)");
+        destLabel.getStyleClass().add("field-label");
+        destLabel.setTooltip(new Tooltip("The writers of the job. Add a writer to create its section."));
+        jobBox.getChildren().add(new VBox(2, destLabel, stringListEditor(
+                caption(""), "writer (e.g. csv_out)", 
+                FXCollections.observableList(cfg.destinationInterfaces()),
+                this::syncWritersFromList)));
 
         box.getChildren().add(collapsed("Job wiring", jobBox, true));
+
+        // --- source entities (global; the legacy BASE tab list) ----------------------------
+        box.getChildren().add(collapsed("Source entities", sourceEntitiesEditor(cfg), true));
         return box;
     }
 
-    private static void setList(List<String> target, String commaSeparated) {
-        target.clear();
-        for (final String part : commaSeparated.split(",")) {
-            final String t = part.trim();
-            if (!t.isEmpty()) {
-                target.add(t);
+    /**
+     * The global source-entity registry (the legacy BASE tab). Source entities are shared by the
+     * reader (which owns their fields) and every writer (which owns their output mapping).
+     */
+    private Node sourceEntitiesEditor(IpcConfig cfg) {
+        final ObservableList<String> items = FXCollections.observableList(cfg.processSourceEntities());
+        final ListView<String> list = new ListView<>(items);
+        list.setEditable(true);
+        list.setPrefHeight(140);
+        list.setPlaceholder(hint("No source entities yet."));
+        list.setCellFactory(TextFieldListCell.forListView());
+        // ListView.EditEvent has no old value; remember it before the cell commits.
+        final String[] renaming = {null};
+        list.setOnEditStart(ev -> renaming[0] = ev.getIndex() >= 0 && ev.getIndex() < items.size()
+                ? items.get(ev.getIndex()) : null);
+        list.setOnEditCommit(ev -> {
+            final String old = renaming[0];
+            renaming[0] = null;
+            final String v = ev.getNewValue() == null ? "" : ev.getNewValue().trim();
+            if (old == null || v.isEmpty() || v.equals(old)) {
+                list.refresh();
+                return;
+            }
+            final List<String> others = cfg.sourceEntityNames();
+            others.removeIf(n -> n.equals(old));
+            if (others.contains(v)) {
+                warn(list, "A source entity named '" + v + "' already exists.");
+                list.refresh();
+                return;
+            }
+            cfg.renameSourceEntity(old, v);
+            list.refresh();
+            structureChanged();
+        });
+
+        final TextField input = new TextField();
+        input.setPromptText("New source entity name");
+        HBox.setHgrow(input, Priority.ALWAYS);
+        final Runnable add = () -> {
+            final String v = input.getText() == null ? "" : input.getText().trim();
+            if (cfg.addSourceEntity(v)) {
+                input.clear();
+                list.getSelectionModel().select(v);
+                structureChanged();
+            }
+        };
+        input.setOnAction(e -> add.run());
+
+        final Button addBtn = toolButton("+", "Add source entity", add);
+        final Button removeBtn = toolButton("\u2212", "Remove source entity (fields and mappings)",
+                () -> {
+                    final String sel = list.getSelectionModel().getSelectedItem();
+                    if (sel != null) {
+                        cfg.removeSourceEntity(sel);
+                        structureChanged();
+                    }
+                });
+        final Button up = toolButton("\u2191", "Move up", () -> {
+            final String sel = list.getSelectionModel().getSelectedItem();
+            if (sel != null) {
+                cfg.moveSourceEntity(sel, -1);
+                list.refresh();
+                list.getSelectionModel().select(sel);
+                structureChanged();
+            }
+        });
+        final Button down = toolButton("\u2193", "Move down", () -> {
+            final String sel = list.getSelectionModel().getSelectedItem();
+            if (sel != null) {
+                cfg.moveSourceEntity(sel, 1);
+                list.refresh();
+                list.getSelectionModel().select(sel);
+                structureChanged();
+            }
+        });
+
+        final Label help = hint("Source entities are global: their fields are edited on the reader, "
+                + "their output mapping on each writer. Double-click to rename.");
+        help.setWrapText(true);
+        return new VBox(4, list, new HBox(6, input, addBtn),
+                new HBox(6, removeBtn, up, down), help);
+    }
+
+    /**
+     * Ensure a writer section exists for every name in {@code destination_interfaces} and drop the
+     * sections that are no longer listed (the legacy selected-writers list is authoritative).
+     */
+    private void syncWritersFromList() {
+        if (cfg == null) {
+            return;
+        }
+        for (final String name : new ArrayList<>(cfg.destinationInterfaces())) {
+            if (!name.isBlank()) {
+                cfg.ensureWriter(name.trim());
             }
         }
+        cfg.writers().keySet().removeIf(w -> !cfg.destinationInterfaces().contains(w));
+        structureChanged();
     }
 
     private static String stripTrailingNewline(String s) {
@@ -207,9 +333,48 @@ final class FormBuilder {
             box.getChildren().add(collapsed("Entity: " + e.getKey(),
                     entityBody(e.getValue(), rw), false));
         }
+        if (!rw.isReader()) {
+            final Node addMapping = writerAddMapping(rw);
+            if (addMapping != null) {
+                box.getChildren().add(addMapping);
+            }
+        }
         if (box.getChildren().size() == 1) {
             box.getChildren().add(hint("No parameters for this interface."));
         }
+        return box;
+    }
+
+    /**
+     * Writer section helper: create the output mapping for a source entity that does not have one
+     * yet (the legacy writer tab selects a source entity from its entity list). The mapping itself
+     * is created lazily by the entity form, so nothing is written until the user edits it.
+     */
+    private Node writerAddMapping(RwConfig rw) {
+        if (cfg == null) {
+            return null;
+        }
+        final List<String> unmapped = new ArrayList<>(cfg.sourceEntityNames());
+        unmapped.removeAll(rw.entities().keySet());
+        if (unmapped.isEmpty()) {
+            return null;
+        }
+        final ComboBox<String> combo = new ComboBox<>(
+                FXCollections.observableArrayList(unmapped));
+        combo.setPromptText("source entity");
+        combo.setValue(unmapped.get(0));
+        combo.setMaxWidth(Double.MAX_VALUE);
+        HBox.setHgrow(combo, Priority.ALWAYS);
+        final Button add = toolButton("+", "Add an output mapping for this source entity", () -> {
+            final String sel = combo.getValue();
+            if (sel != null && !sel.isBlank() && !rw.entities().containsKey(sel)) {
+                rw.ensureEntity(sel);
+                structureChanged();
+            }
+        });
+        final VBox box = new VBox(4,
+                caption("Add output mapping for a source entity"),
+                new HBox(6, combo, add));
         return box;
     }
 
@@ -226,26 +391,25 @@ final class FormBuilder {
     }
 
     /**
-     * The body of an entity form. A <em>reader</em> entity defines the source {@code fields} (and,
-     * for DB/Mongo readers, the order field); a <em>writer</em> entity defines the destination
-     * mapping ({@code mapping_entity} + {@code mapping_field_NNN}) plus the writer-type specific
-     * destination id field and destination filter fields. The mapping editor is shown for every
-     * writer entity, so a mapping can be created even when the file does not contain one yet.
+     * The body of an entity form.
+     *
+     * <p>A <em>reader</em> entity owns the source {@code fields} (the one global definition, shared
+     * by every writer) and, for DB/Mongo readers, the order field.</p>
+     *
+     * <p>A <em>writer</em> entity owns the output mapping of one source entity: the destination
+     * entity, the writer-type specific destination id/filter fields, and the field mapping. The
+     * source fields are read from the reader (drag source) — they are never re-defined here.</p>
      */
     private Node entityBody(EntityConfig ec, RwConfig rw) {
-        final boolean reader = rw.isReader();
         final VBox box = new VBox(10);
         box.setPadding(new Insets(4));
 
-        if (reader) {
+        if (rw.isReader()) {
             box.getChildren().add(sourceFieldList(ec));
             if (isDbLike(rw)) {
                 box.getChildren().add(destField(ec, "order_field", "Order field"));
             }
         } else {
-            if (!ec.fields().isEmpty()) {
-                box.getChildren().add(sourceFieldList(ec));
-            }
             box.getChildren().add(destinationMapping(ec, rw));
         }
         final Map<String, String> rest = remainingSettings(ec, rw);
@@ -304,16 +468,36 @@ final class FormBuilder {
     }
 
     /**
-     * Destination mapping of a writer entity: the destination entity name, the writer-type specific
-     * destination id field ({@code dest_unique_id_field} for DB/Mongo, {@code dest_id_path} for
-     * REST), the destination filter fields and the field mapping table. The mapping record is
-     * created lazily, so merely opening the form does not change the configuration.
+     * Destination mapping of a writer entity — the heart of the editor, mirroring the original
+     * writer tab:
+     *
+     * <ul>
+     *   <li>the destination entity — exactly <em>one</em> per source entity, as in the legacy GUI;</li>
+     *   <li>the writer-type specific destination id field ({@code dest_unique_id_field} for
+     *       DB/Mongo, {@code dest_id_path} for REST) and the destination filter fields;</li>
+     *   <li>the source fields of the selected source entity, in <em>full width at the top</em>,
+     *       as the <em>drag source</em> (they are read-only here and edited on the reader);</li>
+     *   <li>below them the formula box as <em>drop target</em> (a dropped field becomes
+     *       {@code {field}}) with <em>Add standard mapping</em> (legacy {@code Add std. mapping})
+     *       and <em>Add insert mapping</em>;</li>
+     *   <li>the original Studio's clickable drag-and-drop icon (legacy {@code generateMappings}),
+     *       which maps every field to {@code field:{field}};</li>
+     *   <li>the mapping table with edit / remove / move up / move down.</li>
+     * </ul>
+     *
+     * The mapping record is created lazily, so merely opening the form does not change the file.
      */
     private Node destinationMapping(EntityConfig ec, RwConfig rw) {
         final String prefix = InterfaceTypes.of(rw.name()).prefix();
+        final String entity = ec.entity();
+
+        final VBox box = new VBox(10);
+
+        // --- destination entity (max. one per source entity) --------------------------------
         final String dest = ec.hasMapping() && ec.mapping().destEntity() != null
                 ? ec.mapping().destEntity() : "";
         final TextField destEntity = new TextField(dest);
+        destEntity.setPromptText("destination entity (e.g. COMPANIES)");
         destEntity.textProperty().addListener((o, a, b) -> {
             if (b.isBlank() && !ec.hasMapping()) {
                 return; // nothing to clear yet
@@ -321,10 +505,13 @@ final class FormBuilder {
             ec.ensureMapping().setDestEntity(b.isBlank() ? null : b);
             changed();
         });
+        final Label destLabel = new Label("Destination entity");
+        destLabel.getStyleClass().add("field-label");
+        destLabel.setTooltip(new Tooltip("The legacy GUI allows exactly one destination entity per "
+                + "source entity. For a second target, use a view or a second processor configuration."));
+        box.getChildren().add(new VBox(2, destLabel, destEntity));
 
-        final VBox box = new VBox(8);
-        box.getChildren().add(labeled("Destination entity", destEntity));
-
+        // --- writer-type specific destination fields ----------------------------------------
         if ("db".equals(prefix) || "mongo".equals(prefix)) {
             box.getChildren().add(destField(ec, "dest_unique_id_field",
                     "Destination unique id field"));
@@ -339,10 +526,161 @@ final class FormBuilder {
                     commaList(ec.settings(), "dest_filter_fields"), () -> { }));
         }
 
-        box.getChildren().add(caption("Field mapping (destination field \u2190 formula)"));
-        box.getChildren().add(mappingTable(ec));
+        // --- field mapping (source fields -> formula -> mapping table) -----------------------
+        box.getChildren().add(caption("Field mapping \u2014 source entity '" + entity + "'"));
+        box.getChildren().add(mappingEditor(ec, rw, entity));
         return box;
     }
+
+    /**
+     * The drag-and-drop mapping editor. As in the original Studio: the source fields of
+     * {@code entity} (owned by the reader) at the top in full width, below them the formula box
+     * with the add buttons, and at the bottom the ordered mapping table.
+     */
+    private Node mappingEditor(EntityConfig ec, RwConfig rw, String entity) {
+        final List<String> sourceFields = cfg == null
+                ? List.of() : cfg.readerEntityFields(entity);
+
+        final ObservableList<FieldMappingRec> rows = FXCollections.observableArrayList(
+                ec.hasMapping() ? new ArrayList<>(ec.mapping().fields()) : new ArrayList<>());
+        rows.addListener((javafx.collections.ListChangeListener<FieldMappingRec>) c -> {
+            final WriterMapping m = ec.ensureMapping();
+            m.fields().clear();
+            m.fields().addAll(rows);
+            changed();
+        });
+
+        // Source fields on top, in full width: the drag source of this mapping (read-only here,
+        // they are shared and edited on the reader).
+        final ListView<String> fieldsList = new ListView<>(
+                FXCollections.observableArrayList(sourceFields));
+        fieldsList.setPrefHeight(200);
+        fieldsList.setPlaceholder(hint("No source fields for '" + entity + "'."));
+        final Label fieldsCaption = caption("Source fields (" + entity + ")");
+        fieldsCaption.setTooltip(new Tooltip("Drag a field into the formula box below (or "
+                + "double-click it). The fields belong to the source entity and are edited "
+                + "on the reader."));
+
+        // The formula box is the drop target.
+        final TextArea formula = new TextArea();
+        formula.setPromptText("destination:{source-field} ...");
+        formula.setPrefRowCount(3);
+        formula.setWrapText(true);
+        wireFieldDrag(fieldsList, formula);
+        wireFieldDrop(formula);
+
+        final Button addStd = toolButton("Add standard mapping",
+                "Add the formula above as a standard [STD] mapping",
+                () -> addMappingFromBox(ec, rows, formula, false));
+        final Button addIns = toolButton("Add insert mapping",
+                "Add the formula above as an insert-only [INS] mapping",
+                () -> addMappingFromBox(ec, rows, formula, true));
+        final Button all = dndButton(
+                () -> rows.addAll(MappingFormula.standardFor(sourceFields, rows)));
+
+        final HBox buttons = new HBox(8, addStd, addIns, all);
+        buttons.setAlignment(Pos.CENTER_LEFT);
+
+        final VBox fieldsBox = new VBox(4, fieldsCaption, fieldsList);
+        VBox.setVgrow(fieldsList, Priority.ALWAYS);
+
+        return new VBox(10, fieldsBox,
+                labeled("Formula (drop source fields here)", formula),
+                buttons,
+                mappingTable(rows));
+    }
+
+    /** The original Studio's auto-mapping control: a clickable drag-and-drop icon. */
+    private Button dndButton(Runnable action) {
+        final ImageView view = new ImageView(
+                new Image(FormBuilder.class.getResource("images/dnd-48.png").toExternalForm()));
+        view.setPreserveRatio(true);
+        view.setFitHeight(48);
+        final Button b = new Button(null, view);
+        b.setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
+        b.getStyleClass().add("dnd-button");
+        b.setTooltip(new Tooltip(DND_TOOLTIP));
+        b.setOnAction(e -> action.run());
+        return b;
+    }
+
+    /** Auto-mapping hint, wording of the original Studio's drag-and-drop panel. */
+    private static final String DND_TOOLTIP =
+            "Drag single fields from above to destination mapping below.\n\n"
+            + "By clicking HERE, default mappings will be created with all source fields\n"
+            + "and with target field names equal to source field names:\n\n"
+            + "source-field-1:{source-field-1}\n"
+            + "source-field-2:{source-field-2}\n"
+            + "source-field-3:{source-field-3}\n"
+            + "...\n\n"
+            + "If there's already a target field name that equals any source field name,\n"
+            + "the corresponding source field is not taken over.";
+
+    /** Make a source-field list a drag source for the mapping formula box. */
+    private void wireFieldDrag(ListView<String> fieldsList, TextArea formula) {
+        fieldsList.setOnDragDetected(ev -> {
+            final String field = fieldsList.getSelectionModel().getSelectedItem();
+            if (field == null) {
+                return;
+            }
+            final Dragboard db = fieldsList.startDragAndDrop(TransferMode.COPY);
+            final ClipboardContent content = new ClipboardContent();
+            content.put(FIELD_FORMAT, field);
+            content.putString(field);
+            db.setContent(content);
+            ev.consume();
+        });
+        // Double-click is a more discoverable alternative to dragging.
+        fieldsList.setOnMouseClicked(ev -> {
+            final String field = fieldsList.getSelectionModel().getSelectedItem();
+            if (ev.getClickCount() == 2 && field != null) {
+                insertField(formula, field);
+            }
+        });
+    }
+
+    /** Accept dropped source fields in the formula box and insert {@code {field} }. */
+    private void wireFieldDrop(TextArea formula) {
+        formula.setOnDragOver(ev -> {
+            if (ev.getDragboard().hasContent(FIELD_FORMAT)) {
+                ev.acceptTransferModes(TransferMode.COPY);
+            }
+            ev.consume();
+        });
+        formula.setOnDragDropped(ev -> {
+            final Dragboard db = ev.getDragboard();
+            boolean ok = false;
+            if (db.hasContent(FIELD_FORMAT)) {
+                insertField(formula, String.valueOf(db.getContent(FIELD_FORMAT)));
+                ok = true;
+            }
+            ev.setDropCompleted(ok);
+            ev.consume();
+        });
+    }
+
+    private void insertField(TextArea formula, String field) {
+        formula.insertText(formula.getCaretPosition(), "{" + field + "}");
+        formula.requestFocus();
+    }
+
+    /** Validate the formula box and append the mapping (STD or INS). Mirrors legacy {@code addMapping}. */
+    private void addMappingFromBox(EntityConfig ec, ObservableList<FieldMappingRec> rows,
+            TextArea formula, boolean insert) {
+        final String text = formula.getText();
+        final FieldMappingRec rec = MappingFormula.parse(text, insert);
+        if (rec == null) {
+            warn(formula, "The destination mapping '" + (text == null ? "" : text.trim())
+                    + "' has a wrong format!\n\n"
+                    + "Example: 'target-field:{source-field-1} and {source-field-4} whatever'.\n"
+                    + "First the target field, then ':' and then the value — one or more source "
+                    + "fields enclosed in curly brackets. The line must contain exactly one colon.");
+            return;
+        }
+        rows.add(rec);
+        formula.clear();
+    }
+
 
     /**
      * Editor for the source {@code fields} of an entity. Mirrors the original Studio, which edits
@@ -407,7 +745,11 @@ final class FormBuilder {
 
         final HBox inputRow = new HBox(6, input, add);
         final HBox tools = new HBox(6, remove, up, down);
-        return new VBox(4, caption, list, inputRow, tools);
+        final VBox box = new VBox(4, list, inputRow, tools);
+        if (caption != null && !caption.getText().isEmpty()) {
+            box.getChildren().add(0, caption);
+        }
+        return box;
     }
 
     /**
@@ -457,7 +799,7 @@ final class FormBuilder {
     private Node general(Map<String, String> general) {
         final VBox box = new VBox(6);
         box.setPadding(new Insets(8));
-        box.getChildren().add(title("General / cross-cutting"));
+        box.getChildren().add(title("Overwritten Values"));
         if (general.isEmpty()) {
             box.getChildren().add(hint("(none)"));
         } else {
@@ -555,53 +897,54 @@ final class FormBuilder {
         }
     }
 
-    private Node mappingTable(EntityConfig ec) {
-        final ObservableList<FieldMappingRec> rows = FXCollections.observableArrayList(
-                ec.hasMapping() ? new ArrayList<>(ec.mapping().fields()) : new ArrayList<>());
+    /**
+     * The ordered mapping table. Standard ({@code [STD]}) and insert ({@code [INS]}) rows share one
+     * list; the model follows {@code rows} via the change listener set up in {@link #mappingEditor}.
+     */
+    private Node mappingTable(ObservableList<FieldMappingRec> rows) {
         final TableView<FieldMappingRec> table = new TableView<>(rows);
         table.setEditable(true);
         table.setPrefHeight(180);
+        table.setPlaceholder(hint(
+                "No mappings yet \u2014 add one with the buttons above (or click the dnd icon)."));
 
         final TableColumn<FieldMappingRec, String> colField = new TableColumn<>("Destination field");
         colField.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().destField()));
         colField.setCellFactory(TextFieldTableCell.forTableColumn(new DefaultStringConverter()));
-        colField.setOnEditCommit(ev -> replace(ec, rows, ev.getRowValue(),
+        colField.setOnEditCommit(ev -> replace(rows, ev.getRowValue(),
                 new FieldMappingRec(ev.getNewValue(), ev.getRowValue().formula(), ev.getRowValue().insert())));
         colField.setPrefWidth(240);
 
         final TableColumn<FieldMappingRec, String> colFormula = new TableColumn<>("Formula");
         colFormula.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().formula()));
         colFormula.setCellFactory(TextFieldTableCell.forTableColumn(new DefaultStringConverter()));
-        colFormula.setOnEditCommit(ev -> replace(ec, rows, ev.getRowValue(),
+        colFormula.setOnEditCommit(ev -> replace(rows, ev.getRowValue(),
                 new FieldMappingRec(ev.getRowValue().destField(), ev.getNewValue(), ev.getRowValue().insert())));
         colFormula.setPrefWidth(320);
 
         final TableColumn<FieldMappingRec, Boolean> colInsert = new TableColumn<>("Insert (INS)");
         colInsert.setCellValueFactory(c -> new SimpleBooleanProperty(c.getValue().insert()));
         colInsert.setCellFactory(CheckBoxTableCell.forTableColumn(colInsert));
-        colInsert.setOnEditCommit(ev -> replace(ec, rows, ev.getRowValue(),
+        colInsert.setOnEditCommit(ev -> replace(rows, ev.getRowValue(),
                 new FieldMappingRec(ev.getRowValue().destField(), ev.getRowValue().formula(), ev.getNewValue())));
         colInsert.setPrefWidth(90);
 
         table.getColumns().addAll(List.of(colField, colFormula, colInsert));
 
-        final Button add = toolButton("+", "Add mapping", () -> {
-            ec.ensureMapping().fields().add(new FieldMappingRec("", "", false));
-            rows.setAll(ec.mapping().fields());
-            changed();
+        final Button add = toolButton("+", "Add an empty mapping row", () -> {
+            rows.add(new FieldMappingRec("", "", false));
+            table.getSelectionModel().selectLast();
         });
-        final Button remove = toolButton("\u2212", "Remove selected mapping", () -> {
-            final FieldMappingRec sel = table.getSelectionModel().getSelectedItem();
-            if (sel != null && ec.hasMapping()) {
-                ec.mapping().fields().remove(sel);
-                rows.setAll(ec.mapping().fields());
-                changed();
+        final Button remove = toolButton("\u2212", "Remove the selected mapping", () -> {
+            final int i = table.getSelectionModel().getSelectedIndex();
+            if (i >= 0) {
+                rows.remove(i);
             }
         });
         final Button up = toolButton("\u2191", "Move mapping up",
-                () -> moveMapping(ec, rows, table.getSelectionModel().getSelectedIndex(), -1));
+                () -> moveMapping(rows, table.getSelectionModel().getSelectedIndex(), -1));
         final Button down = toolButton("\u2193", "Move mapping down",
-                () -> moveMapping(ec, rows, table.getSelectionModel().getSelectedIndex(), 1));
+                () -> moveMapping(rows, table.getSelectionModel().getSelectedIndex(), 1));
         final HBox buttons = new HBox(6, add, remove, up, down);
 
         final VBox box = new VBox(4, table, buttons);
@@ -609,32 +952,20 @@ final class FormBuilder {
         return box;
     }
 
-    /** Reorder a mapping row; STD and INS entries are kept in one ordered list. */
-    private void moveMapping(EntityConfig ec, ObservableList<FieldMappingRec> rows, int index,
-            int delta) {
-        if (!ec.hasMapping()) {
-            return;
-        }
-        final List<FieldMappingRec> list = ec.mapping().fields();
+    /** Reorder a mapping row; STD and INS entries share one ordered list. */
+    private void moveMapping(ObservableList<FieldMappingRec> rows, int index, int delta) {
         final int target = index + delta;
-        if (index < 0 || target < 0 || target >= list.size()) {
+        if (index < 0 || target < 0 || target >= rows.size()) {
             return;
         }
-        list.add(target, list.remove(index));
-        rows.setAll(list);
-        changed();
+        rows.add(target, rows.remove(index));
     }
 
-    private void replace(EntityConfig ec, ObservableList<FieldMappingRec> rows,
-            FieldMappingRec oldRec, FieldMappingRec newRec) {
-        if (!ec.hasMapping()) {
-            return;
-        }
-        final int i = ec.mapping().fields().indexOf(oldRec);
+    private void replace(ObservableList<FieldMappingRec> rows, FieldMappingRec oldRec,
+            FieldMappingRec newRec) {
+        final int i = rows.indexOf(oldRec);
         if (i >= 0) {
-            ec.mapping().fields().set(i, newRec);
             rows.set(i, newRec);
-            changed();
         }
     }
 
@@ -642,6 +973,28 @@ final class FormBuilder {
         if (onChange != null) {
             onChange.run();
         }
+    }
+
+    /**
+     * A change that alters the <em>tree structure</em> (adding/removing/renaming a section, entity
+     * or writer) — the navigation tree must be rebuilt.
+     */
+    private void structureChanged() {
+        changed();
+        if (onStructureChange != null) {
+            onStructureChange.run();
+        }
+    }
+
+    /** Legacy-style warning dialog for an invalid mapping formula. */
+    private void warn(Node source, String message) {
+        final Alert alert = new Alert(Alert.AlertType.WARNING, message, ButtonType.OK);
+        alert.setHeaderText(null);
+        alert.setTitle("Destination mapping");
+        if (source != null && source.getScene() != null) {
+            alert.initOwner(source.getScene().getWindow());
+        }
+        alert.showAndWait();
     }
 
     private TitledPane collapsed(String title, Node content, boolean expanded) {

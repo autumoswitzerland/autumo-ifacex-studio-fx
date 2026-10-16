@@ -82,6 +82,22 @@ Candidate layouts (to evaluate in the PoC): a **defaults + overrides table**, or
   `rest_out`; `csv_out`/`json_out`/`mail_out` show none of them. A DB-like *reader* entity shows
   its `order_field`. The mapping table's `Insert (INS)` flag distinguishes INS from STD, and the
   mapping rows can be reordered (up/down), matching the legacy `[STD]`/`[INS]` model.
+- **Destination mapping editor, laid out as in the original Studio** (doc 11 §5): the **source
+  fields of the selected source entity take the full width on top** (drag source; they belong to
+  the reader and are only *displayed* here), below them the **formula box** (drop target,
+  double-click also inserts a field), below that the buttons, and at the bottom the ordered
+  **mapping table**. The buttons carry the original wording, spelled out: **`Add standard
+  mapping`** (legacy `Add std. mapping`) and **`Add insert mapping`**. The legacy "map all
+  fields" action is not a text button but the original **clickable drag-and-drop icon**
+  (`icons/dnd-48.png`, copied from the legacy resources) with the original Studio's tooltip
+  (legacy `csv_out_dndPanel` + `ImagePanel` + `generateMappings`); it maps every source field to
+  itself as `field:{field}`. Formula validation mirrors the legacy rules (`split(":")` must be
+  exactly 2 parts, target `[A-z0-9$.#\-_]+`).
+- **Navigation emphasis**: `Overwritten Values` (the base section), `Source:` and `Destination:`
+  are bold (`.nav-emphasis`); the **root entry shows the configuration title** (`meta.title`) and
+  follows it while the title field is edited. The **status bar** reads like the original
+  Studio: `File: <absolute path>` first, then the state (`Loaded` / `Converted from legacy
+  .ifacex` / `Modified` / `Saved …`).
 
 ## 10.6 Extensibility mechanism
 
@@ -182,8 +198,22 @@ external, customer-extendable descriptors remain a later step (§10.8, item 1).
 **Editing.** Form edits mutate the in-memory model and immediately refresh both raw views;
 the model round-trips losslessly through `.ifcx` (YAML) and legacy `.ifacex` (properties).
 
-**Legacy import.** Opening a `.ifacex` converts it in memory and shows
-"Converted legacy .ifacex: …" in the status bar; `.ifcx` re-opens directly.
+**Legacy import.** Opening a `.ifacex` converts it in memory and shows `Converted from legacy
+.ifacex` behind the file in the status bar; `.ifcx` re-opens directly.
+
+**Status bar.** As in the original Studio: `File: <absolute path>` first (`File: -` without a
+file), then the state — `Loaded`, `Converted from legacy .ifacex`, `Modified`, `Saved …`. No
+reader/writer/entity counts: they belong in the navigation, not in the status bar.
+
+**Navigation.** The tree shows the configuration **title** at the root (`meta.title`, kept in
+sync while the title is edited), then `Overwritten Values` (the base section) and the
+`Source:` / `Destination:` sections — the latter three rendered in bold. Reader/writer entries
+carry a coloured type pill.
+
+**CSS live reload (dev).** `CssLiveReload` watches `studio.css`, writes a versioned copy to a
+temp directory and swaps the scene stylesheet entry (JavaFX caches per URL), so CSS changes are
+visible without restarting. Active only in a `file:`-under-`target/classes` dev layout;
+`-Difacex.livereload=false` disables it. Java changes still need a rebuild + restart.
 
 **Per-entity UI (open).** The PoC currently uses collapsible per-entity sections; the
 table-vs-tabs evaluation (§10.8, item 2) is still open and only matters for multi-entity IPCs.

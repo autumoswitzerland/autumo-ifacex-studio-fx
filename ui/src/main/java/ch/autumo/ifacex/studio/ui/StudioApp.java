@@ -85,8 +85,8 @@ public class StudioApp extends BaseApp {
         // Build the scene and apply the theme (autumo-ui dark base + our overrides).
         final Scene scene = new Scene(root, 1100, 720);
         scene.getStylesheets().add(Helper.getBaseStyle());
-        scene.getStylesheets().add(
-                StudioApp.class.getResource("studio.css").toExternalForm());
+        final String studioCss = StudioApp.class.getResource("studio.css").toExternalForm();
+        scene.getStylesheets().add(studioCss);
 
         // Headless self-test: load a config file, exercise the UI, print a summary and exit.
         if (args.size() >= 2 && "--selftest".equals(args.get(0))) {
@@ -103,6 +103,9 @@ public class StudioApp extends BaseApp {
 
         primaryStage.setScene(scene);
         primaryStage.show();
+
+        // Dev convenience: apply studio.css edits without a restart (no-op in packaged builds).
+        CssLiveReload.install(scene, studioCss);
 
         // Optional: preload a configuration file, e.g. "bin/run.sh some.ifacex".
         if (args.size() >= 2 && "--open".equals(args.get(0))) {
