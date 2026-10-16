@@ -54,6 +54,11 @@
                 <artifactId>javafx-maven-plugin</artifactId>
                 <configuration>
                     <mainClass>ch.autumo.ifacex.studio.ui.Launcher</mainClass>
+                    <!-- JavaFX loads native libraries; on Java 24+ this triggers a
+                         restricted-method warning unless native access is granted. -->
+                    <options>
+                        <option>--enable-native-access=javafx.graphics</option>
+                    </options>
                 </configuration>
             </plugin>
         </plugins>
