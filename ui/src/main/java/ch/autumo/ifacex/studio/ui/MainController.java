@@ -106,7 +106,7 @@ public class MainController {
     private void initialize() {
         navTree.getSelectionModel().selectedItemProperty().addListener(
                 (o, a, b) -> showForm(b));
-        formScroll.setContent(new Label("Open a .ifacex or .ifcx file to begin."));
+        formScroll.setContent(FormBuilder.message("Open a .ifacex or .ifcx file to begin."));
         buildToolBar();
         buildMenuIcons();
         setConfigActionsEnabled(false);
@@ -251,7 +251,7 @@ public class MainController {
         navTree.setRoot(null);
         rawYaml.clear();
         rawProps.clear();
-        formScroll.setContent(new Label("Open a .ifacex or .ifcx file to begin."));
+        formScroll.setContent(FormBuilder.message("Open a .ifacex or .ifcx file to begin."));
         setConfigActionsEnabled(false);
         status("Closed");
     }
@@ -298,9 +298,9 @@ public class MainController {
         loadConfig(path);
         final TreeItem<FormBuilder.NavNode> root = navTree.getRoot();
         // exercise the form builder for every nav node
-        int forms = 0;
+        final int[] acc = new int[3]; // forms, list views (source fields), tables (mapping)
         for (final TreeItem<FormBuilder.NavNode> child : root.getChildren()) {
-            forms += countForms(child);
+            countForms(child, acc);
         }
         final var destNode = firstDestinationEntity(root);
         if (destNode != null) {
@@ -310,10 +310,13 @@ public class MainController {
         final int rootFormParts = rootForm instanceof javafx.scene.layout.Pane p
                 ? p.getChildren().size() : -1;
         return "nodes=" + countNodes(root)
-                + " forms=" + forms
+                + " forms=" + acc[0]
                 + " rootFormParts=" + rootFormParts
                 + " toolbarItems=" + toolbarItemCount()
                 + " toolbarIconsOk=" + toolbarIconsOk()
+                + " fieldLists=" + acc[1]
+                + " mappingTables=" + acc[2]
+                + " interFontOk=" + javafx.scene.text.Font.getFamilies().contains("Inter")
                 + " yamlChars=" + rawYaml.getText().length()
                 + " propsChars=" + rawProps.getText().length()
                 + " formClass=" + (formScroll.getContent() == null
@@ -321,18 +324,33 @@ public class MainController {
                 + " statusOk=" + (statusLabel.getText() != null && !statusLabel.getText().isBlank());
     }
 
-    private int countNodes(TreeItem<FormBuilder.NavNode> item) {
-        int n = 1;
+    /** Builds every nav node's form and accumulates [forms, listViews, tables]. */
+    private void countForms(TreeItem<FormBuilder.NavNode> item, int[] acc) {
+        final Node n = formBuilder.build(item.getValue());
+        if (n != null) {
+            acc[0]++;
+            acc[1] += count(n, javafx.scene.control.ListView.class);
+            acc[2] += count(n, javafx.scene.control.TableView.class);
+        }
         for (final TreeItem<FormBuilder.NavNode> c : item.getChildren()) {
-            n += countNodes(c);
+            countForms(c, acc);
+        }
+    }
+
+    private static int count(Node node, Class<?> type) {
+        int n = type.isInstance(node) ? 1 : 0;
+        if (node instanceof javafx.scene.Parent p) {
+            for (final Node child : p.getChildrenUnmodifiable()) {
+                n += count(child, type);
+            }
         }
         return n;
     }
 
-    private int countForms(TreeItem<FormBuilder.NavNode> item) {
-        int n = formBuilder.build(item.getValue()) != null ? 1 : 0;
+    private int countNodes(TreeItem<FormBuilder.NavNode> item) {
+        int n = 1;
         for (final TreeItem<FormBuilder.NavNode> c : item.getChildren()) {
-            n += countForms(c);
+            n += countNodes(c);
         }
         return n;
     }

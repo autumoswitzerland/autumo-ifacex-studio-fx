@@ -21,8 +21,9 @@
  */
 
 .root {
-    /* Aileron is the autumo brand font and is bundled with autumo-ui (loaded by BaseApp). */
-    -fx-font-family: "Aileron";
+    /* Inter is bundled with the Studio (SIL OFL, see fonts/Inter-OFL.txt) and loaded at
+       start-up; it is the modern web-GUI look (React Native Web / system-stack inspired). */
+    -fx-font-family: "Inter";
     -fx-font-size: 14px;
     -fx-font-smoothing-type: lcd;
 }
@@ -83,15 +84,15 @@
 
 /* --- form section headings ----------------------------------------------- */
 .section-title {
+    -fx-font-family: "Inter SemiBold";
     -fx-font-size: 15px;
-    -fx-font-weight: bold;
     -fx-text-fill: #2DC7FE;
     -fx-padding: 8 0 4 0;
 }
 
 .field-label {
+    -fx-font-family: "Inter SemiBold";
     -fx-font-size: 13px;
-    -fx-font-weight: bold;
     -fx-text-fill: #d8d8d8;
 }
 
@@ -195,8 +196,57 @@
     -fx-padding: 0;
 }
 
-/* --- text areas (raw views / notes) -------------------------------------- */
-.text-area {
-    -fx-border-radius: 3;
-    -fx-background-radius: 3;
+/* --- editable lists (entity source fields) -------------------------------- */
+.list-view {
+    -fx-background-color: #262626;
+    -fx-border-color: #3C3C3C;
+    -fx-border-width: 1;
+    -fx-background-radius: 6;
+    -fx-border-radius: 6;
+}
+.list-view .list-cell {
+    -fx-background-color: transparent;
+    -fx-text-fill: #dddddd;
+    -fx-padding: 3 8 3 8;
+}
+.list-view .list-cell:filled:hover {
+    -fx-background-color: #333333;
+}
+.list-view .list-cell:filled:selected {
+    -fx-background-color: #0E4E74;
+    -fx-text-fill: #ffffff;
+}
+.list-view .list-cell .text-field {
+    -fx-background-color: #1f1f1f;
+    -fx-text-fill: #ffffff;
+}
+
+/* --- form fields: rounded corners ---------------------------------------- */
+.text-field,
+.password-field,
+.combo-box,
+.text-area,
+.text-area .content {
+    -fx-background-radius: 6;
+    -fx-border-radius: 6;
+}
+.combo-box > .arrow-button {
+    -fx-background-radius: 0 6 6 0;
+    -fx-background-color: transparent;
+}
+.combo-box > .list-cell {
+    -fx-background-radius: 6 0 0 6;
+}
+.check-box > .box {
+    -fx-background-radius: 4;
+    -fx-border-radius: 4;
+}
+.table-view {
+    -fx-background-radius: 6;
+    -fx-border-radius: 6;
+}
+
+/* --- dialogs use the bundled Inter SemiBold for their headers ------------- */
+.dialog-pane:header .header-panel .label {
+    -fx-font-family: "Inter SemiBold";
 }

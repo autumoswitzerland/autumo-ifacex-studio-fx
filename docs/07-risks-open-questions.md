@@ -139,3 +139,7 @@ Access path / location is to be provided by the owner if desired.
 | 2026-10-16 | **Toolbar right side = original:** title logo (`ifacex-studio-reddot2-40.png`) + clickable ifaceX mark with label `ifaceX` (opens `url.website`). Invented Website/Documentation/Purchase links **removed**. Structure per FX reference `autumo-documents-ui` (`tool-bar-pane` + left/right ToolBar) | user |
 | 2026-10-16 | **Save always writes the new `.ifcx` format** (`.ifacex` = export-only) | user |
 | 2026-10-16 | **Editor tabs restyled** for the dark theme; **continuous separation line** under the toolbar (also under the tree) | user |
+| 2026-10-16 | **Typography = Inter** (bundled, SIL OFL) replaces Aileron: Inter is the modern web-GUI look (React Native Web / system-stack inspired) and is bundled so every machine renders identically. Applied via `studio.css` (`.root` → `Inter`, headings/labels → `Inter SemiBold`); fonts loaded in `StudioApp.loadFonts()` | user |
+| 2026-10-16 | **Entity source fields edited as a list** (Add `+` / Remove `−` / move `↑` `↓` / in-place edit) instead of a comma-separated text field — as in the original Studio (`JList` + Add/Remove/Edit/Up/Down). Mapping table uses the same `+` / `−` buttons | user |
+| 2026-10-16 | **Form fields have rounded corners** (`-fx-background-radius: 6` for text field/area/password/combo box, `4` for check box, `6` for the table) | user |
+| 2026-10-16 | **Text-only forms are padded** (start-up placeholder, "select an element") so the text does not stick to the top-left | user |

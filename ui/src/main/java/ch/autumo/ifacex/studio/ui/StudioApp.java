@@ -28,6 +28,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.layout.Pane;
+import javafx.scene.text.Font;
 import javafx.stage.Stage;
 
 /**
@@ -65,6 +66,7 @@ public class StudioApp extends BaseApp {
     @Override
     protected Pane preInitialize(Stage primaryStage, Properties configuration) {
         instance = this;
+        loadFonts();
         final URL fxml = StudioApp.class.getResource("main.fxml");
         final FXMLLoader loader = new FXMLLoader(fxml);
         try {
@@ -115,6 +117,23 @@ public class StudioApp extends BaseApp {
     @Override
     public void finish(Stage primaryStage) {
         // nothing to clean up in portable mode
+    }
+
+    /**
+     * Loads the bundled <b>Inter</b> font faces (SIL OFL, see {@code fonts/Inter-OFL.txt}) so the
+     * UI has the modern web-GUI look. Called before the scene is built; the family is applied in
+     * {@code studio.css}.
+     */
+    private static void loadFonts() {
+        for (final String face : new String[] {
+                "Inter-Regular.ttf", "Inter-Medium.ttf", "Inter-SemiBold.ttf", "Inter-Bold.ttf" }) {
+            final URL url = StudioApp.class.getResource("fonts/" + face);
+            if (url != null) {
+                Font.loadFont(url.toExternalForm(), 14);
+            } else {
+                System.err.println("Studio: bundled font not found: " + face);
+            }
+        }
     }
 
     @Override

@@ -124,10 +124,20 @@ from the model + field metadata:
   fields the original Studio edits;
 - reader/writer section → collapsible **Parameters** (global), **Defaults (\*, all entities)**
   (wildcard) and one collapsible **Entity** per entity;
-- entity → source **fields** (comma separated), **destination entity** + editable **field
-  mapping table** (`field` / `formula` / `insert`), and the entity **settings** grid;
+- entity → source **fields** as an editable **list** (Add `+` / Remove `−` / move `↑` `↓`,
+  in-place double-click editing — as in the original Studio, not a comma-separated field),
+  **destination entity** + editable **field mapping table** (`field` / `formula` / `insert`,
+  with `+` / `−` buttons), and the entity **settings** grid;
 - general → the remaining top-level (non reader/writer) keys;
-- every parameter is shown, even without a descriptor (see `FieldCatalog` inference).
+- every parameter is shown, even without a descriptor (see `FieldCatalog` inference);
+- a form that has nothing editable to show (start-up placeholder, "select an element") is
+  rendered as a **padded** text body so the text does not stick to the top-left corner.
+
+**Typography.** The UI uses the bundled **Inter** family (SIL OFL, `fonts/Inter-OFL.txt`),
+loaded at start-up in `StudioApp` and applied via `studio.css` (`.root` → `Inter`, headings
+and field labels → `Inter SemiBold`). Inter is the modern web-GUI typeface (the look that
+React Native for Web / the system font stack approximates) and is bundled so rendering is
+identical on every machine.
 
 **Theme.** The scene loads the **autumo-ui base stylesheet**
 (`ch/autumo/ui/style/application.css`, a modern **dark** palette) first, then the Studio
