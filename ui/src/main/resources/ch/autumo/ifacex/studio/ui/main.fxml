@@ -23,11 +23,11 @@
 
     <top>
         <VBox>
-            <MenuBar>
+            <MenuBar styleClass="menu-bar">
                 <Menu text="File">
                     <MenuItem fx:id="miNew" text="New" onAction="#onNew"/>
                     <MenuItem fx:id="miOpen" text="Open…" onAction="#onOpen"/>
-                    <MenuItem fx:id="miSave" text="Save As…" onAction="#onSave"/>
+                    <MenuItem fx:id="miSave" text="Save As… (.ifcx)" onAction="#onSave"/>
                     <SeparatorMenuItem/>
                     <MenuItem fx:id="miExportIfcx" text="Export .ifcx" onAction="#onExportIfcx"/>
                     <MenuItem fx:id="miExportIfacex" text="Export .ifacex" onAction="#onExportIfacex"/>
@@ -38,7 +38,16 @@
                     <MenuItem text="About" onAction="#onAbout"/>
                 </Menu>
             </MenuBar>
-            <ToolBar fx:id="toolBar"/>
+            <BorderPane styleClass="tool-bar-pane">
+                <left>
+                    <ToolBar fx:id="leftToolBar" styleClass="left-tool-bar"
+                             style="-fx-background-color: transparent;"/>
+                </left>
+                <right>
+                    <ToolBar fx:id="rightToolBar" styleClass="right-tool-bar"
+                             style="-fx-background-color: transparent;"/>
+                </right>
+            </BorderPane>
         </VBox>
     </top>
 

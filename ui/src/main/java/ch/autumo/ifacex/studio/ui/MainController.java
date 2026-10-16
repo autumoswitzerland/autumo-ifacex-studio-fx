@@ -25,10 +25,13 @@ import ch.autumo.ifacex.studio.core.io.YamlConfigWriter;
 import ch.autumo.ifacex.studio.core.model.IpcConfig;
 import ch.autumo.ifacex.studio.core.model.RwConfig;
 
+import ch.autumo.ui.Constants;
 import ch.autumo.ui.utils.Helper;
 
 import javafx.fxml.FXML;
+import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
+import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
@@ -46,8 +49,6 @@ import javafx.scene.control.TreeView;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.Region;
 import javafx.stage.FileChooser;
 import javafx.stage.Window;
 
@@ -77,7 +78,9 @@ public class MainController {
     @FXML
     private Label statusLabel;
     @FXML
-    private ToolBar toolBar;
+    private ToolBar leftToolBar;
+    @FXML
+    private ToolBar rightToolBar;
     @FXML
     private MenuItem miNew;
     @FXML
@@ -120,7 +123,7 @@ public class MainController {
         final Button tbOpen = toolButton("project-open-48.png", "Open",
                 "Open an .ifacex or .ifcx configuration", () -> onOpen());
         tbSave = toolButton("project-save-48.png", "Save",
-                "Save the configuration (choose a file)", () -> onSave());
+                "Save as .ifcx (new format)", () -> onSave());
         tbClose = toolButton("project-close-48.png", "Close",
                 "Close the current configuration", () -> onClose());
 
@@ -131,17 +134,45 @@ public class MainController {
         final Button tbFolder = toolButton("folder-48.png", "External Edit",
                 "Open in an external editor — follows later", null);
 
-        final Region spacer = new Region();
-        HBox.setHgrow(spacer, Priority.ALWAYS);
-        final ImageView mark = new ImageView(new Image(
-                Helper.getBaseResource(ICONS + "ifaceX48.png"), 48, 48, true, true));
-
-        toolBar.getItems().addAll(
+        leftToolBar.getItems().addAll(
                 tbNew, tbOpen, tbSave, tbClose,
                 sep(), tbConfig,
                 sep(), tbRun,
-                sep(), tbFolder,
-                spacer, mark);
+                sep(), tbFolder);
+
+        // Right side mirrors the original Studio: the ifaceX Studio title logo and, to its
+        // right, the clickable ifaceX mark (label underneath) that opens the website.
+        rightToolBar.getItems().addAll(titleLogo(), ifaceXButton());
+    }
+
+    /** The ifaceX Studio title logo (banner) as in the original toolbar; not clickable. */
+    private HBox titleLogo() {
+        final ImageView iv = new ImageView(new Image(
+                StudioApp.class.getResource("images/ifacex-studio-reddot2-40.png").toExternalForm()));
+        iv.setSmooth(true);
+        iv.setPreserveRatio(true);
+        iv.setFitHeight(40);
+        final HBox wrap = new HBox(iv);
+        wrap.setAlignment(Pos.CENTER);
+        wrap.setPadding(new Insets(0, 14, 0, 6));
+        return wrap;
+    }
+
+    /** The ifaceX mark with the label underneath; opens the configured website URL. */
+    private Button ifaceXButton() {
+        final Button b = new Button("ifaceX", icon("ifaceX48.png"));
+        b.setContentDisplay(ContentDisplay.TOP);
+        b.getStyleClass().add("toolbar-button");
+        b.setTooltip(new Tooltip("Visit the ifaceX website"));
+        b.setOnAction(e -> Helper.openURL(
+                configUrl(Constants.CONFIG_ENTRY_URL_WEB, Constants.DEF_CONFIG_ENTRY_URL_WEB)));
+        return b;
+    }
+
+    private String configUrl(String key, String fallback) {
+        final StudioApp app = StudioApp.get();
+        final String url = app != null ? app.getConfigurationParameter(key) : null;
+        return url != null && !url.isBlank() ? url : fallback;
     }
 
     private void buildMenuIcons() {
@@ -189,13 +220,19 @@ public class MainController {
     /** Count toolbar buttons whose icon image actually loaded (width &gt; 0). */
     private int toolbarIconsOk() {
         int ok = 0;
-        for (final Node n : toolBar.getItems()) {
-            if (n instanceof Button b && b.getGraphic() instanceof ImageView iv
-                    && iv.getImage() != null && iv.getImage().getWidth() > 0) {
-                ok++;
+        for (final ToolBar bar : new ToolBar[] {leftToolBar, rightToolBar}) {
+            for (final Node n : bar.getItems()) {
+                if (n instanceof Button b && b.getGraphic() instanceof ImageView iv
+                        && iv.getImage() != null && iv.getImage().getWidth() > 0) {
+                    ok++;
+                }
             }
         }
         return ok;
+    }
+
+    private int toolbarItemCount() {
+        return leftToolBar.getItems().size() + rightToolBar.getItems().size();
     }
 
     @FXML
@@ -275,7 +312,7 @@ public class MainController {
         return "nodes=" + countNodes(root)
                 + " forms=" + forms
                 + " rootFormParts=" + rootFormParts
-                + " toolbarItems=" + toolBar.getItems().size()
+                + " toolbarItems=" + toolbarItemCount()
                 + " toolbarIconsOk=" + toolbarIconsOk()
                 + " yamlChars=" + rawYaml.getText().length()
                 + " propsChars=" + rawProps.getText().length()
@@ -378,31 +415,29 @@ public class MainController {
             status("Nothing to save.");
             return;
         }
-        // Save using the format of the currently open file (default: the new .ifcx format).
-        final String ext = sourceFile != null && sourceFile.getFileName().toString()
-                .toLowerCase(Locale.ROOT).endsWith(".ifacex") ? ".ifacex" : ".ifcx";
-        export(ext.equals(".ifacex") ? PropertiesConfigWriter.toText(config)
-                : YamlConfigWriter.toText(config), ext,
-                ext.equals(".ifacex") ? "Legacy properties" : "ifaceX YAML");
+        // Save always uses the new YAML format (.ifcx); .ifacex is export-only (legacy).
+        export(YamlConfigWriter.toText(config), ".ifcx", "ifaceX YAML (new format)",
+                "Save as .ifcx");
     }
 
     @FXML
     private void onExportIfcx() {
-        export(YamlConfigWriter.toText(config), ".ifcx", "ifaceX YAML");
+        export(YamlConfigWriter.toText(config), ".ifcx", "ifaceX YAML", "Export .ifcx");
     }
 
     @FXML
     private void onExportIfacex() {
-        export(PropertiesConfigWriter.toText(config), ".ifacex", "Legacy properties");
+        export(PropertiesConfigWriter.toText(config), ".ifacex", "Legacy properties",
+                "Export .ifacex");
     }
 
-    private void export(String text, String extension, String description) {
+    private void export(String text, String extension, String description, String title) {
         if (config == null) {
             status("Nothing to export.");
             return;
         }
         final FileChooser chooser = new FileChooser();
-        chooser.setTitle("Export " + extension);
+        chooser.setTitle(title);
         chooser.getExtensionFilters().add(
                 new FileChooser.ExtensionFilter(description, "*" + extension));
         if (sourceFile != null) {
@@ -415,7 +450,7 @@ public class MainController {
         }
         try {
             java.nio.file.Files.writeString(out.toPath(), text);
-            status("Exported " + out.getName());
+            status("Saved " + out.getName() + " (" + extension + ")");
         } catch (Exception e) {
             error("Could not write " + out.getName(), e);
         }

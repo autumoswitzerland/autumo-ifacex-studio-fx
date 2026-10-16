@@ -47,11 +47,24 @@ public class StudioApp extends BaseApp {
     /** Application base resource path (autumo-ui convention). */
     private static final String BASE = "/ch/autumo/ifacex/studio/ui/";
 
+    /** Current application instance (the framework creates exactly one). */
+    private static StudioApp instance;
+
     private Parent root;
     private MainController controller;
 
+    /**
+     * The running application instance, or {@code null} before start-up.
+     *
+     * @return application instance
+     */
+    public static StudioApp get() {
+        return instance;
+    }
+
     @Override
     protected Pane preInitialize(Stage primaryStage, Properties configuration) {
+        instance = this;
         final URL fxml = StudioApp.class.getResource("main.fxml");
         final FXMLLoader loader = new FXMLLoader(fxml);
         try {
