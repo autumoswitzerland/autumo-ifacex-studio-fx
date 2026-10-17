@@ -14,9 +14,9 @@
  */
 package ch.autumo.ifacex.studio.ui;
 
-import static ch.autumo.ifacex.studio.core.i18n.Messages.format;
-import static ch.autumo.ifacex.studio.core.i18n.Messages.t;
 
+import static ch.autumo.ifacex.studio.ui.Messages.format;
+import static ch.autumo.ifacex.studio.ui.Messages.t;
 import java.io.File;
 import java.net.URL;
 import java.nio.file.Path;
@@ -28,7 +28,6 @@ import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.Set;
 
-import ch.autumo.ifacex.studio.core.i18n.Messages;
 import ch.autumo.ifacex.studio.core.io.PropertiesConfigReader;
 import ch.autumo.ifacex.studio.core.io.PropertiesConfigWriter;
 import ch.autumo.ifacex.studio.core.io.YamlConfigReader;

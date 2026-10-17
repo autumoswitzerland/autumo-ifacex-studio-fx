@@ -14,9 +14,9 @@
  */
 package ch.autumo.ifacex.studio.ui;
 
+import static ch.autumo.ifacex.studio.ui.Messages.format;
+import static ch.autumo.ifacex.studio.ui.Messages.t;
 import java.util.ArrayList;
-import static ch.autumo.ifacex.studio.core.i18n.Messages.format;
-import static ch.autumo.ifacex.studio.core.i18n.Messages.t;
 
 import java.util.List;
 import java.util.Map;

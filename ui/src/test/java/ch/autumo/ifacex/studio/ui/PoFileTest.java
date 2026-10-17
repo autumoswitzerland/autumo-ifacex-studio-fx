@@ -12,7 +12,7 @@
  * from autumo GmbH.
  * 
  */
-package ch.autumo.ifacex.studio.core.i18n;
+package ch.autumo.ifacex.studio.ui;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -23,8 +23,14 @@ import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
+import ch.autumo.ui.utils.PoFile;
+
 /**
- * Tests the minimal PO reader (escapes, contexts, fuzzy, header, plurals).
+ * Tests the autumo-ui PO reader (escapes, contexts, fuzzy entries, header, plurals).
+ *
+ * <p>The reader now lives in the framework ({@code ch.autumo.ui.utils.PoFile}) because PO support
+ * is a framework feature; the Studio keeps the test here because the PO catalogue itself is
+ * shipped with the Studio UI.</p>
  */
 class PoFileTest {
 

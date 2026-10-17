@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.Properties;
 
 import ch.autumo.ifacex.studio.core.cli.CommandLine;
-import ch.autumo.ifacex.studio.core.i18n.Messages;
 
 import ch.autumo.ui.Constants;
 import ch.autumo.ui.fx.BaseApp;

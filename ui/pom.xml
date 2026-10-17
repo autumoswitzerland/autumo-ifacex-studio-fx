@@ -52,6 +52,14 @@
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-web</artifactId>
         </dependency>
+
+        <!-- The PO/i18n tests live here (not in core): the PO reader is a framework class
+             (ch.autumo.ui.utils.PoFile) and the Studio's own i18n facade is in this module. -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>

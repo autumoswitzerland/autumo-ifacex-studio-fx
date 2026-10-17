@@ -10,6 +10,15 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Language: de\n"
 
+# The autumo-ui framework resolves its own keys (application name, About pane title)
+# through Helper.getMessageBundle(...); their message id is a key, not English text, so
+# the English values need a catalogue as well (see messages.en.po).
+msgid "About.title"
+msgstr "Über ifaceX Studio FX"
+
+msgid "application.name"
+msgstr "ifaceX Studio FX"
+
 msgid "(none)"
 msgstr "(keine)"
 

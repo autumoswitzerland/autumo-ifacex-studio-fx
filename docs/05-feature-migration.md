@@ -15,7 +15,7 @@ Migration status legend:
 | Top tabs: console / script editor / config | `MainFrame` | `rewrite` |
 | GUI state machine | `GuiStateMachine` | `extract` |
 | Dark theme | FlatLaf + `Constants` colors | `rewrite` (JavaFX CSS) |
-| i18n (EN/DE, runtime switch) | `Bundle`, `SwingLocaleChanger` | `extract` + `rewrite` (bindings) |
+| i18n (EN/DE, runtime switch) | `Bundle`, `SwingLocaleChanger` | `rewrite` as gettext PO (msgid = English text) plus the autumo-ui bundle; the PO reader is part of the framework (doc 12) |
 | Sounds (jingle, finish ok/nok) | `Helper.playFinishSound` | `extract` (decision: keep?) |
 
 ## 5.2 Project / File Lifecycle

@@ -1,0 +1,20 @@
+# Translations for the ifaceX Studio FX (English).
+#
+# English is the SOURCE language: for every normal message the msgid already IS the
+# English text, so this catalogue only carries the keys whose message id is not English
+# text - i.e. the autumo-ui framework keys the Studio overrides. Everything else is
+# resolved by showing the msgid itself (see ch.autumo.ifacex.studio.ui.Messages).
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: autumo-ifacex-studio 0.1.0\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: en\n"
+
+msgid "About.title"
+msgstr "About ifaceX Studio FX"
+
+msgid "application.name"
+msgstr "ifaceX Studio FX"

@@ -38,7 +38,6 @@ Carries over / reimplements the UI-free logic from the reference project:
 | License handling | `LicIfaceXApp100`, autumo-registration |
 | Update check | version-file fetch via HttpClient |
 | Internal config access | internal `ifacex-studio.cfg` |
-| i18n resources (bundles) | `Bundle*` |
 | Reader/writer metadata (tabs, fields, validation rules) | extracted from `Config*Panel` |
 | Templates / file layout constants | `Constants` |
 | OS helpers | `os/OSHelper`, `os/FileHandler` (non-UI parts) |
@@ -52,6 +51,7 @@ Carries over / reimplements the UI-free logic from the reference project:
 | Console view with severity highlighting | replaces `ConsoleOutputPane` |
 | Script/config raw editor | replaces `IPCEditor` (RSyntaxTextArea) → JavaFX code editor |
 | Config editor (BASE + reader/writer tabs) | data-driven; replaces `Config*Panel` chain |
+| i18n: gettext PO catalogue (`lang/messages.<lang>.po`) + a thin facade over the autumo-ui framework bundle | the PO reader itself is a framework class, see doc 12 |
 | Drag & drop field mapping | replaces `DNDJList`/`DNDJTextArea` |
 | Dialogs (Settings, Encoder, JSON, Update, Register, About, Remove, License) | replaces the `InternalPanel`s |
 | Installer wizard | replaces `installer/*` |
@@ -68,7 +68,7 @@ Carries over / reimplements the UI-free logic from the reference project:
         ┌──────────────▼────────────┐
         │          core (Java)       │
         │  model / io / process /    │
-        │  crypto / license / i18n   │
+        │  crypto / license / cli    │
         └──────────────┬────────────┘
                        │ uses
         ┌──────────────▼────────────┐
