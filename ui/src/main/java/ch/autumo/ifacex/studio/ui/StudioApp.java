@@ -129,7 +129,7 @@ public class StudioApp extends BaseApp {
         // Optional: preload a configuration file, e.g. "bin/run.sh some.ifacex".
         if (args.size() >= 2 && "--open".equals(args.get(0))) {
             try {
-                controller.loadConfig(Path.of(args.get(1)));
+                controller.openFile(Path.of(args.get(1)));
             } catch (Exception e) {
                 System.err.println("Could not open " + args.get(1) + ": " + e);
             }

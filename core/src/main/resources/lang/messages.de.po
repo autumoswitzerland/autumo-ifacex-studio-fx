@@ -55,6 +55,12 @@ msgstr "Die obige Formel als reines Insert-Mapping [INS] hinzufügen"
 msgid "Author"
 msgstr "Autor"
 
+msgid "Check for Updates"
+msgstr "Nach Updates suchen"
+
+msgid "Clear Entries"
+msgstr "Einträge löschen"
+
 msgid "Close"
 msgstr "Schließen"
 
@@ -121,6 +127,9 @@ msgstr "Einzelne Felder von oben in das Ziel-Mapping unten ziehen.\n\nDurch Klic
 msgid "Edit file metadata and job wiring (selects the root node)"
 msgstr "Datei-Metadaten und Job-Verdrahtung bearbeiten (wählt den Wurzelknoten)"
 
+msgid "Encoder"
+msgstr "Encoder"
+
 msgid "Entity not found: {0}"
 msgstr "Entity nicht gefunden: {0}"
 
@@ -186,6 +195,9 @@ msgstr "Sprache"
 
 msgid "Legacy properties"
 msgstr "Legacy-Properties"
+
+msgid "License"
+msgstr "Lizenz"
 
 msgid "Loaded"
 msgstr "Geladen"
@@ -256,6 +268,12 @@ msgstr "Konfiguration öffnen"
 msgid "Open in an external editor — follows later"
 msgstr "In externem Editor öffnen — folgt später"
 
+msgid "Open Online Documentation"
+msgstr "Online-Dokumentation öffnen"
+
+msgid "Open Recent"
+msgstr "Zuletzt geöffnet"
+
 msgid "Open…"
 msgstr "Öffnen…"
 
@@ -276,6 +294,9 @@ msgstr "Roh-YAML (.ifcx)"
 
 msgid "Ready"
 msgstr "Bereit"
+
+msgid "Remove App Data"
+msgstr "App-Daten entfernen"
 
 msgid "Remove selected"
 msgstr "Ausgewähltes entfernen"

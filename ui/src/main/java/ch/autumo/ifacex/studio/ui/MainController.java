@@ -68,6 +68,9 @@ import javafx.scene.control.Tooltip;
 import javafx.scene.control.TreeCell;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyCodeCombination;
+import javafx.scene.input.KeyCombination;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
@@ -146,13 +149,31 @@ public class MainController extends BaseController {
     @FXML
     private MenuItem miExportIfacex;
     @FXML
+    private MenuItem miClose;
+    @FXML
     private MenuItem miAbout;
+    @FXML
+    private MenuItem miLicense;
     @FXML
     private MenuItem miExit;
     @FXML
     private MenuBar menuBar;
     @FXML
     private Menu menuFile;
+    @FXML
+    private Menu menuRecent;
+    @FXML
+    private Menu menuConfig;
+    @FXML
+    private MenuItem miEncoder;
+    @FXML
+    private MenuItem miRemoveAppData;
+    @FXML
+    private MenuItem miDocumentation;
+    @FXML
+    private MenuItem miWebsite;
+    @FXML
+    private MenuItem miUpdate;
     @FXML
     private Menu menuHelp;
     @FXML
@@ -191,6 +212,8 @@ public class MainController extends BaseController {
                 (o, a, b) -> showForm(b));
         applyTexts();
         buildLanguageMenu();
+        buildAccelerators();
+        buildRecentMenu();
         formScroll.setContent(FormBuilder.message(t("Open a .ifacex or .ifcx file to begin.")));
         buildToolBar();
         buildMenuIcons();
@@ -269,6 +292,7 @@ public class MainController extends BaseController {
         Messages.setLanguage(lang);
         applyTexts();
         buildToolBar();
+        buildRecentMenu();
         if (config == null) {
             setConfigActionsEnabled(false);
         } else {
@@ -286,13 +310,22 @@ public class MainController extends BaseController {
         menuFile.setText(t("File"));
         menuHelp.setText(t("Help"));
         menuLanguage.setText(t("Language"));
+        menuConfig.setText(t("Configuration"));
+        menuRecent.setText(t("Open Recent"));
         miNew.setText(t("New"));
         miOpen.setText(t("Open…"));
         miSave.setText(t("Save As… (.ifcx)"));
         miExportIfcx.setText(t("Export .ifcx"));
         miExportIfacex.setText(t("Export .ifacex"));
+        miClose.setText(t("Close"));
         miExit.setText(t("Exit"));
         miAbout.setText(t("About"));
+        miEncoder.setText(t("Encoder"));
+        miRemoveAppData.setText(t("Remove App Data"));
+        miDocumentation.setText(t("Open Online Documentation"));
+        miWebsite.setText(t("Visit Website"));
+        miUpdate.setText(t("Check for Updates"));
+        miLicense.setText(t("License"));
         tabForm.setText(t("Form"));
         tabRawYaml.setText(t("Raw YAML (.ifcx)"));
         tabRawProps.setText(t("Raw Properties (.ifacex)"));
@@ -399,12 +432,63 @@ public class MainController extends BaseController {
         return url != null && !url.isBlank() ? url : fallback;
     }
 
+    /**
+     * Puts the original Studio's 16px menu icons on the menu items (they come from autumo-ui, the
+     * same set the toolbar uses). Icons are language independent and are set once at start-up.
+     */
     private void buildMenuIcons() {
+        menuRecent.setGraphic(icon("project-open-16.png"));
         miNew.setGraphic(icon("project-new-16.png"));
         miOpen.setGraphic(icon("project-open-16.png"));
         miSave.setGraphic(icon("project-save-16.png"));
         miExportIfcx.setGraphic(icon("project-save-16.png"));
         miExportIfacex.setGraphic(icon("project-save-16.png"));
+        miClose.setGraphic(icon("project-close-16.png"));
+        miExit.setGraphic(icon("exit-16.png"));
+        miEncoder.setGraphic(icon("config-16.png"));
+        miRemoveAppData.setGraphic(icon("remove-config-16.png"));
+        miDocumentation.setGraphic(icon("help-16.png"));
+        miWebsite.setGraphic(icon("ifaceX16.png"));
+        miUpdate.setGraphic(icon("update-16.png"));
+        miAbout.setGraphic(icon("about-16.png"));
+        miLicense.setGraphic(icon("about-16.png"));
+    }
+
+    /**
+     * Puts the original Studio's keyboard shortcuts on the menu items.
+     *
+     * <p>{@link KeyCombination#SHORTCUT_DOWN} is the platform's menu modifier (Command on macOS,
+     * Control elsewhere), so the original ⌘-shortcuts survive without hard-coding the modifier.
+     * They are set here and not in the FXML: {@code KeyCodeCombination} is immutable and the FXML
+     * builder cannot construct it from a plain set of attributes.</p>
+     */
+    private void buildAccelerators() {
+        miNew.setAccelerator(new KeyCodeCombination(KeyCode.N, KeyCombination.SHORTCUT_DOWN));
+        miOpen.setAccelerator(new KeyCodeCombination(KeyCode.O, KeyCombination.SHORTCUT_DOWN));
+        miSave.setAccelerator(new KeyCodeCombination(KeyCode.S, KeyCombination.SHORTCUT_DOWN));
+        miClose.setAccelerator(new KeyCodeCombination(KeyCode.W, KeyCombination.SHORTCUT_DOWN));
+        miEncoder.setAccelerator(new KeyCodeCombination(KeyCode.E, KeyCombination.SHORTCUT_DOWN));
+        miRemoveAppData.setAccelerator(
+                new KeyCodeCombination(KeyCode.R, KeyCombination.SHORTCUT_DOWN,
+                        KeyCombination.SHIFT_DOWN));
+        miDocumentation.setAccelerator(new KeyCodeCombination(KeyCode.F1));
+        miWebsite.setAccelerator(new KeyCodeCombination(KeyCode.F2));
+        miUpdate.setAccelerator(new KeyCodeCombination(KeyCode.U, KeyCombination.SHORTCUT_DOWN));
+    }
+
+    /**
+     * Builds {@code File › Open Recent}. The list itself lives in the framework
+     * ({@link BaseController#initializeRecentMenu(Menu, MenuItem)} wires the {@code Clear Entries}
+     * item, {@link BaseController#rebuildRecentList()} renders the entries, {@code BaseApp} keeps
+     * the file list, drops vanished files and persists it on exit), so the Studio only has to hook
+     * its own open into {@link #innerOpen(File)}.
+     *
+     * <p>The clear item is passed in so that <em>all</em> menu labels come from one catalogue (our
+     * PO file, {@link Messages#t(String)}); it is rebuilt whenever the language changes.</p>
+     */
+    private void buildRecentMenu() {
+        initializeRecentMenu(menuRecent, new MenuItem(t("Clear Entries")));
+        rebuildRecentList();
     }
 
     private Button toolButton(String iconFile, String text, String tip, Runnable action) {
@@ -494,11 +578,33 @@ public class MainController extends BaseController {
         }
     }
 
-    private void openFile(Path path) {
+    /**
+     * Opens a file by path — used by {@code File › Open} and the {@code --open} command line
+     * option; goes through the framework's {@link #innerOpen(File)} so the file is filed in the
+     * recent list.
+     *
+     * @param path file to open
+     */
+    void openFile(Path path) {
+        innerOpen(path.toFile());
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * <p>Loads the configuration and files it in the framework's recent list, which
+     * {@link BaseController#rebuildRecentList()} renders as {@code File › Open Recent}. The recent
+     * list is deliberately <em>not</em> touched by {@link #loadConfig(Path)}: a head-less self-test
+     * run must not pollute the list that is persisted on exit.</p>
+     */
+    @Override
+    protected void innerOpen(File file) {
         try {
-            loadConfig(path);
+            loadConfig(file.toPath());
+            app.addRecentFile(file);
+            buildRecentMenu();
         } catch (Exception e) {
-            error(format("Could not read {0}", path.getFileName()), e);
+            error(format("Could not read {0}", file.getName()), e);
         }
     }
 
@@ -572,7 +678,10 @@ public class MainController extends BaseController {
                         && getClass().getResource("html/about_de.html") != null
                         && getClass().getResource("html/license_en.html") != null
                         && getClass().getResource("html/license_de.html") != null)
-                + " aboutPaneOk=" + aboutPaneSelfTest()
+                + " aboutPaneOk=" + frameworkPaneSelfTest(() -> UI.showAboutWithLicense(app))
+                + " encoderPaneOk=" + frameworkPaneSelfTest(() -> UI.showEncoder(app))
+                + " licensePaneOk=" + frameworkPaneSelfTest(() -> UI.showLicense(app))
+                + " recentItems=" + menuRecent.getItems().size()
                 + " langItems=" + menuLanguage.getItems().size()
                 + " langSwitchOk=" + languageSwitchSelfTest(startLang)
                 + " langRestoredOk=" + Messages.getLanguage().equals(startLang);
@@ -599,18 +708,19 @@ public class MainController extends BaseController {
     }
 
     /**
-     * Opens the framework About pane exactly like the {@code Help › About} menu item does
-     * ({@link UI#showAboutWithLicense(BaseApp)}), verifies that a window was actually shown and
-     * closes it again.
+     * Opens one of the framework panes exactly like its menu item does, verifies that a window was
+     * actually shown and closes it again.
      *
-     * <p>This exercises the whole About path headlessly: the framework bundle keys
-     * ({@code About.title}, {@code button.License}) must resolve and the HTML pane must build —
-     * a missing key would otherwise only surface as an exception when the user clicks About.</p>
+     * <p>This exercises the whole framework-pane path headlessly: the framework bundle keys
+     * ({@code About.title}, {@code Encoder.*}, {@code License.title}, {@code button.License} …) must
+     * resolve and the pane must build — a missing key would otherwise only surface as an exception
+     * when the user clicks the menu item.</p>
      *
-     * @return {@code true} if the About pane was created and shown
+     * @param opener the same call the menu item makes, e.g. {@code () -> UI.showEncoder(app)}
+     * @return {@code true} if the pane was created and shown
      */
-    private boolean aboutPaneSelfTest() {
-        UI.showAboutWithLicense(app);
+    private boolean frameworkPaneSelfTest(Runnable opener) {
+        opener.run();
         final List<Stage> extra = Window.getWindows().stream()
                 .filter(w -> w instanceof Stage).map(w -> (Stage) w)
                 .filter(s -> s != getStage()).toList();
@@ -850,6 +960,8 @@ public class MainController extends BaseController {
         }
         try {
             java.nio.file.Files.writeString(out.toPath(), text);
+            app.addRecentFile(out);
+            buildRecentMenu();
             status(format("Saved {0} ({1})", out.getName(), extension));
         } catch (Exception e) {
             error(format("Could not write {0}", out.getName()), e);
@@ -874,6 +986,51 @@ public class MainController extends BaseController {
     @FXML
     private void onAbout() {
         UI.showAboutWithLicense(app);
+    }
+
+    /**
+     * {@code Configuration › Encoder}: opens the framework's encoder pane.
+     *
+     * <p>The original Studio filled the pane from its own {@code STR_ENC_MODEL} list ("none",
+     * "Base64 - SHA3-256 AES", …) and required a 32 character key from the general settings that had
+     * to match the engine's secret. The framework pane uses the application's internal key instead,
+     * so the Studio does not have to keep a second secret of its own — see
+     * {@code docs/07-risks-open-questions.md}.</p>
+     */
+    @FXML
+    private void onEncoder() {
+        UI.showEncoder(app);
+    }
+
+    /** {@code Configuration › Remove App Data}: the framework's pane (it asks before deleting). */
+    @FXML
+    private void onRemoveAppData() {
+        UI.showRemovePane(app);
+    }
+
+    /** {@code Help › Open Online Documentation}: opens {@code url.documentation} from app.cfg. */
+    @FXML
+    private void onDocumentation() {
+        Helper.openURL(configUrl(Constants.CONFIG_ENTRY_URL_DOC,
+                Constants.DEF_CONFIG_ENTRY_URL_DOC));
+    }
+
+    /** {@code Help › Visit Website}: opens {@code url.website} from app.cfg. */
+    @FXML
+    private void onWebsite() {
+        Helper.openURL(configUrl(Constants.CONFIG_ENTRY_URL_WEB, Constants.DEF_CONFIG_ENTRY_URL_WEB));
+    }
+
+    /** {@code Help › Check for Updates}: the framework's update pane. */
+    @FXML
+    private void onUpdate() {
+        UI.showUpdatePane(app);
+    }
+
+    /** {@code Help › License}: the framework's license pane (same HTML as the About button). */
+    @FXML
+    private void onLicense() {
+        UI.showLicense(app);
     }
 
     /** State shown behind the file: "Loaded", "Converted ...", "Modified", "Saved ...". */

@@ -32,20 +32,37 @@
                 <Menu fx:id="menuFile" text="File">
                     <MenuItem fx:id="miNew" text="New" onAction="#onNew"/>
                     <MenuItem fx:id="miOpen" text="Open…" onAction="#onOpen"/>
+                    <Menu fx:id="menuRecent" text="Open Recent"/>
                     <MenuItem fx:id="miSave" text="Save As… (.ifcx)" onAction="#onSave"/>
                     <SeparatorMenuItem/>
                     <MenuItem fx:id="miExportIfcx" text="Export .ifcx" onAction="#onExportIfcx"/>
                     <MenuItem fx:id="miExportIfacex" text="Export .ifacex" onAction="#onExportIfacex"/>
                     <SeparatorMenuItem/>
+                    <MenuItem fx:id="miClose" text="Close" onAction="#onClose"/>
                     <MenuItem fx:id="miExit" text="Exit" onAction="#onExit"/>
                 </Menu>
+                <!-- Configuration as in the original Studio; only the framework-backed panes are
+                     wired here (Encoder, Remove App Data) — see docs/11 for the two config editors
+                     that the new Studio shows in the navigation tree instead. -->
+                <Menu fx:id="menuConfig" text="Configuration">
+                    <MenuItem fx:id="miEncoder" text="Encoder" onAction="#onEncoder"/>
+                    <SeparatorMenuItem/>
+                    <MenuItem fx:id="miRemoveAppData" text="Remove App Data"
+                              onAction="#onRemoveAppData"/>
+                </Menu>
                 <Menu fx:id="menuHelp" text="Help">
+                    <MenuItem fx:id="miDocumentation" text="Open Online Documentation"
+                              onAction="#onDocumentation"/>
+                    <MenuItem fx:id="miWebsite" text="Visit Website" onAction="#onWebsite"/>
+                    <MenuItem fx:id="miUpdate" text="Check for Updates" onAction="#onUpdate"/>
+                    <SeparatorMenuItem/>
                     <Menu fx:id="menuLanguage" text="Language">
                         <RadioMenuItem fx:id="miLangEn" text="English" onAction="#onLanguage"/>
                         <RadioMenuItem fx:id="miLangDe" text="Deutsch" onAction="#onLanguage"/>
                     </Menu>
                     <SeparatorMenuItem/>
                     <MenuItem fx:id="miAbout" text="About" onAction="#onAbout"/>
+                    <MenuItem fx:id="miLicense" text="License" onAction="#onLicense"/>
                 </Menu>
             </MenuBar>
             <BorderPane styleClass="tool-bar-pane">

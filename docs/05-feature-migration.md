@@ -11,6 +11,7 @@ Migration status legend:
 | Feature | Reference | Migration |
 | --- | --- | --- |
 | Main window, menu bar, toolbar, status bar | `MainFrame`, `DesignMainFrame` | `rewrite` |
+| Menu structure and wording (`File`, `Configuration`, `Help`, legacy item order, ⌘-accelerators) | `DesignMainFrame.jMenu1…jMenu6`, `Bundle_en_US.properties` | `rewrite` — only items that have a real implementation; framework panes come from autumo-ui, the rest follows (see doc 11 §8) |
 | Top tabs: console / script editor / config | `MainFrame` | `rewrite` |
 | GUI state machine | `GuiStateMachine` | `extract` |
 | Dark theme | FlatLaf + `Constants` colors | `rewrite` (JavaFX CSS) |
@@ -24,7 +25,7 @@ Migration status legend:
 | IPC model, load/save, comment header | `IfacexConfiguration` | `reuse` |
 | Project wrapper (path, title, saved state) | `project/Project` | `extract` |
 | New / Open / Save / Save-As / Close | `Controller` | `extract` + `rewrite` dialogs |
-| Recent files (max 10) | `IfaceXStudio.addRecent*` | `extract` |
+| Recent files (max 10) | `IfaceXStudio.addRecent*`, `MainFrame.rebuildRecentList` | `reuse` (autumo-ui `BaseController.initializeRecentMenu` / `rebuildRecentList`, list kept and persisted by `BaseApp`) |
 | Manual-edit merge into config | `Project.saveFromManualEdit` | `extract` |
 
 ## 5.3 Configuration Editor (core feature)
@@ -79,13 +80,14 @@ tab today — verify against reference).
 | Raw config editor (base/interfaces) | `ConfigPanel` | `rewrite` |
 | Script / IPC editor | `IPCEditor` | `rewrite` (RichTextFX) |
 | JSON formatter | `JSONPanel` | `rewrite` (Gson `reuse`) |
-| Encoder | `EncoderPanel` | `rewrite` |
-| Preferences / general settings | `PrefPanel` | `rewrite` |
-| Update check | `UpdatePanel` | `rewrite` (HttpClient `reuse`) |
+| Encoder | `EncoderPanel` | `autumo-ui` (`UI.showEncoder`; the framework uses the application's internal key instead of the legacy 32-hex secret) |
+| Preferences / general settings | `PrefPanel` | `rewrite` (open) |
+| Update check | `UpdatePanel` | `autumo-ui` (`UI.showUpdatePane`; needs a real `url.website.version.file`) |
 | About | `AboutPanel` | `autumo-ui` (`UI.showAboutWithLicense`, `html/about_<lang>.html`) |
-| Remove app data | `RemovePanel` | `rewrite` |
-| License view | `LicensePanel` | `autumo-ui` (`html/license_<lang>.html`) |
-| Registration | `RegisterPanel` | `rewrite` |
+| Remove app data | `RemovePanel` | `autumo-ui` (`UI.showRemovePane`) — `Configuration › Remove App Data` |
+| License view | `LicensePanel` | `autumo-ui` (`UI.showLicense`, `html/license_<lang>.html`) — `Help › License` |
+| Open online documentation / visit website | `jMenuItem_OpenDoco`, `jMenuItem_Visit` | `reuse` (browser via `Helper.openURL`, URLs from `cfg/app.cfg`) |
+| Registration | `RegisterPanel` | `rewrite` (open — own top-level menu, as in the original) |
 | OS file open/edit | `os/FileHandler` | `extract` |
 
 ## 5.6 Installer & License

@@ -55,6 +55,12 @@ msgstr ""
 msgid "Author"
 msgstr ""
 
+msgid "Check for Updates"
+msgstr ""
+
+msgid "Clear Entries"
+msgstr ""
+
 msgid "Close"
 msgstr ""
 
@@ -121,6 +127,9 @@ msgstr ""
 msgid "Edit file metadata and job wiring (selects the root node)"
 msgstr ""
 
+msgid "Encoder"
+msgstr ""
+
 msgid "Entity not found: {0}"
 msgstr ""
 
@@ -185,6 +194,9 @@ msgid "Language"
 msgstr ""
 
 msgid "Legacy properties"
+msgstr ""
+
+msgid "License"
 msgstr ""
 
 msgid "Loaded"
@@ -256,6 +268,12 @@ msgstr ""
 msgid "Open in an external editor — follows later"
 msgstr ""
 
+msgid "Open Online Documentation"
+msgstr ""
+
+msgid "Open Recent"
+msgstr ""
+
 msgid "Open…"
 msgstr ""
 
@@ -275,6 +293,9 @@ msgid "Raw YAML (.ifcx)"
 msgstr ""
 
 msgid "Ready"
+msgstr ""
+
+msgid "Remove App Data"
 msgstr ""
 
 msgid "Remove selected"

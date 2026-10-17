@@ -381,3 +381,64 @@ not in `destination_interfaces` cannot be configured.
 - "New configuration" is a required workflow (choose reader + writers + entities), not an
   afterthought.
 - Unknown/`<Other>` parameters must always be preserved.
+
+## 11. Menu bar and menu items (authoritative)
+
+The bar is built in `DesignMainFrame.initialize()`; almost all labels come from
+`Bundle_en_US.properties` (`ifacex.jMenu*.text`, `ifacex.jMenuItem_*.text`), a few are hard-coded in
+the layout code (marked below). Menu and toolbar share the dark `Color(102, 102, 102)`. The texts are
+the *shipped English* ones — the legacy Studio has no German bundle.
+
+| Menu | Item | Label as shipped | Accelerator | Icon | Reference |
+| --- | --- | --- | --- | --- | --- |
+| File | Open | `Open` | ⌘O | `project-open-16.png` | `jMenuItem_Open` |
+| File | Open Recent | `Open Recent` | ⇧⌘O on the first entry | `project-open-16.png` | `jMenu_Recent`, `MainFrame.rebuildRecentList` |
+| File | New | `New Configuration` | ⌘N | `project-new-16.png` | `jMenuItem_New` |
+| File | Save | `Save` | ⌘S | `project-save-16.png` | `jMenuItem_Save` |
+| File | Save As | `Save As` | ⇧⌘S | `project-save-16.png` | `jMenuItem_SaveAs` |
+| File | Close | `Close` | ⌘W | `project-close-16.png` | `jMenuItem_Close` |
+| File | Quit (only off macOS — `OSHelper.isMac()` skips it) | `Quit` | ⌘Q (Windows: Alt+F4) | `exit-16.png` | `jMenuItem_Quit` |
+| Configuration | Interface Processor Configuration | `Interface Processor Configuration` | ⇧⌘P | `settings-16.png` | `jMenuItem_ProjectSettings` |
+| Configuration | Interface Base Configuration | *hard-coded* | ⌘B | `settings-16.png` | `jMenuItem_BaseConfig` |
+| Configuration | Interfaces Configuration | *hard-coded* | ⌘I | `settings-16.png` | `jMenuItem_Interfaces` |
+| Configuration | Encoder | *hard-coded* | ⌘E | `config-16.png` | `jMenuItem_Encoder` |
+| Configuration | General Settings | `General Settings` | ⌘G | `config-16.png` | `jMenuItem_GeneralSettings` |
+| Configuration | Remove App Data | `Remove App Data` | ⇧⌘R | `remove-config-16.png` | `jMenuItem_RemoveAppData` |
+| Process | Run | *hard-coded* | ⇧⌘X | `process-16.png` | `jMenuItem_Execute` |
+| Process | Debug Mode (**check box**, checked by default) | *hard-coded* | ⌘D | `debug.png` | `jCheckBoxItem_Debug` |
+| Registration | Register an ifaceX instance | `Register an ifaceX instance` | ⌘R | `register-16.png` | `jMenuItem_Registration` |
+| Help | Format JSON | *hard-coded* | ⌘F | `json-16.png` | `jMenuItem_Format` |
+| Help | Open Online Documentation | `Open Online Documentation` | F1 | `help-16.png` | `jMenuItem_OpenDoco` |
+| Help | Visit Website | `Visit Website` | F2 | `ifaceX16.png` | `jMenuItem_Visit` |
+| Help | Check for Updates | `Check for Updates` | ⌘U | `update-16.png` | `jMenuItem_Update` |
+| Help | About | `About` | F3 | `about-16.png` | `jMenuItem_About` |
+
+**There is no language menu.** `Bundle_en_US.properties` still holds `ifacex.jMenu6.text=Language`
+and `ifacex.jCheckBoxMenuItem_LANG_EN/DE.text`, but the field `jMenu6` is commented out in the
+generated layout and the two check-box items are never added to the bar — they are dead code. The
+legacy Studio set its language once at start-up (`SwingLocaleChanger`), not at runtime.
+
+### 11.1 What the new Studio does with it
+
+| Legacy item | `-fx` Studio |
+| --- | --- |
+| File: Open / Open Recent / New / Save / Close / Quit | wired (Quit lives in the macOS app menu) |
+| File: Save As | not needed — `Save` always writes a fresh `.ifcx` (there is no "current path" for the new format yet) |
+| File: Export .ifcx / .ifacex | **new** items: the YAML format is primary, `.ifacex` is import/export only |
+| Configuration: Interface Processor / Base / Interfaces Configuration | the navigation tree + raw views (no separate editors) |
+| Configuration: Encoder | `UI.showEncoder(app)` (framework) |
+| Configuration: General Settings | open — the legacy pane was the Studio's own `PrefPanel` |
+| Configuration: Remove App Data | `UI.showRemovePane(app)` (framework) |
+| Process: Run | toolbar `Run` button (placeholder until the engine integration) |
+| Process: Debug Mode | open — needs the engine run |
+| Registration | open — own top-level menu later, as in the original |
+| Help: Format JSON | open — the formatter is not rebuilt yet |
+| Help: Open Online Documentation / Visit Website | wired, URLs from `cfg/app.cfg` |
+| Help: Check for Updates | `UI.showUpdatePane(app)` (framework) |
+| Help: About | `UI.showAboutWithLicense(app)` |
+| Help: License | `UI.showLicense(app)` — **new item**; the legacy Studio had the license behind About |
+| Language | `Help › Language` (English/Deutsch) — **new**, the legacy had no language menu (see above) |
+
+The accelerators are set in code (`MainController.buildAccelerators()`) with
+`KeyCombination.SHORTCUT_DOWN`, so macOS keeps the ⌘ shortcuts of the original without hard-coding
+the modifier. `About` deliberately gets no F3 — macOS uses F3 for Mission Control.
