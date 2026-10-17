@@ -189,7 +189,7 @@ public class MainController extends BaseController {
     @FXML
     private Tab tabRawProps;
 
-    private final FormBuilder formBuilder = new FormBuilder(this::onModelChanged, this::rebuild);
+    private final FormBuilder formBuilder = new FormBuilder(app, this::onModelChanged, this::rebuild);
 
     private IpcConfig config;
     private Path sourceFile;

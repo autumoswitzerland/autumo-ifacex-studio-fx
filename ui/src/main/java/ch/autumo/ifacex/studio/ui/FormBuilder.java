@@ -91,12 +91,14 @@ final class FormBuilder {
     private final Runnable onChange;
     private final Runnable onStructureChange;
     private IpcConfig cfg;
+    private final ch.autumo.ui.fx.BaseApp app;
 
-    FormBuilder(Runnable onChange) {
-        this(onChange, null);
+    FormBuilder(ch.autumo.ui.fx.BaseApp app, Runnable onChange) {
+        this(app, onChange, null);
     }
 
-    FormBuilder(Runnable onChange, Runnable onStructureChange) {
+    FormBuilder(ch.autumo.ui.fx.BaseApp app, Runnable onChange, Runnable onStructureChange) {
+        this.app = app;
         this.onChange = onChange;
         this.onStructureChange = onStructureChange;
     }
@@ -881,13 +883,13 @@ final class FormBuilder {
                 return tf;
             }
             case SECRET: {
-                final PasswordField pf = new PasswordField();
-                pf.setText(value);
-                pf.textProperty().addListener((o, a, b) -> {
-                    map.put(key, b);
+                final ch.autumo.ui.fx.control.SecretField sf = new ch.autumo.ui.fx.control.SecretField(app);
+                sf.setText(value);
+                sf.textProperty().addListener((o, a, b) -> {
+                    map.put(key, b == null ? "" : b);
                     changed();
                 });
-                return pf;
+                return sf;
             }
             case TEXT_AREA: {
                 final TextArea ta = new TextArea(value);
