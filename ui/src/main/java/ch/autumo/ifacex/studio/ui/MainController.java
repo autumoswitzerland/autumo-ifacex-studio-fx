@@ -235,6 +235,28 @@ public class MainController extends BaseController {
     }
 
     /**
+     * The toolbar pane that is repositioned on macOS after the menu bar is
+     * detached to the system menu bar.
+     * 
+     * @return toolbar pane (BorderPane with fx:id "tool-bar-pane")
+     */
+    @Override
+    public javafx.scene.layout.Pane getToolBar() {
+        javafx.scene.Node top = menuBar.getParent();
+        if (top instanceof javafx.scene.layout.AnchorPane ap) {
+            for (javafx.scene.Node n : ap.getChildren()) {
+                if (n.getId() != null && "tool-bar-pane".equals(n.getId())) {
+                    return (javafx.scene.layout.Pane) n;
+                }
+                if (n instanceof javafx.scene.layout.BorderPane bp && bp.getStyleClass().contains("tool-bar-pane")) {
+                    return bp;
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
      * Builds the {@code Help › Language} sub-menu: one radio item per supported language, each
      * with the framework's flag icon. Picking an item switches the language live, see
      * {@link #switchLanguage(String)}.

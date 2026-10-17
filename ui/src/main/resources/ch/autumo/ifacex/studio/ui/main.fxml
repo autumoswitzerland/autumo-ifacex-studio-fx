@@ -26,8 +26,9 @@
          xmlns:fx="http://javafx.com/fxml/1">
 
     <top>
-        <VBox>
-            <MenuBar fx:id="menuBar" styleClass="menu-bar">
+        <AnchorPane>
+            <MenuBar fx:id="menuBar" styleClass="menu-bar" AnchorPane.topAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
+
 
                 <Menu fx:id="menuFile" text="File">
                     <MenuItem fx:id="miNew" text="New" onAction="#onNew"/>
@@ -65,7 +66,7 @@
                     <MenuItem fx:id="miLicense" text="License" onAction="#onLicense"/>
                 </Menu>
             </MenuBar>
-            <BorderPane styleClass="tool-bar-pane">
+            <BorderPane styleClass="tool-bar-pane" AnchorPane.topAnchor="30.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
                 <left>
                     <ToolBar fx:id="leftToolBar" styleClass="left-tool-bar"
                              style="-fx-background-color: transparent;"/>
@@ -75,7 +76,7 @@
                              style="-fx-background-color: transparent;"/>
                 </right>
             </BorderPane>
-        </VBox>
+        </AnchorPane>
     </top>
 
     <center>
