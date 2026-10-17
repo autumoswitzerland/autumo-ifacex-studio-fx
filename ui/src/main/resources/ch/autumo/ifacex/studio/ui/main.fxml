@@ -4,6 +4,7 @@
 <?import javafx.scene.control.Menu?>
 <?import javafx.scene.control.MenuBar?>
 <?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.RadioMenuItem?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.SeparatorMenuItem?>
 <?import javafx.scene.control.SplitPane?>
@@ -17,13 +18,17 @@
 <?import javafx.scene.layout.Priority?>
 <?import javafx.scene.layout.VBox?>
 
-<BorderPane xmlns="http://javafx.com/javafx/25"
-            xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="ch.autumo.ifacex.studio.ui.MainController">
+<!-- Root is injected by the autumo-ui framework (UI.setup) as our BaseBorderView
+     subclass; the controller is set the same way. Hence fx:root, not a plain
+     BorderPane + fx:controller. -->
+<fx:root type="javafx.scene.layout.BorderPane"
+         xmlns="http://javafx.com/javafx/25"
+         xmlns:fx="http://javafx.com/fxml/1">
 
     <top>
         <VBox>
-            <MenuBar styleClass="menu-bar">
+            <MenuBar fx:id="menuBar" styleClass="menu-bar">
+
                 <Menu fx:id="menuFile" text="File">
                     <MenuItem fx:id="miNew" text="New" onAction="#onNew"/>
                     <MenuItem fx:id="miOpen" text="Open…" onAction="#onOpen"/>
@@ -35,6 +40,11 @@
                     <MenuItem fx:id="miExit" text="Exit" onAction="#onExit"/>
                 </Menu>
                 <Menu fx:id="menuHelp" text="Help">
+                    <Menu fx:id="menuLanguage" text="Language">
+                        <RadioMenuItem fx:id="miLangEn" text="English" onAction="#onLanguage"/>
+                        <RadioMenuItem fx:id="miLangDe" text="Deutsch" onAction="#onLanguage"/>
+                    </Menu>
+                    <SeparatorMenuItem/>
                     <MenuItem fx:id="miAbout" text="About" onAction="#onAbout"/>
                 </Menu>
             </MenuBar>
@@ -74,4 +84,4 @@
         </HBox>
     </bottom>
 
-</BorderPane>
+</fx:root>

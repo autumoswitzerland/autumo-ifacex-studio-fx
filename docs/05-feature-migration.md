@@ -82,9 +82,9 @@ tab today — verify against reference).
 | Encoder | `EncoderPanel` | `rewrite` |
 | Preferences / general settings | `PrefPanel` | `rewrite` |
 | Update check | `UpdatePanel` | `rewrite` (HttpClient `reuse`) |
-| About | `AboutPanel` | `rewrite` |
+| About | `AboutPanel` | `autumo-ui` (`UI.showAboutWithLicense`, `html/about_<lang>.html`) |
 | Remove app data | `RemovePanel` | `rewrite` |
-| License view | `LicensePanel` | `rewrite` |
+| License view | `LicensePanel` | `autumo-ui` (`html/license_<lang>.html`) |
 | Registration | `RegisterPanel` | `rewrite` |
 | OS file open/edit | `os/FileHandler` | `extract` |
 

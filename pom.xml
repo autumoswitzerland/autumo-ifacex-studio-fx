@@ -59,6 +59,13 @@
                 <version>${javafx.version}</version>
             </dependency>
 
+            <!-- autumo-ui renders its HTML panes (About, License, …) with a WebView. -->
+            <dependency>
+                <groupId>org.openjfx</groupId>
+                <artifactId>javafx-web</artifactId>
+                <version>${javafx.version}</version>
+            </dependency>
+
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter</artifactId>

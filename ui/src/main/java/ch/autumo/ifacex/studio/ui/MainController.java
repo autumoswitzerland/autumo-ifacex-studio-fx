@@ -18,12 +18,14 @@ import static ch.autumo.ifacex.studio.core.i18n.Messages.format;
 import static ch.autumo.ifacex.studio.core.i18n.Messages.t;
 
 import java.io.File;
+import java.net.URL;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.ResourceBundle;
 import java.util.Set;
 
 import ch.autumo.ifacex.studio.core.i18n.Messages;
@@ -36,7 +38,11 @@ import ch.autumo.ifacex.studio.core.model.IpcConfig;
 import ch.autumo.ifacex.studio.core.model.RwConfig;
 
 import ch.autumo.ui.Constants;
+import ch.autumo.ui.fx.BaseApp;
+import ch.autumo.ui.fx.controller.BaseController;
+import ch.autumo.ui.fx.model.BaseModel;
 import ch.autumo.ui.utils.Helper;
+import ch.autumo.ui.utils.UI;
 
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
@@ -49,11 +55,14 @@ import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
 import javafx.scene.control.Menu;
+import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.RadioMenuItem;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Separator;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TextArea;
+import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.ToolBar;
 import javafx.scene.control.Tooltip;
 import javafx.scene.control.TreeCell;
@@ -62,14 +71,28 @@ import javafx.scene.control.TreeView;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
 import javafx.stage.FileChooser;
+import javafx.stage.Stage;
 import javafx.stage.Window;
 
 /**
- * Controller for the FXML shell. Static layout comes from {@code main.fxml}; the configuration
- * forms are produced by {@link FormBuilder}.
+ * Controller of the main window.
+ *
+ * <p>The static shell comes from {@code main.fxml}; every configuration form is produced by
+ * {@link FormBuilder}. The controller extends the autumo-ui {@link BaseController}, so the
+ * framework supplies the standard behaviour: the HTML info panes (About, …), the macOS menu
+ * detach when the menu bar is overwritten by {@link #getMenuBar()}, and the keyboard shortcuts
+ * installed by {@code ch.autumo.ui.utils.UI#setup}.</p>
+ *
+ * <p>Lifecycle: the FXMLLoader injects the {@code @FXML} fields and then calls
+ * {@link BaseController#initialize(URL, ResourceBundle)}}, which handles macOS and finally
+ * delegates to {@link #init(URL, ResourceBundle, double)}.</p>
+ *
+ * @see MainView
+ * @see StudioApp#preInitialize(Stage, java.util.Properties)
  */
-public class MainController {
+public class MainController extends BaseController {
 
     /** Toolbar icons ship with the autumo-ui framework (base resource path). */
     private static final String ICONS = "icons/";
@@ -82,6 +105,21 @@ public class MainController {
 
     /** Style class that renders a navigation entry in bold (see studio.css). */
     private static final String NAV_EMPHASIS = "nav-emphasis";
+
+    /**
+     * Creates the controller of the main view.
+     *
+     * <p>The instance is created by hand and handed to {@code UI.setup(…)} — the FXML file no
+     * longer declares {@code fx:controller}.</p>
+     *
+     * @param app   the application
+     * @param stage the primary stage
+     * @param model the main model
+     * @param view  the main view
+     */
+    public MainController(BaseApp app, Stage stage, BaseModel model, Pane view) {
+        super(app, stage, model, view);
+    }
 
     @FXML
     private TreeView<FormBuilder.NavNode> navTree;
@@ -112,9 +150,17 @@ public class MainController {
     @FXML
     private MenuItem miExit;
     @FXML
+    private MenuBar menuBar;
+    @FXML
     private Menu menuFile;
     @FXML
     private Menu menuHelp;
+    @FXML
+    private Menu menuLanguage;
+    @FXML
+    private RadioMenuItem miLangEn;
+    @FXML
+    private RadioMenuItem miLangDe;
     @FXML
     private Tab tabForm;
     @FXML
@@ -132,16 +178,104 @@ public class MainController {
     private Button tbConfig;
     private TreeItem<FormBuilder.NavNode> rootItem;
 
-    @FXML
-    private void initialize() {
+    /**
+     * {@inheritDoc}
+     *
+     * <p>Called after the FXML object graph has been injected and after the framework's macOS
+     * decision (menu detach), see {@link BaseController#initialize(URL, ResourceBundle)}.</p>
+     */
+    @Override
+    public void init(URL location, ResourceBundle resources, double toolBarShift) {
         navTree.setCellFactory(tv -> navCell());
         navTree.getSelectionModel().selectedItemProperty().addListener(
                 (o, a, b) -> showForm(b));
         applyTexts();
+        buildLanguageMenu();
         formScroll.setContent(FormBuilder.message(t("Open a .ifacex or .ifcx file to begin.")));
         buildToolBar();
         buildMenuIcons();
         setConfigActionsEnabled(false);
+    }
+
+    /**
+     * The menu bar that may be detached to the macOS system menu bar.
+     *
+     * <p>The framework sets {@code useSystemMenuBar} on it when running on macOS; the detach is
+     * prevented with {@code disableMacOSMenuDetach=yes} in {@code app.cfg}. On all other
+     * platforms this method is never called.</p>
+     *
+     * @return the menu bar of the main window
+     */
+    @Override
+    public MenuBar getMenuBar() {
+        return menuBar;
+    }
+
+    /**
+     * Builds the {@code Help › Language} sub-menu: one radio item per supported language, each
+     * with the framework's flag icon. Picking an item switches the language live, see
+     * {@link #switchLanguage(String)}.
+     *
+     * <p>The language names are deliberately <em>not</em> translated — a language list reads
+     * best in the language itself ("English", "Deutsch").</p>
+     */
+    private void buildLanguageMenu() {
+        final ToggleGroup group = new ToggleGroup();
+        miLangEn.setToggleGroup(group);
+        miLangDe.setToggleGroup(group);
+        miLangEn.setGraphic(icon("lang_en.png"));
+        miLangDe.setGraphic(icon("lang_de.png"));
+        selectLanguageItem(Messages.getLanguage());
+    }
+
+    /**
+     * Marks the radio item of the given language as selected <em>without</em> triggering a switch;
+     * a programmatic selection does not fire {@code onAction} in JavaFX.
+     *
+     * @param lang language code, e.g. {@code de}
+     */
+    private void selectLanguageItem(String lang) {
+        if (Messages.LANG_DE.equals(lang)) {
+            miLangDe.setSelected(true);
+        } else {
+            miLangEn.setSelected(true);
+        }
+    }
+
+    /**
+     * {@code Help › Language}: switches the UI language live.
+     */
+    @FXML
+    private void onLanguage() {
+        switchLanguage(miLangDe.isSelected() ? Messages.LANG_DE : Messages.LANG_EN);
+    }
+
+    /**
+     * Switches the whole UI to the given language at runtime.
+     *
+     * <p>Two catalogues have to follow: the <b>autumo-ui framework</b> resources (window title,
+     * About/license HTML panes, framework dialogs) via {@link Helper#setLanguage(String)}, and the
+     * <b>application</b> texts via {@link Messages#setLanguage(String)}. Afterwards the static FXML
+     * shell and the toolbar are re-texted and the navigation tree plus the open form are rebuilt,
+     * so no stale text is left anywhere.</p>
+     *
+     * @param lang language code, e.g. {@code de}
+     */
+    private void switchLanguage(String lang) {
+        if (lang == null || lang.equals(Messages.getLanguage())) {
+            return;
+        }
+        Helper.setLanguage(lang);
+        Messages.setLanguage(lang);
+        applyTexts();
+        buildToolBar();
+        if (config == null) {
+            setConfigActionsEnabled(false);
+        } else {
+            rebuild();
+        }
+        selectLanguageItem(lang);
+        renderStatus();
     }
 
     /**
@@ -151,6 +285,7 @@ public class MainController {
     private void applyTexts() {
         menuFile.setText(t("File"));
         menuHelp.setText(t("Help"));
+        menuLanguage.setText(t("Language"));
         miNew.setText(t("New"));
         miOpen.setText(t("Open…"));
         miSave.setText(t("Save As… (.ifcx)"));
@@ -204,6 +339,9 @@ public class MainController {
      * from the autumo-ui framework (48px, label below).
      */
     private void buildToolBar() {
+        // Idempotent: also called again on a live language switch, so drop the old items first.
+        leftToolBar.getItems().clear();
+        rightToolBar.getItems().clear();
         final Button tbNew = toolButton("project-new-48.png", t("New"),
                 t("Create a new, empty configuration"), () -> onNew());
         final Button tbOpen = toolButton("project-open-48.png", t("Open"),
@@ -379,6 +517,7 @@ public class MainController {
     /** Headless self-test support: load a file and describe what the UI would show. */
     String selfTest(Path path) throws Exception {
         loadConfig(path);
+        final String startLang = Messages.getLanguage();
         final TreeItem<FormBuilder.NavNode> root = navTree.getRoot();
         // exercise the form builder for every nav node
         final int[] acc = new int[4]; // forms, list views (source fields), tables, dnd buttons
@@ -401,7 +540,7 @@ public class MainController {
         }
         final List<String> paramLabels = fieldLabels.stream().filter(knownLabels::contains)
                 .distinct().sorted().toList();
-        return "nodes=" + countNodes(root)
+        final String metrics = "nodes=" + countNodes(root)
                 + " forms=" + acc[0]
                 + " rootFormParts=" + rootFormParts
                 + " toolbarItems=" + toolbarItemCount()
@@ -426,7 +565,58 @@ public class MainController {
                         .map(c -> c.getValue().label()).collect(java.util.stream.Collectors.joining(" | "))
                         + "\""
                 + " statusText=\"" + (statusLabel.getText() == null ? "" : statusLabel.getText()) + "\""
-                + " statusOk=" + (statusLabel.getText() != null && !statusLabel.getText().isBlank());
+                + " statusOk=" + (statusLabel.getText() != null && !statusLabel.getText().isBlank())
+                // the framework's HTML about/license panes resolve these per language; a typo in
+                // the package/resource name would only show up as a WebView error page, so pin it
+                + " aboutHtmlOk=" + (getClass().getResource("html/about_en.html") != null
+                        && getClass().getResource("html/about_de.html") != null
+                        && getClass().getResource("html/license_en.html") != null
+                        && getClass().getResource("html/license_de.html") != null)
+                + " aboutPaneOk=" + aboutPaneSelfTest()
+                + " langItems=" + menuLanguage.getItems().size()
+                + " langSwitchOk=" + languageSwitchSelfTest(startLang)
+                + " langRestoredOk=" + Messages.getLanguage().equals(startLang);
+        return metrics;
+    }
+
+    /**
+     * Drives one full live language switch — to the "other" language and back — and reports whether
+     * the shell text, the framework language and the radio selection all followed. Used by
+     * {@link #selfTest(Path)} to prove the {@code Help › Language} switch works headlessly.
+     *
+     * @param startLang language the self-test started in
+     * @return {@code true} if the switch and the restore behaved as expected
+     */
+    private boolean languageSwitchSelfTest(String startLang) {
+        final String other = Messages.LANG_DE.equals(startLang) ? Messages.LANG_EN : Messages.LANG_DE;
+        switchLanguage(other);
+        final boolean ok = other.equals(Messages.getLanguage())
+                && other.equals(Helper.getLanguage())
+                && menuFile.getText().equals(t("File"))
+                && (Messages.LANG_DE.equals(other) ? miLangDe.isSelected() : miLangEn.isSelected());
+        switchLanguage(startLang);
+        return ok;
+    }
+
+    /**
+     * Opens the framework About pane exactly like the {@code Help › About} menu item does
+     * ({@link UI#showAboutWithLicense(BaseApp)}), verifies that a window was actually shown and
+     * closes it again.
+     *
+     * <p>This exercises the whole About path headlessly: the framework bundle keys
+     * ({@code About.title}, {@code button.License}) must resolve and the HTML pane must build —
+     * a missing key would otherwise only surface as an exception when the user clicks About.</p>
+     *
+     * @return {@code true} if the About pane was created and shown
+     */
+    private boolean aboutPaneSelfTest() {
+        UI.showAboutWithLicense(app);
+        final List<Stage> extra = Window.getWindows().stream()
+                .filter(w -> w instanceof Stage).map(w -> (Stage) w)
+                .filter(s -> s != getStage()).toList();
+        final boolean showing = !extra.isEmpty() && extra.stream().allMatch(Stage::isShowing);
+        extra.forEach(Stage::close);
+        return showing;
     }
 
     /** Builds every nav node's form and accumulates [forms, listViews, tables, dndButtons]. */
@@ -671,17 +861,19 @@ public class MainController {
         window().hide();
     }
 
+    /**
+     * Shows the About window through the autumo-ui pane, with the license button.
+     *
+     * <p>The framework builds the dialog ({@code about-48.png} header, HTML body, footer) and
+     * loads the body from {@code html/about_<lang>.html} plus, behind the license button,
+     * {@code html/license_<lang>.html}. Both are resolved relative to {@link StudioApp}, and the
+     * language is the one autumo-ui reads from the {@code user.language} system property, which
+     * {@link Messages#setLanguage(String)} keeps in sync. The text is therefore a translatable
+     * resource and no dialog code changes per language — see {@code docs/12-i18n.md}.</p>
+     */
     @FXML
     private void onAbout() {
-        final Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle(t("About"));
-        alert.setHeaderText(t("ifaceX Studio FX — PoC"));
-        alert.setContentText(t("Metadata-driven configuration editor.") + "\n"
-                + t("Shell: FXML.  Forms: programmatic.") + "\n"
-                + "\u00A9 2026 autumo GmbH");
-        alert.initOwner(window());
-        theme(alert);
-        alert.showAndWait();
+        UI.showAboutWithLicense(app);
     }
 
     /** State shown behind the file: "Loaded", "Converted ...", "Modified", "Saved ...". */

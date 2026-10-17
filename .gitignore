@@ -45,6 +45,9 @@ Desktop.ini
 *.swp
 *~
 
+# --- Etc. ---
+TODO.txt
+
 # --- Local build helpers ---
 # NOTE: if a local Maven repo is needed (provided jars, e.g. lib/repo),
 # decide deliberately whether to commit it; do not ignore blindly.

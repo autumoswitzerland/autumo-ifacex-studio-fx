@@ -45,6 +45,13 @@
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-fxml</artifactId>
         </dependency>
+
+        <!-- autumo-ui renders its About/license panes in a WebView; without javafx-web the
+             framework's HTML panes fail with NoClassDefFoundError. -->
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-web</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

@@ -181,6 +181,9 @@ msgstr "Insert (INS)"
 msgid "Job wiring"
 msgstr "Job-Verdrahtung"
 
+msgid "Language"
+msgstr "Sprache"
+
 msgid "Legacy properties"
 msgstr "Legacy-Properties"
 

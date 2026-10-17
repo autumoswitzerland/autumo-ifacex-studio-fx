@@ -73,8 +73,9 @@ Candidates must be confirmed before adoption (see open questions).
   compile/runtime scopes and let `jpackage`/`jlink` assemble the runtime. Revisit the
   `provided` approach deliberately (see open questions).
 - **Runtime modules:** include JavaFX modules (`javafx.controls`, `javafx.fxml`,
-  `javafx.graphics`, etc.); `java.desktop` may no longer be required except for
-  `Desktop`-based OS integration.
+  `javafx.web`, `javafx.graphics`, etc.); `java.desktop` may no longer be required except for
+  `Desktop`-based OS integration. `javafx.web` is required because autumo-ui renders its
+  About/license panes in a `WebView`.
 - **Java options:** carry over `-Dfile.encoding=UTF-8 -Xms512m` as a starting point.
 
 ## 4.5 Testing Strategy

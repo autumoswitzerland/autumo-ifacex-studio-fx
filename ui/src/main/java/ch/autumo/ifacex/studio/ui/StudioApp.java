@@ -14,7 +14,6 @@
  */
 package ch.autumo.ifacex.studio.ui;
 
-import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.List;
@@ -25,10 +24,9 @@ import ch.autumo.ifacex.studio.core.i18n.Messages;
 import ch.autumo.ui.Constants;
 import ch.autumo.ui.fx.BaseApp;
 import ch.autumo.ui.utils.Helper;
+import ch.autumo.ui.utils.UI;
 
 import javafx.application.Platform;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.layout.Pane;
 import javafx.scene.text.Font;
@@ -54,7 +52,6 @@ public class StudioApp extends BaseApp {
     /** Current application instance (the framework creates exactly one). */
     private static StudioApp instance;
 
-    private Parent root;
     private MainController controller;
 
     /**
@@ -76,32 +73,39 @@ public class StudioApp extends BaseApp {
         final String configured = configuration.getProperty(Constants.PROP_KEY_LANGUAGE,
                 configuration.getProperty("lang", Messages.LANG_EN));
         final String lang = System.getProperty("ifacex.lang", configured);
+        // Keep the autumo-ui framework in sync first (it owns the window title, About/license HTML
+        // panes and framework dialogs), then set our own PO catalogue on top of it.
+        Helper.setLanguage(lang);
         final int translations = Messages.setLanguage(lang);
         if (translations > 0) {
             System.out.println("[dev] language=" + Messages.getLanguage()
                     + " (" + translations + " translations)");
         }
         loadFonts();
-        final URL fxml = StudioApp.class.getResource("main.fxml");
-        final FXMLLoader loader = new FXMLLoader(fxml);
-        try {
-            root = loader.load();
-        } catch (IOException e) {
-            throw new IllegalStateException("Could not load main.fxml", e);
-        }
-        controller = loader.getController();
-        return (Pane) root;
+        // Create the main view and hand it to the autumo-ui loader: UI.setup() remembers our
+        // base resource path, loads main.fxml into the view and binds this controller. It is
+        // also what makes the framework's info panes (UI.showAbout, …) work, and it walks our
+        // own package for main.fxml / html/*.html.
+        final MainView view = new MainView(this, primaryStage, null);
+        final MainModel model = new MainModel(view);
+        view.setModel(model);
+        controller = new MainController(this, primaryStage, model, view);
+        view.setController(controller);
+        UI.setup(this, getBaseResourcePath(), view, "main.fxml");
+        return view;
     }
 
     @Override
     protected void initialize(Stage primaryStage, Properties configuration) {
         final List<String> args = getParameters().getRaw();
 
-        // Build the scene and apply the theme (autumo-ui dark base + our overrides).
-        final Scene scene = new Scene(root, 1100, 720);
-        scene.getStylesheets().add(Helper.getBaseStyle());
+        // The scene already exists: BaseBorderView (via MainView) created it on the stage and
+        // installed the autumo-ui base style. Our own style sheet goes on top of it.
+        final Scene scene = primaryStage.getScene();
         final String studioCss = StudioApp.class.getResource("studio.css").toExternalForm();
         scene.getStylesheets().add(studioCss);
+        primaryStage.setWidth(1100);
+        primaryStage.setHeight(720);
 
         // Headless self-test: load a config file, exercise the UI, print a summary and exit.
         if (args.size() >= 2 && "--selftest".equals(args.get(0))) {

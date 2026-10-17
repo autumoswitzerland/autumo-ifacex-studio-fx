@@ -56,6 +56,24 @@ class MessagesTest {
     }
 
     @Test
+    void getLanguageReturnsThePlainLanguageCode() {
+        // The code is what the live switch compares and what Helper.setLanguage(...) takes, so it
+        // must be a plain ISO 639-1 code and not a locale tag such as "en-US".
+        Messages.setLanguage("en");
+        assertEquals("en", Messages.getLanguage());
+        Messages.setLanguage("de");
+        assertEquals("de", Messages.getLanguage());
+    }
+
+    @Test
+    void aRegionSelectsTheSamePoFileAsItsBaseLanguage() {
+        // autumo-ui is a Swiss framework ('de_CH'); the region must not defeat the lookup.
+        assertTrue(Messages.setLanguage("de_CH") > 100, "the German PO should be loaded");
+        assertEquals("de", Messages.getLanguage());
+        assertEquals("Datei", Messages.t("File"));
+    }
+
+    @Test
     void parameterLabelsUseTheKeyAsMessageIdWithAnEnglishFallback() {
         Messages.setLanguage("en");
         // Parameter labels have the raw configuration key as message id and the derived
