@@ -30,6 +30,10 @@ import java.util.Set;
  */
 public final class IpcConfig {
 
+    /** Creates an empty job with the default metadata. */
+    public IpcConfig() {
+    }
+
     private Meta meta = Meta.EMPTY;
     private String sourceInterface = "";
     private final List<String> destinationInterfaces = new ArrayList<>();
@@ -43,55 +47,123 @@ public final class IpcConfig {
     /** General (non reader/writer scoped) keys, e.g. {@code batch_mode}, {@code files_folder}. */
     private final Map<String, String> general = new LinkedHashMap<>();
 
+    /**
+     * The metadata (comment header) of this configuration.
+     *
+     * @return metadata, never {@code null}
+     */
     public Meta meta() {
         return meta;
     }
 
+    /**
+     * Sets the metadata (comment header).
+     *
+     * @param meta metadata to set
+     */
     public void setMeta(Meta meta) {
         this.meta = meta;
     }
 
+    /**
+     * The single source interface prefix, e.g. {@code rest_in}.
+     *
+     * @return source interface prefix, empty when unset
+     */
     public String sourceInterface() {
         return sourceInterface;
     }
 
+    /**
+     * Sets the source interface prefix.
+     *
+     * @param sourceInterface source interface prefix, e.g. {@code rest_in}
+     */
     public void setSourceInterface(String sourceInterface) {
         this.sourceInterface = sourceInterface;
     }
 
+    /**
+     * The destination interface prefixes in declaration order, e.g. {@code [csv_out, mail_out]}.
+     * A declared interface need not have a section of its own (e.g. {@code console_out}).
+     *
+     * @return mutable list of destination interface prefixes
+     */
     public List<String> destinationInterfaces() {
         return destinationInterfaces;
     }
 
+    /**
+     * The globally declared source entities (legacy {@code process_source_entities}).
+     *
+     * @return mutable list of source entity names
+     */
     public List<String> processSourceEntities() {
         return processSourceEntities;
     }
 
+    /**
+     * The reader sections by prefix, in file order.
+     *
+     * @return mutable map of reader prefix to section
+     */
     public Map<String, RwConfig> readers() {
         return readers;
     }
 
+    /**
+     * The writer sections by prefix, in file order.
+     *
+     * @return mutable map of writer prefix to section
+     */
     public Map<String, RwConfig> writers() {
         return writers;
     }
 
+    /**
+     * Keys that are not bound to a reader or writer section, e.g. {@code batch_mode} or
+     * {@code files_folder}.
+     *
+     * @return mutable map of general key to value
+     */
     public Map<String, String> general() {
         return general;
     }
 
+    /**
+     * The first (and usually only) reader section.
+     *
+     * @return reader section, or {@code null} when the configuration has none
+     */
     public RwConfig reader() {
         return readers.values().stream().findFirst().orElse(null);
     }
 
+    /**
+     * Looks up a reader section by prefix.
+     *
+     * @param name reader prefix, e.g. {@code rest_in}
+     * @return reader section, or {@code null} when absent
+     */
     public RwConfig reader(String name) {
         return readers.get(name);
     }
 
+    /**
+     * Looks up a writer section by prefix.
+     *
+     * @param name writer prefix, e.g. {@code csv_out}
+     * @return writer section, or {@code null} when absent
+     */
     public RwConfig writer(String name) {
         return writers.get(name);
     }
 
-    /** All reader/writer sections in insertion order. */
+    /**
+     * All reader/writer sections, readers first, each group in insertion order.
+     *
+     * @return new list of sections
+     */
     public List<RwConfig> sections() {
         final List<RwConfig> all = new ArrayList<>();
         all.addAll(readers.values());
@@ -99,6 +171,13 @@ public final class IpcConfig {
         return all;
     }
 
+    /**
+     * Returns the reader section with the given prefix, creating it when necessary. Every globally
+     * declared source entity is reconciled into it, so its fields stay editable.
+     *
+     * @param name reader prefix
+     * @return reader section, never {@code null}
+     */
     public RwConfig ensureReader(String name) {
         final RwConfig r = readers.computeIfAbsent(name, n -> new RwConfig(n, true));
         // Reconcile: every declared source entity must exist in the reader, so its fields are editable.
@@ -108,6 +187,12 @@ public final class IpcConfig {
         return r;
     }
 
+    /**
+     * Returns the writer section with the given prefix, creating it when necessary.
+     *
+     * @param name writer prefix
+     * @return writer section, never {@code null}
+     */
     public RwConfig ensureWriter(String name) {
         return writers.computeIfAbsent(name, n -> new RwConfig(n, false));
     }
@@ -119,6 +204,8 @@ public final class IpcConfig {
      * any entity that only exists in the reader section. This is the canonical list shown in the
      * BASE tab and mirrored by every reader and writer — source entities are <em>global</em> in the
      * original Studio (one {@code EntityFieldsHolder} list shared by all tabs).
+     *
+     * @return ordered source entity names
      */
     public List<String> sourceEntityNames() {
         final Set<String> names = new LinkedHashSet<>(processSourceEntities);
@@ -129,7 +216,13 @@ public final class IpcConfig {
         return new ArrayList<>(names);
     }
 
-    /** Add a global source entity (legacy BASE "add source entity"); false if it already exists. */
+    /**
+     * Adds a global source entity (legacy BASE "add source entity") and reconciles it into the
+     * reader section, so the fields become editable.
+     *
+     * @param name entity name; {@code null} or blank is ignored
+     * @return {@code false} when the entity already exists or the name is unusable
+     */
     public boolean addSourceEntity(String name) {
         if (name == null || name.isBlank()) {
             return false;
@@ -146,7 +239,11 @@ public final class IpcConfig {
         return true;
     }
 
-    /** Remove a global source entity together with all its fields and mappings. */
+    /**
+     * Removes a global source entity together with all its fields and mappings.
+     *
+     * @param name entity name
+     */
     public void removeSourceEntity(String name) {
         processSourceEntities.remove(name);
         for (final RwConfig rw : readers.values()) {
@@ -157,7 +254,13 @@ public final class IpcConfig {
         }
     }
 
-    /** Rename a global source entity in the entity list, the reader fields and every writer mapping. */
+    /**
+     * Renames a global source entity in the entity list, the reader fields and every writer
+     * mapping, preserving positions.
+     *
+     * @param oldName current entity name
+     * @param newName new entity name; a blank or unchanged name is ignored
+     */
     public void renameSourceEntity(String oldName, String newName) {
         if (oldName == null || newName == null || newName.isBlank()
                 || oldName.equals(newName.trim())) {
@@ -176,7 +279,12 @@ public final class IpcConfig {
         }
     }
 
-    /** Move a source entity up ({@code delta = -1}) or down ({@code delta = 1}) in the global order. */
+    /**
+     * Moves a source entity in the global order and mirrors the move into the reader section.
+     *
+     * @param name  entity to move
+     * @param delta {@code -1} up, {@code 1} down
+     */
     public void moveSourceEntity(String name, int delta) {
         final int i = processSourceEntities.indexOf(name);
         final int t = i + delta;
@@ -215,6 +323,9 @@ public final class IpcConfig {
      * The live source-field list of a source entity. The fields are stored on the reader section
      * (legacy {@code <reader>_<entity>_fields}); writers only reference them. Returns an empty,
      * read-only list when the reader or the entity is absent (e.g. a mapping to an unknown entity).
+     *
+     * @param entity source entity name
+     * @return the entity's source fields, or an empty list
      */
     public List<String> readerEntityFields(String entity) {
         final RwConfig r = reader();

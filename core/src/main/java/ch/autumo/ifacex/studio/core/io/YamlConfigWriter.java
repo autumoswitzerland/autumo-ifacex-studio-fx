@@ -45,9 +45,12 @@ import ch.autumo.ifacex.studio.core.model.RwConfig;
  */
 public final class YamlConfigWriter {
 
+    /** Version of the new {@code .ifcx} YAML format written by this class. */
     public static final int FORMAT_VERSION = 1;
 
-    static final String K_FORMAT = "formatVersion";
+    /** Document key that carries {@link #FORMAT_VERSION}. */
+    public static final String K_FORMAT = "formatVersion";
+
     static final String K_SOURCE_INTERFACE = "sourceInterface";
     static final String K_DESTINATION_INTERFACES = "destinationInterfaces";
     static final String K_PROCESS_SOURCE_ENTITIES = "processSourceEntities";
@@ -70,10 +73,24 @@ public final class YamlConfigWriter {
     private YamlConfigWriter() {
     }
 
+    /**
+     * Writes the model in the new YAML format (UTF-8).
+     *
+     * @param path target file, overwritten when it exists
+     * @param cfg  configuration to write
+     * @throws IOException when the file cannot be written
+     */
     public static void write(Path path, IpcConfig cfg) throws IOException {
         Files.writeString(path, toText(cfg), StandardCharsets.UTF_8);
     }
 
+    /**
+     * Renders the model as the full {@code .ifcx} text: the metadata comment header followed by
+     * the YAML body.
+     *
+     * @param cfg configuration to write
+     * @return file text
+     */
     public static String toText(IpcConfig cfg) {
         final StringBuilder sb = new StringBuilder();
         sb.append(CommentHeader.render(cfg.meta()));
@@ -82,6 +99,13 @@ public final class YamlConfigWriter {
         return sb.toString();
     }
 
+    /**
+     * Builds the ordered YAML tree for the model. Kept public so tests can assert the structure
+     * independently of the emitter's formatting.
+     *
+     * @param cfg configuration to convert
+     * @return ordered map that mirrors the document layout
+     */
     public static Map<String, Object> toTree(IpcConfig cfg) {
         final Map<String, Object> root = new LinkedHashMap<>();
         root.put(K_FORMAT, FORMAT_VERSION);

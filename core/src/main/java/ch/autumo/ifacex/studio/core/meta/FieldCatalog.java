@@ -108,7 +108,12 @@ public final class FieldCatalog {
     private FieldCatalog() {
     }
 
-    /** Return the descriptor for a parameter, inferring a best-effort one when unknown. */
+    /**
+     * Returns the descriptor for a parameter, inferring a best-effort one when unknown.
+     *
+     * @param param engine parameter name
+     * @return the matching descriptor, never {@code null}
+     */
     public static FieldDescriptor descriptor(String param) {
         final FieldDescriptor d = KNOWN.get(param);
         return d != null ? d : infer(param);

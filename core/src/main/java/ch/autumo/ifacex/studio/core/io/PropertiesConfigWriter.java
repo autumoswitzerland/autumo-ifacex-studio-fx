@@ -47,11 +47,23 @@ public final class PropertiesConfigWriter {
     private PropertiesConfigWriter() {
     }
 
+    /**
+     * Writes the model in the legacy properties format (UTF-8).
+     *
+     * @param path target file, overwritten when it exists
+     * @param cfg  configuration to write
+     * @throws IOException when the file cannot be written
+     */
     public static void write(Path path, IpcConfig cfg) throws IOException {
         Files.writeString(path, toText(cfg), StandardCharsets.UTF_8);
     }
 
-    /** Flatten the model back to the canonical key/value map (without meta). */
+    /**
+     * Flattens the model back to the canonical key/value map, without the meta keys.
+     *
+     * @param cfg configuration to flatten
+     * @return ordered engine keys and values
+     */
     public static Map<String, String> toFlatMap(IpcConfig cfg) {
         final Map<String, String> flat = new LinkedHashMap<>();
         flat.put(KeyModel.SOURCE_INTERFACE, nullToEmpty(cfg.sourceInterface()));
@@ -91,6 +103,13 @@ public final class PropertiesConfigWriter {
         return flat;
     }
 
+    /**
+     * Renders the model as the full legacy file text, including the comment header and the
+     * fixed section order.
+     *
+     * @param cfg configuration to render
+     * @return file text
+     */
     public static String toText(IpcConfig cfg) {
         final Map<String, String> flat = toFlatMap(cfg);
 

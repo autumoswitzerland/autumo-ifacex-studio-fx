@@ -44,7 +44,17 @@ public final class InterfaceTypes {
         UNKNOWN
     }
 
-    /** Resolved type information of one interface name. */
+    /**
+     * Resolved type information of one interface name.
+     *
+     * @param rwName      section name, e.g. {@code csv_in}, {@code code} or {@code exec}
+     * @param kind        role of the interface
+     * @param prefix      engine parameter prefix without the {@code _in}/{@code _out} suffix,
+     *                    e.g. {@code csv}
+     * @param display     human readable type name, e.g. {@code CSV}
+     * @param colorHex    legacy GUI colour used for the type pill
+     * @param engineClass fully qualified engine reader/writer class, or {@code null} when unknown
+     */
     public record InterfaceType(
             String rwName,
             Kind kind,
@@ -53,25 +63,39 @@ public final class InterfaceTypes {
             String colorHex,
             String engineClass) {
 
-        /** Reader/writer section parameter prefix, e.g. {@code csv_in_}. */
+        /**
+         * The engine parameter prefix of this section, e.g. {@code csv_in_}.
+         *
+         * @return section name plus a trailing underscore
+         */
         public String keyPrefix() {
             return rwName + "_";
         }
 
-        /** True for a source interface. */
+        /**
+         * Whether this type is a source interface.
+         *
+         * @return {@code true} for a reader
+         */
         public boolean isReader() {
             return kind == Kind.READER;
         }
 
-        /** True for a destination interface. */
+        /**
+         * Whether this type is a destination interface.
+         *
+         * @return {@code true} for a writer
+         */
         public boolean isWriter() {
             return kind == Kind.WRITER;
         }
     }
 
-    /** Legacy GUI colours. */
+    /** Legacy GUI colour for base/general nodes. */
     public static final String COLOR_BASE = "#48486b";
+    /** Legacy GUI colour for readers. */
     public static final String COLOR_READER = "#486b48";
+    /** Legacy GUI colour for writers. */
     public static final String COLOR_WRITER = "#6b4848";
 
     /** prefix -&gt; display name (reader and writer share the display name). */
@@ -118,8 +142,11 @@ public final class InterfaceTypes {
     }
 
     /**
-     * Resolve the type of an interface name such as {@code csv_in}, {@code rest_out},
+     * Resolves the type of an interface name such as {@code csv_in}, {@code rest_out},
      * {@code code} or {@code exec}.
+     *
+     * @param rwName interface name, may be empty or {@code null}
+     * @return resolved type, never {@code null} ({@code Kind.UNKNOWN} for an unknown name)
      */
     public static InterfaceType of(String rwName) {
         if (rwName == null || rwName.isEmpty()) {
@@ -144,17 +171,32 @@ public final class InterfaceTypes {
                 kind == Kind.READER ? READER_CLASS.get(prefix) : WRITER_CLASS.get(prefix));
     }
 
-    /** True when the name is a reader interface ({@code _in}). */
+    /**
+     * Whether the name is a reader interface ({@code _in}).
+     *
+     * @param rwName interface name
+     * @return {@code true} for a reader
+     */
     public static boolean isReader(String rwName) {
         return of(rwName).isReader();
     }
 
-    /** True when the name is a writer interface ({@code _out}, {@code code}, {@code exec}). */
+    /**
+     * Whether the name is a writer interface ({@code _out}, {@code code}, {@code exec}).
+     *
+     * @param rwName interface name
+     * @return {@code true} for a writer
+     */
     public static boolean isWriter(String rwName) {
         return of(rwName).isWriter();
     }
 
-    /** Colour of an interface role. */
+    /**
+     * Legacy colour of an interface role.
+     *
+     * @param kind role
+     * @return colour as {@code #rrggbb}
+     */
     public static String color(Kind kind) {
         return switch (kind) {
             case READER -> COLOR_READER;
@@ -163,7 +205,12 @@ public final class InterfaceTypes {
         };
     }
 
-    /** Display name of a prefix, capitalised when unknown. */
+    /**
+     * Display name of a prefix; an unknown prefix is simply capitalised.
+     *
+     * @param prefix interface prefix, e.g. {@code csv}
+     * @return human readable type name
+     */
     public static String display(String prefix) {
         final String d = DISPLAY.get(prefix);
         if (d != null) {
@@ -175,17 +222,29 @@ public final class InterfaceTypes {
         return Character.toUpperCase(prefix.charAt(0)) + prefix.substring(1);
     }
 
-    /** All known reader prefixes, in the legacy GUI order. */
+    /**
+     * All known reader prefixes, in the legacy GUI order.
+     *
+     * @return reader prefixes, e.g. {@code csv}
+     */
     public static List<String> readerPrefixes() {
         return new ArrayList<>(READER_CLASS.keySet());
     }
 
-    /** All known writer prefixes, in the legacy GUI order. */
+    /**
+     * All known writer prefixes, in the legacy GUI order.
+     *
+     * @return writer prefixes, e.g. {@code csv}
+     */
     public static List<String> writerPrefixes() {
         return new ArrayList<>(WRITER_CLASS.keySet());
     }
 
-    /** All known reader interface names ({@code csv_in}, …). */
+    /**
+     * All known reader interface names.
+     *
+     * @return reader names, e.g. {@code csv_in}
+     */
     public static List<String> readerNames() {
         final List<String> names = new ArrayList<>();
         for (final String p : READER_CLASS.keySet()) {
@@ -194,7 +253,11 @@ public final class InterfaceTypes {
         return names;
     }
 
-    /** All known writer interface names ({@code csv_out}, {@code code}, …). */
+    /**
+     * All known writer interface names.
+     *
+     * @return writer names, e.g. {@code csv_out}, {@code code}
+     */
     public static List<String> writerNames() {
         final List<String> names = new ArrayList<>();
         for (final String p : WRITER_CLASS.keySet()) {

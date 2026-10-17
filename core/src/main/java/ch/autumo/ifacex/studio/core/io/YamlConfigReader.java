@@ -43,10 +43,25 @@ public final class YamlConfigReader {
     private YamlConfigReader() {
     }
 
+    /**
+     * Reads a {@code .ifcx} file from disk.
+     *
+     * @param path file to read (UTF-8)
+     * @return parsed configuration
+     * @throws IOException when the file cannot be read
+     */
     public static IpcConfig read(Path path) throws IOException {
         return read(Files.readString(path, StandardCharsets.UTF_8));
     }
 
+    /**
+     * Parses the new YAML format from a string (e.g. the in-memory editor buffer). The YAML body
+     * is flattened and handed to {@link PropertiesConfigReader#fromFlat} so that both formats
+     * share exactly one classification implementation.
+     *
+     * @param text complete document text, comment header included
+     * @return parsed configuration
+     */
     public static IpcConfig read(String text) {
         final Object rootObj = LOAD.loadFromString(text);
         final Map<String, String> flat = flatten(asMap(rootObj));

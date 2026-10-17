@@ -27,23 +27,29 @@ import java.util.regex.Pattern;
  */
 public final class KeyModel {
 
-    /** Cross-cutting keys. */
+    /** Job-level key: the single source interface, e.g. {@code rest_in}. */
     public static final String SOURCE_INTERFACE = "source_interface";
+    /** Job-level key: comma-separated destination interfaces. */
     public static final String DESTINATION_INTERFACES = "destination_interfaces";
+    /** Job-level key: comma-separated global source entities. */
     public static final String PROCESS_SOURCE_ENTITIES = "process_source_entities";
 
-    /** Special entity-scoped parameters. */
+    /** Entity-scoped key: the source field list. */
     public static final String P_FIELDS = "fields";
+    /** Entity-scoped key: the destination entity of a writer mapping. */
     public static final String P_MAPPING_ENTITY = "mapping_entity";
+    /** Entity-scoped key prefix: a standard mapping record. */
     public static final String PFX_MAPPING_FIELD = "mapping_field_";
+    /** Entity-scoped key prefix: an insert-only mapping record. */
     public static final String PFX_MAPPING_INSERT = "mapping_insert_";
 
     /** Wildcard scope marker. */
     public static final String WILDCARD = "*";
 
-    /** Section order used by the legacy properties writer (store0). */
+    /** Reader section order used by the legacy properties writer (store0). */
     public static final List<String> READER_ORDER =
             List.of("csv_in", "json_in", "doc_in", "db_in", "mongo_in", "rest_in");
+    /** Writer section order used by the legacy properties writer (store0). */
     public static final List<String> WRITER_ORDER =
             List.of("csv_out", "json_out", "mail_out", "db_out", "rest_out", "mongo_out", "code", "exec");
 
@@ -53,8 +59,11 @@ public final class KeyModel {
     }
 
     /**
-     * Return the reader/writer prefix for a key, or {@code null} if the key is not
-     * reader/writer scoped.
+     * Returns the reader/writer prefix for a key.
+     *
+     * @param key flat engine key, e.g. {@code csv_in_global_x}
+     * @return prefix such as {@code csv_in}, {@code code} or {@code exec}; {@code null} when the
+     *         key is not reader/writer scoped
      */
     public static String rwPrefix(String key) {
         final Matcher m = RW.matcher(key);
@@ -70,15 +79,35 @@ public final class KeyModel {
         return null;
     }
 
+    /**
+     * Whether a reader/writer prefix denotes a reader ({@code *_in}, and the special
+     * {@code null_in} / {@code file_in}).
+     *
+     * @param prefix prefix from {@link #rwPrefix(String)}
+     * @return {@code true} for a reader prefix
+     */
     public static boolean isReaderPrefix(String prefix) {
         return prefix != null && (prefix.endsWith("_in") || prefix.equals("null_in") || prefix.equals("file_in"));
     }
 
+    /**
+     * Whether a reader/writer prefix denotes a writer. Every prefix that is not a reader prefix
+     * counts as a writer.
+     *
+     * @param prefix prefix from {@link #rwPrefix(String)}
+     * @return {@code true} for a writer prefix
+     */
     public static boolean isWriterPrefix(String prefix) {
         return prefix != null && !isReaderPrefix(prefix);
     }
 
-    /** Strip the reader/writer prefix and the leading underscore, returning the remainder. */
+    /**
+     * Strips the reader/writer prefix and the separating underscore.
+     *
+     * @param key    full key, e.g. {@code csv_in_ent_fields}
+     * @param prefix prefix from {@link #rwPrefix(String)}, e.g. {@code csv_in}
+     * @return the remainder, e.g. {@code ent_fields}
+     */
     public static String remainder(String key, String prefix) {
         return key.substring(prefix.length() + 1);
     }

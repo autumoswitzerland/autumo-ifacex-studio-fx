@@ -20,6 +20,11 @@ package ch.autumo.ifacex.studio.core.model;
  *
  * <p>Legacy: {@code <rw>_<entity>_mapping_field_NNN} / {@code ..._mapping_insert_NNN}
  * with value {@code destField:formula} (split on the first {@code :}).</p>
+ *
+ * @param destField destination field name
+ * @param formula   source field reference or mapping formula
+ * @param insert    {@code true} for an insert-only mapping ({@code mapping_insert_NNN}),
+ *                  {@code false} for a standard mapping ({@code mapping_field_NNN})
  */
 public record FieldMappingRec(String destField, String formula, boolean insert) {
 }

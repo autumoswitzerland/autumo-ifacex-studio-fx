@@ -46,6 +46,10 @@ import javafx.stage.Stage;
  */
 public class StudioApp extends BaseApp {
 
+    /** Creates the application; the framework instantiates exactly one. */
+    public StudioApp() {
+    }
+
     /** Application base resource path (autumo-ui convention). */
     private static final String BASE = "/ch/autumo/ifacex/studio/ui/";
 
@@ -63,6 +67,20 @@ public class StudioApp extends BaseApp {
         return instance;
     }
 
+    /**
+     * Resolves the language before the UI is built, keeps the autumo-ui framework in sync and
+     * installs the application view.
+     *
+     * <p>English is the default and does <em>not</em> follow the operating system locale.
+     * Precedence: {@code -Difacex.lang=de} &gt; {@code language=de} in {@code cfg/app.cfg}
+     * (autumo-ui convention) &gt; the {@code lang} alias &gt; English. The framework is switched
+     * first (it owns the window title, the About/license panes and framework dialogs), then the
+     * Studio's own PO catalogue is layered on top.</p>
+     *
+     * @param primaryStage  primary window
+     * @param configuration resolved application configuration
+     * @return the root pane of the application view
+     */
     @Override
     protected Pane preInitialize(Stage primaryStage, Properties configuration) {
         instance = this;
@@ -95,6 +113,14 @@ public class StudioApp extends BaseApp {
         return view;
     }
 
+    /**
+     * Finishes the window set-up after the view exists: adds the Studio style sheet, sizes the
+     * stage and either runs the headless self-test or shows the window and opens the file handed
+     * in on the command line.
+     *
+     * @param primaryStage  primary window
+     * @param configuration resolved application configuration
+     */
     @Override
     protected void initialize(Stage primaryStage, Properties configuration) {
         final List<String> args = getParameters().getRaw();
@@ -142,6 +168,11 @@ public class StudioApp extends BaseApp {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * <p>Nothing to clean up in portable mode.</p>
+     */
     @Override
     public void finish(Stage primaryStage) {
         // nothing to clean up in portable mode
@@ -164,41 +195,86 @@ public class StudioApp extends BaseApp {
         }
     }
 
+    /**
+     * The Studio's application base resource path; the framework loads {@code main.fxml},
+     * {@code html/*.html}, the PO catalogue and the images from here.
+     *
+     * @return base resource path, e.g. {@code /ch/autumo/ifacex/studio/ui/}
+     */
     @Override
     public String getBaseResourcePath() {
         return BASE;
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @return the bundled {@code cfg/app.cfg} template of the Studio
+     */
     @Override
     public String getConfigTemplateFile() {
         return BASE + "cfg/app.cfg";
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @return the bundled base-configuration template, {@code cfg/base.ifc}
+     */
     @Override
     public String getBaseConfigTemplateFile() {
         return BASE + "cfg/base.ifc";
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @return the identifier used for the in-memory (unsaved) configuration
+     */
     @Override
     public String getInMemoryConfigName() {
         return "ifacex-studio-fx";
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @return the Studio version
+     */
     @Override
     public String getAppVersion() {
         return "0.1.0-SNAPSHOT";
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @return the human readable application title
+     */
     @Override
     public String getAppTitle() {
         return "ifaceX Studio FX";
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @return the internal application name (no spaces), used for directories and files
+     */
     @Override
     public String getInternalAppName() {
         return "ifaceXStudioFX";
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * <p>The Studio currently runs in portable mode: no installer and no licensing, so
+     * development does not require a license. The installer and the registration/licensing UI are
+     * wired in later.</p>
+     *
+     * @return {@code true}
+     */
     @Override
     protected boolean isPortableApp() {
         return true;

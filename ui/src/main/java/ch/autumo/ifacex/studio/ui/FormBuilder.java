@@ -79,6 +79,11 @@ final class FormBuilder {
 
     /** Selection carried by a navigation tree item. */
     record NavNode(String kind, String label, Object payload, Object payload2) {
+        /**
+         * The navigation tree shows the label only.
+         *
+         * @return the display label
+         */
         @Override
         public String toString() {
             return label;

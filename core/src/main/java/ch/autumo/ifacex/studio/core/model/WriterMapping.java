@@ -23,17 +23,36 @@ import java.util.List;
  */
 public final class WriterMapping {
 
+    /** Creates an empty mapping with no destination entity. */
+    public WriterMapping() {
+    }
+
     private String destEntity;
     private final List<FieldMappingRec> fields = new ArrayList<>();
 
+    /**
+     * The destination entity this mapping writes to (legacy {@code mapping_entity}).
+     *
+     * @return destination entity name, or {@code null} when unset
+     */
     public String destEntity() {
         return destEntity;
     }
 
+    /**
+     * Sets the destination entity.
+     *
+     * @param destEntity destination entity name
+     */
     public void setDestEntity(String destEntity) {
         this.destEntity = destEntity;
     }
 
+    /**
+     * The ordered destination mappings: destination field to source formula.
+     *
+     * @return mutable list of mapping records (standard and insert-marker entries together)
+     */
     public List<FieldMappingRec> fields() {
         return fields;
     }

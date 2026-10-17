@@ -33,7 +33,12 @@ public final class CommentHeader {
     private CommentHeader() {
     }
 
-    /** Render the header block, ending with a newline after the closing ruler. */
+    /**
+     * Renders the header block, ending with a newline after the closing ruler.
+     *
+     * @param meta metadata to render
+     * @return the comment header text
+     */
     public static String render(Meta meta) {
         final StringBuilder sb = new StringBuilder();
         sb.append(RULER).append('\n');
@@ -58,7 +63,12 @@ public final class CommentHeader {
         return sb.toString();
     }
 
-    /** Parse the metadata out of a configuration file's comment lines. */
+    /**
+     * Parses the metadata out of a configuration file's comment lines.
+     *
+     * @param lines all lines of the file, comment header included
+     * @return parsed metadata; missing fields keep their default values
+     */
     public static Meta parse(List<String> lines) {
         String title = "";
         String author = "";

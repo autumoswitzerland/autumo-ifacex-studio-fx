@@ -360,6 +360,13 @@ public class MainController extends BaseController {
      */
     private TreeCell<FormBuilder.NavNode> navCell() {
         return new TreeCell<>() {
+            /**
+             * Renders one navigation node: the coloured type pill (when the node carries a
+             * section) followed by the plain text label.
+             *
+             * @param item  the node to render, or {@code null} for an empty cell
+             * @param empty whether the cell is empty
+             */
             @Override
             protected void updateItem(FormBuilder.NavNode item, boolean empty) {
                 super.updateItem(item, empty);

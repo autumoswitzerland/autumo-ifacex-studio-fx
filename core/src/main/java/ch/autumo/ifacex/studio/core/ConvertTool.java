@@ -40,6 +40,13 @@ public final class ConvertTool {
     private ConvertTool() {
     }
 
+    /**
+     * Command-line entry point for the PoC converter.
+     *
+     * @param args {@code <in.ifacex> [outDir]} to convert a single file, or
+     *             {@code --check <dir>} to verify lossless round-trips
+     * @throws Exception when a file cannot be read or written
+     */
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {
             System.out.println("usage: ConvertTool <in.ifacex> [outDir]");
@@ -54,6 +61,15 @@ public final class ConvertTool {
         convert(in, outDir);
     }
 
+    /**
+     * Converts one legacy {@code .ifacex} file into the new {@code .ifcx} YAML format and
+     * writes the YAML plus a re-exported {@code .ifacex} (the properties round-trip) into
+     * {@code outDir}. A short summary of the job wiring is printed to standard out.
+     *
+     * @param in     legacy configuration file to read
+     * @param outDir target directory; created when it does not exist
+     * @throws Exception when the source cannot be read or a target cannot be written
+     */
     public static void convert(Path in, Path outDir) throws Exception {
         Files.createDirectories(outDir);
         final IpcConfig cfg = PropertiesConfigReader.read(in);
@@ -73,6 +89,15 @@ public final class ConvertTool {
                 + " entities=" + cfg.processSourceEntities());
     }
 
+    /**
+     * Verifies that every legacy configuration in {@code dir} round-trips losslessly: the model
+     * must reproduce the original file key for key, and both the properties writer and the YAML
+     * writer must survive a full read/write cycle unchanged.
+     *
+     * @param dir directory that holds the {@code *.ifacex} files (the base config is skipped)
+     * @return {@code 0} when all files pass, {@code 1} when at least one fails
+     * @throws Exception when the directory cannot be listed
+     */
     public static int check(Path dir) throws Exception {
         int ok = 0;
         int bad = 0;

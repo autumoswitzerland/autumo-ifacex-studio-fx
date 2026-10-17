@@ -47,8 +47,10 @@ public final class MappingFormula {
     }
 
     /**
-     * Parse a mapping line typed in the formula box.
+     * Parses a mapping line typed in the formula box.
      *
+     * @param text   raw line, e.g. {@code target:{source1}{source2}}
+     * @param insert {@code true} for an insert-only mapping, {@code false} for a standard one
      * @return the mapping record, or {@code null} when the line is empty or invalid (the caller
      *         shows the legacy-style warning).
      */
@@ -65,18 +67,33 @@ public final class MappingFormula {
         return new FieldMappingRec(parts[0], parts[1], insert);
     }
 
-    /** True when {@code text} is a valid mapping line. */
+    /**
+     * Whether {@code text} is a valid mapping line.
+     *
+     * @param text raw line
+     * @return {@code true} when it parses
+     */
     public static boolean isValid(String text) {
         return parse(text, false) != null;
     }
 
-    /** The display label of a mapping row: {@code [STD] target:formula} / {@code [INS] ...}. */
+    /**
+     * The display label of a mapping row, e.g. {@code [STD] target:formula}.
+     *
+     * @param rec mapping record
+     * @return label with the type marker
+     */
     public static String display(FieldMappingRec rec) {
         final String prefix = rec.insert() ? PREFIX_INS : PREFIX_STD;
         return prefix + " " + rec.destField() + ":" + rec.formula();
     }
 
-    /** The mapping line without the prefix, as stored in the formula box. */
+    /**
+     * The mapping line without the type marker, as it appears in the formula box.
+     *
+     * @param rec mapping record
+     * @return {@code target:formula}
+     */
     public static String line(FieldMappingRec rec) {
         return rec.destField() + ":" + rec.formula();
     }
@@ -85,6 +102,10 @@ public final class MappingFormula {
      * Legacy {@code generateMappings} ("All"/standard): map every source field to itself as
      * {@code field:{field}} (standard). Fields already mapped are skipped, so pressing the button
      * twice does not duplicate entries.
+     *
+     * @param sourceFields source fields to map
+     * @param existing     mappings already present
+     * @return the new standard mappings that are not covered yet
      */
     public static List<FieldMappingRec> standardFor(List<String> sourceFields,
             List<FieldMappingRec> existing) {

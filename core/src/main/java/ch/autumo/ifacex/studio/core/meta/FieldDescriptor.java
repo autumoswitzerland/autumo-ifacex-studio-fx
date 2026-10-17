@@ -28,10 +28,25 @@ import java.util.List;
 public record FieldDescriptor(String param, String label, FieldType type,
         List<String> options, String help) {
 
+    /**
+     * Creates a descriptor without select options and without help text.
+     *
+     * @param param engine parameter name
+     * @param label human readable label
+     * @param type  rendering/validation type
+     */
     public FieldDescriptor(String param, String label, FieldType type) {
         this(param, label, type, List.of(), "");
     }
 
+    /**
+     * Creates a descriptor with fixed selectable values and no help text.
+     *
+     * @param param   engine parameter name
+     * @param label   human readable label
+     * @param type    rendering/validation type
+     * @param options allowed values for a select field
+     */
     public FieldDescriptor(String param, String label, FieldType type, List<String> options) {
         this(param, label, type, options, "");
     }

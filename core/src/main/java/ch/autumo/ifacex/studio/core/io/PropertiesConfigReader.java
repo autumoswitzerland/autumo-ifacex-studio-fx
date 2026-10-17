@@ -47,17 +47,34 @@ public final class PropertiesConfigReader {
     private PropertiesConfigReader() {
     }
 
+    /**
+     * Reads a legacy {@code .ifacex} file from disk.
+     *
+     * @param path file to read (UTF-8)
+     * @return parsed configuration
+     * @throws IOException when the file cannot be read
+     */
     public static IpcConfig read(Path path) throws IOException {
         return read(Files.readAllLines(path, StandardCharsets.UTF_8));
     }
 
+    /**
+     * Parses a legacy configuration from already loaded lines, e.g. the lines of an in-memory
+     * editor buffer.
+     *
+     * @param lines file lines (without line terminators)
+     * @return parsed configuration
+     */
     public static IpcConfig read(List<String> lines) {
         return fromFlat(parseRaw(lines), CommentHeader.parse(lines));
     }
 
     /**
-     * Parse the raw {@code key=value} lines into an order-preserving map, skipping comments
+     * Parses the raw {@code key=value} lines into an order-preserving map, skipping comments
      * and blank lines. Values are kept verbatim (no escape processing) to mirror the legacy writer.
+     *
+     * @param lines file lines (without line terminators)
+     * @return ordered key/value pairs, meta keys included
      */
     public static Map<String, String> parseRaw(List<String> lines) {
         final Map<String, String> flat = new LinkedHashMap<>();
@@ -82,8 +99,12 @@ public final class PropertiesConfigReader {
     }
 
     /**
-     * Build the model from an already parsed, order-preserving key/value map plus metadata.
+     * Builds the model from an already parsed, order-preserving key/value map plus metadata.
      * Shared with the YAML reader to guarantee identical classification.
+     *
+     * @param flat flat engine keys, e.g. {@code csv_in_global_batch_mode}
+     * @param meta metadata for the comment header
+     * @return the parsed configuration
      */
     public static IpcConfig fromFlat(Map<String, String> flat, Meta meta) {
         final IpcConfig cfg = new IpcConfig();

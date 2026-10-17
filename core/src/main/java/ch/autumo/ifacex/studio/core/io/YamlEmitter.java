@@ -32,6 +32,12 @@ public final class YamlEmitter {
     private YamlEmitter() {
     }
 
+    /**
+     * Serialises a nested {@code Map}/{@code List} tree (with scalar leaves) to YAML text.
+     *
+     * @param root tree root, typically a {@link java.util.Map}
+     * @return YAML document text, terminated by a newline
+     */
     public static String dump(Object root) {
         final StringBuilder sb = new StringBuilder();
         if (root instanceof Map<?, ?> map) {

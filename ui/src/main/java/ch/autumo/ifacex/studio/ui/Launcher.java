@@ -27,6 +27,12 @@ public final class Launcher {
     private Launcher() {
     }
 
+    /**
+     * Launches the Studio. Command-line arguments are forwarded to the JavaFX application, which
+     * resolves them via {@link StudioApp#getParameters()}.
+     *
+     * @param args command-line arguments (e.g. {@code --selftest <file>} or a file to open)
+     */
     public static void main(String[] args) {
         Application.launch(StudioApp.class, args);
     }
