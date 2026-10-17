@@ -221,10 +221,10 @@ public class MainController extends BaseController {
     }
 
     /**
-     * The menu bar that may be detached to the macOS system menu bar.
+     * Returns the menu bar that may be detached to the macOS system menu bar.
      *
-     * <p>The framework sets {@code useSystemMenuBar} on it when running on macOS; the detach is
-     * prevented with {@code disableMacOSMenuDetach=yes} in {@code app.cfg}. On all other
+     * <p>The framework sets {@code useSystemMenuBarProperty()} on it when running on macOS; the
+     * detach is prevented with {@code disableMacOSMenuDetach=yes} in {@code app.cfg}. On all other
      * platforms this method is never called.</p>
      *
      * @return the menu bar of the main window
@@ -235,10 +235,10 @@ public class MainController extends BaseController {
     }
 
     /**
-     * The toolbar pane that is repositioned on macOS after the menu bar is
-     * detached to the system menu bar.
+     * Returns the toolbar pane that is repositioned on macOS after the menu bar is detached to
+     * the system menu bar.
      * 
-     * @return toolbar pane (BorderPane with fx:id "tool-bar-pane")
+     * @return toolbar pane (BorderPane with fx:id {@code "tool-bar-pane"})
      */
     @Override
     public javafx.scene.layout.Pane getToolBar() {
