@@ -426,7 +426,7 @@ legacy Studio set its language once at start-up (`SwingLocaleChanger`), not at r
 | File: Save As | not needed — `Save` always writes a fresh `.ifcx` (there is no "current path" for the new format yet) |
 | File: Export .ifcx / .ifacex | **new** items: the YAML format is primary, `.ifacex` is import/export only |
 | Configuration: Interface Processor / Base / Interfaces Configuration | the navigation tree + raw views (no separate editors) |
-| Configuration: Encoder | `UI.showEncoder(app)` (framework) |
+| Configuration: Encoder | `UI.showEncoder(app, false)` (framework, **unique** security key = engine seed `secret_key_seed`; not the internal framework key) |
 | Configuration: General Settings | open — the legacy pane was the Studio's own `PrefPanel` |
 | Configuration: Remove App Data | `UI.showRemovePane(app)` (framework) |
 | Process: Run | toolbar `Run` button (placeholder until the engine integration) |

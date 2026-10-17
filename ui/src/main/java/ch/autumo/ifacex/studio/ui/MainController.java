@@ -993,13 +993,15 @@ public class MainController extends BaseController {
      *
      * <p>The original Studio filled the pane from its own {@code STR_ENC_MODEL} list ("none",
      * "Base64 - SHA3-256 AES", …) and required a 32 character key from the general settings that had
-     * to match the engine's secret. The framework pane uses the application's internal key instead,
-     * so the Studio does not have to keep a second secret of its own — see
-     * {@code docs/07-risks-open-questions.md}.</p>
+     * to match the engine's secret. The framework pane is used with {@code internalEncryption=false}
+     * so it reads the application's <em>unique</em> security key ({@code secret_key_seed}) from the
+     * configuration instead of the internal framework key. When a test instance is configured later,
+     * that seed will be taken from the instance's base config ({@code cfg/ifacex.cfg} or
+     * {@code cfg/ifacex-base.ifcx}, whichever exists). See {@code docs/07-risks-open-questions.md}.</p>
      */
     @FXML
     private void onEncoder() {
-        UI.showEncoder(app);
+        UI.showEncoder(app, false);
     }
 
     /** {@code Configuration › Remove App Data}: the framework's pane (it asks before deleting). */

@@ -42,6 +42,7 @@ Carries over / reimplements the UI-free logic from the reference project:
 | Reader/writer metadata (tabs, fields, validation rules) | extracted from `Config*Panel` |
 | Templates / file layout constants | `Constants` |
 | OS helpers | `os/OSHelper`, `os/FileHandler` (non-UI parts) |
+| Launcher command-line handling (which config to open; `--open` / bare path for double-click) | new (`cli/CommandLine`) |
 
 ### `ui` module (JavaFX)
 

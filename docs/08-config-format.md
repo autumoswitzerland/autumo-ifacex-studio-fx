@@ -343,8 +343,16 @@ internally to run test IPCs (see 8.7), exposed as a user feature.
 Unlike IPC configs, the **base/general config is not generated from forms**. It is a file
 that **lives in the file structure of the test engine**:
 
-- `ifacex.cfg` — legacy properties (today)
-- `ifacex-base.ifcx` — the new YAML variant
+- `cfg/ifacex.cfg` — legacy properties (what existing engine installations ship)
+- `cfg/ifacex-base.ifcx` — the new YAML variant
+
+The Studio does **not** assume which one is present: it **checks the test engine's `cfg/`
+folder and uses whichever file exists** (the YAML variant is preferred when both are there,
+because that is the authoring file — `ifacex.cfg` is the export the engine still reads for test
+runs). This also decides where the **encoder seed** comes from: the **`secret_key_seed`** of the
+base configuration is the shared crypto seed, and the Studio uses it for password encoding
+(`UI.showEncoder(app, false)` → unique security key) exactly as the engine does. Old engine
+installations therefore keep working through `ifacex.cfg`; new ones use `ifacex-base.ifcx`.
 
 The Studio merely offers a way to **edit** it, **once a test engine has been defined**
 (a test engine is required anyway for test runs and for GUI licensing). The engine merges

@@ -19,6 +19,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Properties;
 
+import ch.autumo.ifacex.studio.core.cli.CommandLine;
 import ch.autumo.ifacex.studio.core.i18n.Messages;
 
 import ch.autumo.ui.Constants;
@@ -126,12 +127,18 @@ public class StudioApp extends BaseApp {
         // Dev convenience: apply studio.css edits without a restart (no-op in packaged builds).
         CssLiveReload.install(scene, studioCss);
 
-        // Optional: preload a configuration file, e.g. "bin/run.sh some.ifacex".
-        if (args.size() >= 2 && "--open".equals(args.get(0))) {
+        // Optional: open a configuration file handed in on the command line. Two shapes are
+        // accepted, because two launchers exist:
+        //   --open <file>   the development launcher "bin/run.sh some.ifacex";
+        //   <file>          the packaged (jpackage) launcher, which the OS passes verbatim when
+        //                   the user double-clicks a registered .ifcx/.ifacex file or uses
+        //                   "Open With". The association is declared in product/packaging/.
+        final Path toOpen = CommandLine.openTarget(args);
+        if (toOpen != null) {
             try {
-                controller.openFile(Path.of(args.get(1)));
+                controller.openFile(toOpen);
             } catch (Exception e) {
-                System.err.println("Could not open " + args.get(1) + ": " + e);
+                System.err.println("Could not open " + toOpen + ": " + e);
             }
         }
     }

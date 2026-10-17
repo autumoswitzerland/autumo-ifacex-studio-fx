@@ -66,6 +66,8 @@ explicitly instructed**; this is the proposed order of work.
 ## Phase 7 — Packaging & Release
 
 - `jpackage`/`jlink` for Windows/macOS/Linux.
+- Register `.ifcx` / `.ifacex` **file associations** so a double-click opens the Studio
+  (descriptors ready in `product/packaging/file-associations/`); app icon + bundle identity.
 - CI workflows (build + tests + release matrix).
 
 **Deliverable:** installable artifacts per OS.

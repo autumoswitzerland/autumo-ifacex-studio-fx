@@ -14,9 +14,9 @@
 #
 #  Usage:
 #   bin/run.sh                       start with an empty editor
-#   bin/run.sh path/to/config.ifacex open a config file directly
-#                                    (relative paths are resolved against the
-#                                     directory you invoke the script from)
+#   bin/run.sh path/to/config.ifcx   open a config file directly (.ifcx or the
+#   bin/run.sh path/to/config.ifacex   legacy .ifacex; relative paths are resolved
+#                                    against the directory you invoke the script from)
 #
 #------------------------------------------------------------------------------
 #
