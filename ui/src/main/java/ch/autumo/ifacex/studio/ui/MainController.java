@@ -700,7 +700,7 @@ public class MainController extends BaseController {
                         && getClass().getResource("html/about_de.html") != null
                         && getClass().getResource("html/license_en.html") != null
                         && getClass().getResource("html/license_de.html") != null)
-                + " aboutPaneOk=" + frameworkPaneSelfTest(() -> UI.showAboutWithLicense(app))
+                + " aboutPaneOk=" + frameworkPaneSelfTest(() -> UI.showAboutWithLicense(app, "/ch/autumo/ifacex/studio/ui/images/about-48.png"))
                 + " encoderPaneOk=" + frameworkPaneSelfTest(() -> UI.showEncoder(app))
                 + " licensePaneOk=" + frameworkPaneSelfTest(() -> UI.showLicense(app))
                 + " recentItems=" + menuRecent.getItems().size()
@@ -1007,7 +1007,7 @@ public class MainController extends BaseController {
      */
     @FXML
     private void onAbout() {
-        UI.showAboutWithLicense(app);
+        UI.showAboutWithLicense(app, "/ch/autumo/ifacex/studio/ui/images/about-48.png");
     }
 
     /**
