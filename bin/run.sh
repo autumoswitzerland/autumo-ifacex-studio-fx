@@ -6,10 +6,9 @@
 #
 #  Notes:
 #   - starts the JavaFX desktop application (module "ui")
-#   - builds/installs the "core" module first, so "ui" resolves it locally
 #   - forces JDK 25: the project is built for Java 25 and the JavaFX 25 class
 #     files (major 67) cannot be read by an older JVM. An older JAVA_HOME is
-#     therefore overridden, otherwise "javafx:run" fails with
+#     therefore overridden, otherwise ":ui:run" fails with
 #     "Unsupported major.minor version 67.0".
 #
 #  Usage:
@@ -28,59 +27,20 @@ set -e
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(cd "$HERE/.." && pwd)"
-
-# Remember where the user invoked us: "javafx:run" executes with the working
-# directory of the "ui" module, so relative file arguments must be resolved
-# against the caller's directory here (otherwise they are looked up in "ui/").
 INVOKE_DIR="$PWD"
 
-# Turn a (possibly relative) path into an absolute one.
-abspath() {
-	case "$1" in
-		/*)	printf '%s' "$1" ;;
-		*)	printf '%s/%s' "$INVOKE_DIR" "$1" ;;
-	esac
-}
-
-# --- Resolve the JDK 25 required by this project (override an older JAVA_HOME)
-JDK25=""
-if [ -x /usr/libexec/java_home ]
-then
-	JDK25="$(/usr/libexec/java_home -v 25 2>/dev/null || true)"
-fi
-if [ -z "$JDK25" ] && [ -d "/Library/Java/JavaVirtualMachines/zulu-25.jdk/Contents/Home" ]
-then
-	JDK25="/Library/Java/JavaVirtualMachines/zulu-25.jdk/Contents/Home"
-fi
-if [ -n "$JDK25" ]
-then
-	JAVA_HOME="$JDK25"
-	export JAVA_HOME
-else
-	echo "WARNING: no JDK 25 found (checked java_home and Zulu 25)."
-	echo "         Falling back to JAVA_HOME='${JAVA_HOME:-<unset>}'; the build will likely fail."
-fi
+. "$HERE/lib.sh"
+use_jdk25
 
 cd "$ROOT"
-
-echo "-> Using JDK: ${JAVA_HOME:-<default on PATH>}"
-if [ -n "$JAVA_HOME" ]
-then
-	"$JAVA_HOME/bin/java" -version 2>&1 | head -1 || true
-else
-	java -version 2>&1 | head -1 || true
-fi
-
-echo "-> Building core module ..."
-mvn -B -ntp -q -pl core install -DskipTests
 
 echo "-> Starting ifaceX Studio FX ..."
 if [ "$#" -gt 0 ]
 then
 	case "$1" in
-		-*)	ARGS="$*" ;;
-		*)	ARGS="--open $(abspath "$1")" ;;
+		-*)	ARGS="--args=$*" ;;
+		*)	ARGS="--args=--open $(abspath "$1")" ;;
 	esac
-	exec mvn -B -ntp -pl ui javafx:run -Djavafx.args="$ARGS"
+	exec ./gradlew -q :ui:run $ARGS
 fi
-exec mvn -B -ntp -pl ui javafx:run
+exec ./gradlew -q :ui:run

@@ -78,14 +78,14 @@ tab today — verify against reference).
 | Feature | Reference | Migration |
 | --- | --- | --- |
 | Raw config editor (base/interfaces) | `ConfigPanel` | `rewrite` |
-| Script / IPC editor | `IPCEditor` | `rewrite` (RichTextFX) |
+| Script / IPC editor | `IPCEditor` | `reuse` (autumo-ui `DefaultCodeEditorView`, RSyntaxTextArea 1:1) |
 | JSON formatter | `JSONPanel` | `rewrite` (Gson `reuse`) |
 | Encoder | `EncoderPanel` | `autumo-ui` (`UI.showEncoder`; the framework uses the application's internal key instead of the legacy 32-hex secret) |
 | Preferences / general settings | `PrefPanel` | `rewrite` (open) |
 | Update check | `UpdatePanel` | `autumo-ui` (`UI.showUpdatePane`; needs a real `url.website.version.file`) |
 | About | `AboutPanel` | `autumo-ui` (`UI.showAboutWithLicense`, `html/about_<lang>.html`) |
-| Remove app data | `RemovePanel` | `autumo-ui` (`UI.showRemovePane`) — `Configuration › Remove App Data` |
-| License view | `LicensePanel` | `autumo-ui` (`UI.showLicense`, `html/license_<lang>.html`) — `Help › License` |
+| Remove app data | `RemovePanel` | `autumo-ui` (`UI.showRemovePane`) — `Configuration › Remove App Data`; the pane's HTML is the **framework default** (`ch/autumo/ui/html/remove_<lang>.html`), the Studio ships none |
+| License view | `LicensePanel` | `autumo-ui` (`UI.showLicense`, `html/license_<lang>.html`) — no menu item; shown by the **License** button of the About dialog (`UI.showAboutWithLicense`), as in the legacy Studio |
 | Open online documentation / visit website | `jMenuItem_OpenDoco`, `jMenuItem_Visit` | `reuse` (browser via `Helper.openURL`, URLs from `cfg/app.cfg`) |
 | Registration | `RegisterPanel` | `rewrite` (open — own top-level menu, as in the original) |
 | OS file open/edit | `os/FileHandler` | `extract` |
@@ -94,7 +94,7 @@ tab today — verify against reference).
 
 | Feature | Reference | Migration |
 | --- | --- | --- |
-| First-run wizard (license→lang→settings→done) | `installer/*` | `rewrite` |
+| First-run wizard (license→lang→settings→done) | `installer/*` | `rewrite` — **done** (2026-10-18): framework steps *About/Terms* → `StepSettings` → *Done*; settings = `project.root`, `play.sounds`, `play.jingle` (no consumer in the FX Studio yet). The legacy *language* step is dropped — the language follows the desktop and is switched at runtime (`Help › Language`). License acceptance is part of the first step |
 | License acceptance flag | `licenseAccepted` | `extract` |
 | License server check | `LicenseUtils` (autumo-commons) | `reuse` |
 | Registration data handling | `RegisterPanel`, `Registration.*` | `extract` |

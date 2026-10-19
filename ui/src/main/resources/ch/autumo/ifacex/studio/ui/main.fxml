@@ -44,10 +44,11 @@
                     <MenuItem fx:id="miExit" text="Exit" onAction="#onExit"/>
                 </Menu>
                 <!-- Configuration as in the original Studio; only the framework-backed panes are
-                     wired here (Encoder, Remove App Data) — see docs/11 for the two config editors
-                     that the new Studio shows in the navigation tree instead. -->
+                     wired here (Encoder, JSON Formatter, Remove App Data) — see docs/11 for the
+                     two config editors that the new Studio shows in the navigation tree instead. -->
                 <Menu fx:id="menuConfig" text="Configuration">
                     <MenuItem fx:id="miEncoder" text="Encoder" onAction="#onEncoder"/>
+                    <MenuItem fx:id="miJsonFormatter" text="JSON Formatter" onAction="#onJsonFormatter"/>
                     <SeparatorMenuItem/>
                     <MenuItem fx:id="miRemoveAppData" text="Remove App Data"
                               onAction="#onRemoveAppData"/>
@@ -58,13 +59,12 @@
                     <MenuItem fx:id="miWebsite" text="Visit Website" onAction="#onWebsite"/>
                     <MenuItem fx:id="miUpdate" text="Check for Updates" onAction="#onUpdate"/>
                     <SeparatorMenuItem/>
-                    <Menu fx:id="menuLanguage" text="Language">
-                        <RadioMenuItem fx:id="miLangEn" text="English" onAction="#onLanguage"/>
-                        <RadioMenuItem fx:id="miLangDe" text="Deutsch" onAction="#onLanguage"/>
-                    </Menu>
+                    <!-- Filled by the autumo-ui framework: BaseController.initializeLanguageMenu()
+                         creates one radio item per supported language, flag and language name
+                         included. -->
+                    <Menu fx:id="menuLanguage" text="Language"/>
                     <SeparatorMenuItem/>
                     <MenuItem fx:id="miAbout" text="About" onAction="#onAbout"/>
-                    <MenuItem fx:id="miLicense" text="License" onAction="#onLicense"/>
                 </Menu>
             </MenuBar>
             <BorderPane styleClass="tool-bar-pane" AnchorPane.topAnchor="30.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">

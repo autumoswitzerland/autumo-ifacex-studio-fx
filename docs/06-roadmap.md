@@ -50,14 +50,15 @@ explicitly instructed**; this is the proposed order of work.
 
 ## Phase 5 — Tools & Dialogs
 
-- Script/config raw editors (RichTextFX).
+- Script/config raw editors (`DefaultCodeEditorView` — RSyntaxTextArea embedded via `SwingNode`).
 - JSON formatter, Encoder, Preferences, Update, About, Remove, License, Register.
 
 **Deliverable:** complete tool set.
 
 ## Phase 6 — Installer, License, Customization
 
-- First-run wizard.
+- First-run wizard. *(Wired 2026-10-18: *About/Terms* → **General Settings** → *Done*, run by the
+  framework because the Studio is not portable; see doc 07 §7.5.)*
 - License acceptance/registration flow.
 - Customer customization hook (if kept).
 

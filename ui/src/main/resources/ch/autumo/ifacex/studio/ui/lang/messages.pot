@@ -58,6 +58,9 @@ msgstr ""
 msgid "Check for Updates"
 msgstr ""
 
+msgid "Choose root configuration folder…"
+msgstr ""
+
 msgid "Clear Entries"
 msgstr ""
 
@@ -71,6 +74,9 @@ msgid "Closed"
 msgstr ""
 
 msgid "Configuration"
+msgstr ""
+
+msgid "Configuration root folder:"
 msgstr ""
 
 msgid "Converted from legacy .ifacex"
@@ -176,6 +182,9 @@ msgid "Formula"
 msgstr ""
 
 msgid "Formula (drop source fields here)"
+msgstr ""
+
+msgid "General Settings"
 msgstr ""
 
 msgid "Global job configuration (source_interface, destination_interfaces, process_source_entities)"
@@ -284,6 +293,12 @@ msgid "Overwritten Values"
 msgstr ""
 
 msgid "Parameters"
+msgstr ""
+
+msgid "Play jingle?"
+msgstr ""
+
+msgid "Play sounds?"
 msgstr ""
 
 msgid "Raw Properties (.ifacex)"

@@ -1,16 +1,8 @@
-/**
- * Copyright 2026 autumo GmbH, Michael Gasche.
- * All Rights Reserved.
- * 
- * NOTICE: All information contained herein is, and remains
- * the property of autumo GmbH The intellectual and technical
- * concepts contained herein are proprietary to autumo GmbH
- * and are protected by trade secret or copyright law.
- * 
- * Dissemination of this information or reproduction of this material
- * is strictly forbidden unless prior written permission is obtained
- * from autumo GmbH.
- * 
+/*
+ * Copyright 2026 autumo GmbH.
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 package ch.autumo.ifacex.studio.ui;
 
@@ -31,7 +23,7 @@ public final class Launcher {
      * Launches the Studio. Command-line arguments are forwarded to the JavaFX application, which
      * resolves them via {@link StudioApp#getParameters()}.
      *
-     * @param args command-line arguments (e.g. {@code --selftest <file>} or a file to open)
+     * @param args command-line arguments (a configuration file to open)
      */
     public static void main(String[] args) {
         Application.launch(StudioApp.class, args);

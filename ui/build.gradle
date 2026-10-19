@@ -1,0 +1,186 @@
+/**
+ * UI module: the Studio shell on the autumo-ui framework.
+ *
+ * - badass-runtime: jlink runtime image + jpackage installer (the Studio's own
+ *   application icon is the autumo-ifacex-studio set in src/main/resources/.../icons/).
+ * - shadow: a standalone fat jar (one JAR instead of many — an advantage on Windows).
+ * - openjfx: the Studio pins its own JavaFX 25 (the framework's JavaFX is excluded).
+ */
+
+plugins {
+    id 'com.gradleup.shadow'
+    id 'org.beryx.runtime'
+    id 'org.openjfx.javafxplugin'
+}
+
+javafx {
+    version = '25'
+    modules = ['javafx.controls', 'javafx.fxml', 'javafx.web', 'javafx.swing']
+}
+
+dependencies {
+    api project(':core')
+
+    // The framework's own JavaFX is excluded; the Studio pins its own JavaFX 25 (above).
+    api('ch.autumo.commons:autumo-ui:1.2.0') {
+        exclude group: 'org.openjfx'
+    }
+
+    // Proprietary registration implementation (register test instances with a license
+    // through the input mask). Deliberately NOT exposed by autumo-ui, so the Studio
+    // declares it itself.
+    api 'ch.autumo.registration:autumo-registration:1.2.0'
+}
+
+application {
+    mainClass = 'ch.autumo.ifacex.studio.ui.Launcher'
+}
+
+// JavaFX loads native libraries; on macOS this needs the native access flag.
+tasks.named('run') {
+    jvmArgs '--enable-native-access=javafx.graphics'
+}
+
+// The Studio is an installed application: autumo-ui resolves the user's application data
+// directory below 'user.home' (autumo-commons reads it once at class initialisation). The
+// UI tests build the real shell, so they must not read or write the developer's app.cfg -
+// the scratch home below the build directory isolates them completely.
+tasks.named('test') {
+    systemProperty 'user.home', layout.buildDirectory.dir('test-home').get().asFile
+    jvmArgs '--enable-native-access=javafx.graphics'
+}
+
+// Standalone fat jar: excludes the JavaFX/JDK classes the packaged runtime provides.
+shadowJar {
+    exclude 'javax/**'
+    exclude 'javafx/**'
+    exclude 'com/sun/**'
+    exclude '*.dylib'
+}
+
+def runtimeJdk = 'zulu25.36.205-ca-fx-jdk25.0.4.1'
+
+runtime {
+    modules = ['javafx.controls', 'javafx.fxml', 'javafx.web', 'javafx.swing']
+
+    // jpackage accepts one to three dot-separated integers as the application version, so the
+    // development version's '-SNAPSHOT' qualifier (3.0.0-SNAPSHOT) is stripped for the installer.
+    // The project version itself stays untouched.
+    def installerVersion = project.version.toString().replaceFirst(/(?i)-.*$/, '')
+
+    jpackage {
+        options = [
+            '--strip-debug',
+            // 'zip-6' replaces the deprecated numeric '--compress 2' (JDK 21+).
+            '--compress', 'zip-6',
+            '--no-header-files',
+            '--no-man-pages'
+        ]
+
+        // The plugin derives --app-version from project.version (3.0.0-SNAPSHOT), which jpackage
+        // rejects. Override it with the sanitized, numeric installer version (see above).
+        appVersion = installerVersion
+
+        targetPlatformName = 'mac'
+        imageName = 'ifaceX Studio FX'
+        jvmArgs = ['-Djdk.gtk.version=2']
+        // The packaging resources (license texts for the installers) live in the root project's
+        // 'package/' directory - NOT in the 'ui' module, so rootProject.file() must be used here:
+        // file('package/') would resolve to 'ui/package', which does not exist.
+        resourceDir = rootProject.file('package')
+
+        installerOptions = [
+            '--description', 'Modern JavaFX rebuild of the ifaceX Studio',
+            '--copyright', 'Copyright 2026 autumo GmbH',
+            '--vendor', 'autumo GmbH'
+        ]
+
+        if (targetPlatformName == 'macArch') {
+            targetPlatform('macArch') {
+                jdkHome = providers.provider {
+                    '/Volumes/Fastdrive/Development/JDKs/Azul/mac/' +
+                        runtimeJdk + '-macosx_aarch64/Contents/Home'
+                }
+            }
+            installerType = 'pkg'
+            installerOptions += ['--name', 'ifaceX-Studio-FX-arm64']
+        }
+
+        if (targetPlatformName == 'mac') {
+            targetPlatform('mac') {
+                jdkHome = providers.provider {
+                    '/Volumes/Fastdrive/Development/JDKs/Azul/mac/' +
+                        runtimeJdk + '-macosx_x64/Contents/Home'
+                }
+            }
+            installerType = 'pkg'
+            installerOptions += ['--name', 'ifaceX-Studio-FX-x64']
+        }
+
+        if (targetPlatformName == 'win') {
+            targetPlatform('win') {
+                jdkHome = providers.provider {
+                    'G:/Java/JDKs/Azul/' + runtimeJdk + '-win_x64'
+                }
+            }
+            installerType = 'exe'
+            installerOptions += ['--name', 'ifaceX-Studio-FX']
+        }
+
+        if (targetPlatformName == 'linux') {
+            targetPlatform('linux') {
+                jdkHome = providers.provider {
+                    '/opt/java/' + runtimeJdk + '-linux_amd64'
+                }
+            }
+            installerType = 'deb'
+            installerOptions += ['--name', 'ifaceX-Studio-FX']
+        }
+
+        if (installerType == 'pkg') {
+            imageOptions += ['--icon', 'src/main/resources/ch/autumo/ifacex/studio/ui/icons/autumo-ifacex-studio.icns']
+            installerOptions += [
+                // Absolute path: jpackage resolves a relative --license-file against its own
+                // working directory, which is not necessarily this project.
+                '--license-file', rootProject.file('package/LICENSE-OS-Installer.txt').absolutePath
+            ]
+        }
+
+        if (installerType == 'exe') {
+            imageOptions += ['--icon', 'src/main/resources/ch/autumo/ifacex/studio/ui/icons/autumo-ifacex-studio.ico']
+            installerOptions += [
+                '--win-dir-chooser',
+                '--win-menu',
+                '--win-shortcut'
+            ]
+        }
+
+        if (installerType in ['deb', 'rpm']) {
+            imageOptions += ['--icon', 'src/main/resources/ch/autumo/ifacex/studio/ui/icons/app-256.png']
+            installerOptions += [
+                '--resource-dir', 'build/jpackage/ifaceX Studio FX/lib',
+                '--license-file', rootProject.file('package/LICENSE.txt').absolutePath,
+                '--linux-menu-group', 'Utility',
+                '--linux-shortcut'
+            ]
+        }
+
+        if (installerType == 'deb') {
+            installerOptions += [
+                '--linux-deb-maintainer', 'info@autumo.ch'
+            ]
+        }
+
+        if (installerType == 'rpm') {
+            installerOptions += [
+                '--linux-rpm-license-type', 'GPLv3'
+            ]
+        }
+    }
+}
+
+// ':ui:jpackageImage' consumes the jlink image that ':ui:runtime' produces (build/jre). Gradle 9
+// rejects that as an implicit dependency, so declare it explicitly.
+tasks.named('jpackageImage') {
+    dependsOn tasks.named('runtime')
+}

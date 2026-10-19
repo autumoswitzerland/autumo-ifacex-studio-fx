@@ -13,11 +13,13 @@
 
 ## 3.2 Module Structure (target)
 
-A multi-module Maven build:
+A multi-module **Gradle** build (Gradle wrapper; Maven has been removed — see doc 07, decision 11):
 
 ```
 autumo-ifacex-studio-fx/
-├── pom.xml                     (parent / aggregator)
+├── build.gradle                (root: plugins, allprojects/subprojects config)
+├── settings.gradle             (rootProject + `include 'core', 'ui'`)
+├── gradlew / gradle/           (wrapper)
 ├── core/                       # UI-independent domain + infrastructure (pure Java)
 ├── ui/                         # JavaFX application (depends on core)
 ├── docs/                       # this planning documentation
@@ -49,7 +51,7 @@ Carries over / reimplements the UI-free logic from the reference project:
 | --- | --- |
 | Application shell (menus, toolbar, tabs, status bar) | replaces `MainFrame`/`DesignMainFrame` |
 | Console view with severity highlighting | replaces `ConsoleOutputPane` |
-| Script/config raw editor | replaces `IPCEditor` (RSyntaxTextArea) → JavaFX code editor |
+| Script/config raw editor | replaces `IPCEditor` (RSyntaxTextArea) → `DefaultCodeEditorView` (RSyntaxTextArea in a `SwingNode`) |
 | Config editor (BASE + reader/writer tabs) | data-driven; replaces `Config*Panel` chain |
 | i18n: gettext PO catalogue (`lang/messages.<lang>.po`) + a thin facade over the autumo-ui framework bundle | the PO reader itself is a framework class, see doc 12 |
 | Drag & drop field mapping | replaces `DNDJList`/`DNDJTextArea` |

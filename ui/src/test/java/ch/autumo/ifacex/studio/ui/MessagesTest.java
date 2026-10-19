@@ -1,20 +1,13 @@
 /*
- * Copyright 2026 autumo GmbH, Michael Gasche.
- * All Rights Reserved.
- * 
- * NOTICE: All information contained herein is, and remains
- * the property of autumo GmbH The intellectual and technical
- * concepts contained herein are proprietary to autumo GmbH
- * and are protected by trade secret or copyright law.
- * 
- * Dissemination of this information or reproduction of this material
- * is strictly forbidden unless prior written permission is obtained
- * from autumo GmbH.
- * 
+ * Copyright 2026 autumo GmbH.
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 package ch.autumo.ifacex.studio.ui;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Locale;
@@ -61,6 +54,21 @@ class MessagesTest {
     void unknownMessageFallsBackToItself() {
         Messages.setLanguage("en");
         assertEquals("Not a known message", Messages.t("Not a known message"));
+    }
+
+    @Test
+    void mergesTheFrameworkCatalogueBelowTheApplicationOne() {
+        // 'button.Alright' is a framework key only (autumo-ui dialogs); the Studio's catalogue does
+        // not define it, so its value proves that the framework PO is merged in.
+        Messages.setLanguage("en");
+        assertEquals("Alright", Messages.t("button.Alright"));
+        assertEquals("File", Messages.t("menu.File"));
+        Messages.setLanguage("de");
+        assertEquals("Okay", Messages.t("button.Alright"));
+        assertEquals("Datei", Messages.t("menu.File"));
+        // Both catalogues define 'application.name'; the application's entry wins.
+        assertNotEquals("autumo UI", Messages.t("application.name"));
+        assertEquals("ifaceX Studio FX", Messages.t("application.name"));
     }
 
     @Test

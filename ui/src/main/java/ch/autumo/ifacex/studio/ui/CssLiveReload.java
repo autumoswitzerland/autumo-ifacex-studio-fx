@@ -1,16 +1,8 @@
-/**
- * Copyright 2026 autumo GmbH, Michael Gasche.
- * All Rights Reserved.
- * 
- * NOTICE: All information contained herein is, and remains
- * the property of autumo GmbH The intellectual and technical
- * concepts contained herein are proprietary to autumo GmbH
- * and are protected by trade secret or copyright law.
- * 
- * Dissemination of this information or reproduction of this material
- * is strictly forbidden unless prior written permission is obtained
- * from autumo GmbH.
- * 
+/*
+ * Copyright 2026 autumo GmbH.
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 package ch.autumo.ifacex.studio.ui;
 
@@ -26,7 +18,7 @@ import javafx.application.Platform;
 import javafx.scene.Scene;
 
 /**
- * Development-only live reload for {@code studio.css}.
+ * Development-only live reload for {@code style/application.css}.
  *
  * <p>JavaFX caches parsed style sheets per URL, so re-adding the same URL has no effect. This
  * watcher therefore writes every change to a <em>newly named</em> copy in a temp directory and
@@ -50,7 +42,7 @@ final class CssLiveReload {
      * Start watching the source file behind {@code stylesheetUrl} and keep the scene up to date.
      *
      * @param scene         the live scene whose style sheet entry is swapped
-     * @param stylesheetUrl the {@code studio.css} URL that was added to the scene
+     * @param stylesheetUrl the {@code style/application.css} URL that was added to the scene
      */
     static void install(Scene scene, String stylesheetUrl) {
         if (!Boolean.parseBoolean(System.getProperty("ifacex.livereload", "true"))) {
@@ -79,8 +71,10 @@ final class CssLiveReload {
     }
 
     /**
-     * Map the loaded class-path URL ({@code .../target/classes/<pkg>/studio.css}) back to the
-     * source file ({@code .../src/main/resources/<pkg>/studio.css}).
+     * Map the loaded class-path URL back to the source file. Handles both the Maven layout
+     * ({@code .../target/classes/<pkg>/style/application.css}) and the Gradle layout
+     * ({@code .../build/resources/main/<pkg>/style/application.css} or
+     * {@code .../build/classes/java/main/<pkg>/style/application.css}).
      *
      * @return the source file, or {@code null} when this is not a development layout
      */
@@ -90,14 +84,21 @@ final class CssLiveReload {
         }
         try {
             final String path = Path.of(URI.create(stylesheetUrl)).toString();
-            final String marker = "/target/classes/";
-            final int at = path.lastIndexOf(marker);
-            if (at < 0) {
-                return null;
+            for (final String marker : new String[] {
+                    "/target/classes/",
+                    "/build/resources/main/",
+                    "/build/classes/java/main/" }) {
+                final int at = path.lastIndexOf(marker);
+                if (at < 0) {
+                    continue;
+                }
+                final Path source = Path.of(path.substring(0, at) + "/src/main/resources/"
+                        + path.substring(at + marker.length()));
+                if (Files.isRegularFile(source)) {
+                    return source;
+                }
             }
-            final Path source = Path.of(path.substring(0, at) + "/src/main/resources/"
-                    + path.substring(at + marker.length()));
-            return Files.isRegularFile(source) ? source : null;
+            return null;
         } catch (RuntimeException e) {
             return null;
         }
@@ -114,7 +115,7 @@ final class CssLiveReload {
                 continue;
             }
             last = now;
-            final Path copy = tempDir.resolve("studio-" + version.incrementAndGet() + ".css");
+            final Path copy = tempDir.resolve("application-" + version.incrementAndGet() + ".css");
             try {
                 Files.copy(source, copy, StandardCopyOption.REPLACE_EXISTING);
                 final String url = copy.toUri().toString();

@@ -1,16 +1,8 @@
-/**
- * Copyright 2026 autumo GmbH, Michael Gasche.
- * All Rights Reserved.
- * 
- * NOTICE: All information contained herein is, and remains
- * the property of autumo GmbH The intellectual and technical
- * concepts contained herein are proprietary to autumo GmbH
- * and are protected by trade secret or copyright law.
- * 
- * Dissemination of this information or reproduction of this material
- * is strictly forbidden unless prior written permission is obtained
- * from autumo GmbH.
- * 
+/*
+ * Copyright 2026 autumo GmbH.
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 package ch.autumo.ifacex.studio.core.cli;
 
@@ -72,7 +64,7 @@ public final class CommandLine {
      * Picks the configuration file to open from the raw command line arguments.
      *
      * <p>Recognises {@code --open <file>} and a bare {@code <file>} (see the class comment). Any
-     * other argument — notably one starting with {@code -} such as {@code --selftest} — yields
+     * other argument — notably one starting with {@code -} such as {@code --verbose} — yields
      * {@code null}, so the caller can keep handling its own options.</p>
      *
      * @param args raw command line arguments (may be {@code null} or empty)

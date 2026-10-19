@@ -1,16 +1,8 @@
-/**
- * Copyright 2026 autumo GmbH, Michael Gasche.
- * All Rights Reserved.
- * 
- * NOTICE: All information contained herein is, and remains
- * the property of autumo GmbH The intellectual and technical
- * concepts contained herein are proprietary to autumo GmbH
- * and are protected by trade secret or copyright law.
- * 
- * Dissemination of this information or reproduction of this material
- * is strictly forbidden unless prior written permission is obtained
- * from autumo GmbH.
- * 
+/*
+ * Copyright 2026 autumo GmbH.
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 package ch.autumo.ifacex.studio.core.meta;
 
@@ -68,7 +60,7 @@ public final class FieldCatalog {
         // --- OAuth / auth -----------------------------------------------------------------
         text("auth_host", "Auth host");
         text("auth_url", "Auth URL");
-        select("auth_method", "Auth method", "none", "basic", "oauth", "oauth-ba", "bearer");
+        select("auth_method", "Auth method", "none", "basic", "apikey", "digest", "oauth", "oauth-ba");
         textArea("auth_body", "Auth body");
         text("auth_grant_type", "Auth grant type");
         bool("auth", "Auth");
@@ -102,7 +94,6 @@ public final class FieldCatalog {
 
         // --- files / folders --------------------------------------------------------------
         text("job_id", "Job id");
-        select("log_level", "Log level", "DEBUG", "INFO", "WARN", "ERROR");
     }
 
     private FieldCatalog() {
@@ -120,7 +111,7 @@ public final class FieldCatalog {
     }
 
     /**
-     * The parameters with a known descriptor. Used by tooling (e.g. the headless self-test) to
+     * The parameters with a known descriptor. Used by tooling (e.g. the UI tests) to
      * tell a real engine parameter label apart from a plain caption.
      *
      * @return unmodifiable set of parameter names, in declaration order

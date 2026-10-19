@@ -1,0 +1,7 @@
+plugins {
+    // Auto-provisions toolchains (e.g. a JavaFX-capable JDK) when none is found.
+    id 'org.gradle.toolchains.foojay-resolver-convention' version '0.10.0'
+}
+
+rootProject.name = 'autumo-ifacex-studio-fx'
+include 'core', 'ui'

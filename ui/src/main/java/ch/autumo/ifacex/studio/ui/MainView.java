@@ -1,16 +1,8 @@
-/**
- * Copyright 2026 autumo GmbH, Michael Gasche.
- * All Rights Reserved.
- * 
- * NOTICE: All information contained herein is, and remains
- * the property of autumo GmbH The intellectual and technical
- * concepts contained herein are proprietary to autumo GmbH
- * and are protected by trade secret or copyright law.
- * 
- * Dissemination of this information or reproduction of this material
- * is strictly forbidden unless prior written permission is obtained
- * from autumo GmbH.
- * 
+/*
+ * Copyright 2026 autumo GmbH.
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 package ch.autumo.ifacex.studio.ui;
 
@@ -37,6 +29,12 @@ public class MainView extends BaseBorderView {
 
     /**
      * Creates the main view and its scene on the given stage.
+     *
+     * <p>{@code null} as style sheet is deliberate: {@link BaseBorderView} then installs the
+     * <em>autumo-ui base</em> look, and {@link StudioApp#initialize(Stage, java.util.Properties)}
+     * puts the application's own stylesheet — the conventional
+     * {@code style/application.css} of the autumo-ui resource structure — on top of it. Passing a
+     * style sheet here would <em>replace</em> the base look instead of extending it.</p>
      *
      * @param app               owning application instance
      * @param stage             primary stage this view is shown on

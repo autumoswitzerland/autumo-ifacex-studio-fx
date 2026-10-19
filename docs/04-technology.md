@@ -6,16 +6,17 @@
 | --- | --- | --- |
 | Language | **Java 25** (latest LTS; Azul Zulu builds) | current LTS; JavaFX 25 accordingly |
 | UI toolkit | **JavaFX (OpenJFX) 25** | CSS theming, scenes, bindings; no Chromium |
-| Build | **Maven** (multi-module) | reference uses Maven; keeps tooling familiar |
+| Build | **Gradle** (multi-module) | like the reference (autumo-ui-demo); jpackage via badass-runtime |
 | UI markup | **Hybrid**: FXML for the static shell + programmatic (metadata-driven) forms | decided 2026-10-16; see doc 07 §7.3 and doc 10 |
-| App shell / framework | **autumo-ui 1.2.0** (`ch.autumo.commons:autumo-ui`) | lifecycle, installer, licensing/registration, i18n, theming, recent files, update check; **portable mode** for dev. Baseline **Java 25 + JavaFX 25** (framework bumped, D12) |
+| App shell / framework | **autumo-ui 1.2.0** (`ch.autumo.commons:autumo-ui`) | lifecycle, first-run installer, licensing/registration, i18n, theming, recent files, update check; **installer active, not portable**: the wizard writes the user `cfg/app.cfg` (see doc 07 §7.5). Baseline **Java 25 + JavaFX 25** (framework bumped, D12) |
 | Packaging | `jpackage` / `jlink` | as in the reference |
 
 > **UI foundation (D12, 2026-10-16):** the Studio is built **on top of the autumo-ui framework**
 > (itself extracted from the legacy ifaceX Studio Swing code). The framework supplies the
 > *application shell and product concerns*; the Studio-specific editor UI and the UI-free
 > `core` module remain our own. The framework may be **extended/improved** where it is not well
-> implemented (owner-authorized). See doc 07 §7.5 and the `spike/` module.
+> implemented (owner-authorized). See doc 07 §7.5. (The original `spike/` module that validated
+> this has been removed — its result is the `ui` module.)
 
 ## 4.2 Library Mapping (Swing → JavaFX)
 
@@ -25,7 +26,7 @@
 | --- | --- | --- |
 | Swing (`javax.swing`) | whole UI | JavaFX |
 | FlatLaf (+ IntelliJ themes) | dark look & feel | JavaFX CSS theme (custom stylesheet) |
-| RSyntaxTextArea / RTextScrollPane | code/config editing with syntax highlighting | **RichTextFX** (+ custom keyword highlighting) |
+| RSyntaxTextArea / RTextScrollPane | code/config editing with syntax highlighting | **kept** — autumo-ui `DefaultCodeEditorView` (RSyntaxTextArea in a `SwingNode`, theme `cfg/autumo-edit.xml`) |
 | JGoodies Forms | form layouts | JavaFX layout panes (GridPane, etc.) |
 | JGoodies Validation | form validation | JavaFX validation + optional **ControlsFX** |
 | AbsoluteLayout | absolute positioning | JavaFX layout (avoid absolute positioning) |
@@ -53,7 +54,7 @@
 
 | Need | Candidate | Notes |
 | --- | --- | --- |
-| Code editor | RichTextFX (`org.fxmisc.richtext`) | JavaFX-native editor used by many apps |
+| Code editor | RSyntaxTextArea (`com.fifesoft:rsyntaxtextarea`) via autumo-ui `DefaultCodeEditorView` | the legacy editor itself, embedded with a `SwingNode`; RichTextFX was dropped (caret colour, border/divider, highlighting) |
 | Extra UI controls | ControlsFX | validation decoration, notifications, dialogs |
 | Unit tests | JUnit 5 | replaces the missing test framework |
 | UI tests | TestFX | automated JavaFX UI smoke tests |
@@ -63,12 +64,13 @@ Candidates must be confirmed before adoption (see open questions).
 
 ## 4.4 Build & Runtime
 
-- Multi-module Maven: `core`, `ui`, aggregator parent.
+- Multi-module Gradle: `core`, `ui`, aggregator root.
 - **autumo-ui dependency:** built with **Gradle 9.7 + JDK 25** (Java 25 / JavaFX 25 toolchain) and
   published to `mavenLocal` (`./gradlew publishToMavenLocal`); the Studio consumes
-  `ch.autumo.commons:autumo-ui:1.2.0` as a normal Maven dependency.
-  `autumo-commons`/`autumo-registration` come in transitively (compile scope). See the validated
-  integration in the `ui` module and doc 07 §7.3 for the open build-tool question.
+  `ch.autumo.commons:autumo-ui:1.2.0` as a normal dependency (see the validated
+  integration in the `ui` module and doc 07 §7.3). `autumo-commons` comes in transitively
+  (compile scope); the proprietary `autumo-registration` is declared **explicitly** by the
+  Studio (autumo-ui deliberately does not expose it).
 - **Dependency scope:** unlike the reference (everything `provided`), prefer normal
   compile/runtime scopes and let `jpackage`/`jlink` assemble the runtime. Revisit the
   `provided` approach deliberately (see open questions).
@@ -83,7 +85,7 @@ Candidates must be confirmed before adoption (see open questions).
 - `core`: JUnit 5 unit tests for config load/save round-trip, key grouping/sorting,
   process-runner argument construction, crypto/encoder, settings.
 - `ui`: TestFX smoke tests for startup, opening/binding a config, and run-console flow.
-- CI: Maven build + tests (replaces the current `skipTests=true`).
+- CI: Gradle build + tests (replaces the current `skipTests=true`).
 
 ## 4.6 Continuous Integration
 

@@ -67,6 +67,9 @@ msgstr "Autor"
 msgid "Check for Updates"
 msgstr "Nach Updates suchen"
 
+msgid "Choose root configuration folder…"
+msgstr "Wurzelverzeichnis der Konfiguration wählen…"
+
 msgid "Clear Entries"
 msgstr "Einträge löschen"
 
@@ -81,6 +84,9 @@ msgstr "Geschlossen"
 
 msgid "Configuration"
 msgstr "Konfiguration"
+
+msgid "Configuration root folder:"
+msgstr "Wurzelverzeichnis der Konfiguration:"
 
 msgid "Converted from legacy .ifacex"
 msgstr "Aus Legacy-.ifacex konvertiert"
@@ -139,6 +145,9 @@ msgstr "Datei-Metadaten und Job-Verdrahtung bearbeiten (wählt den Wurzelknoten)
 msgid "Encoder"
 msgstr "Encoder"
 
+msgid "JSON Formatter"
+msgstr "JSON-Formatter"
+
 msgid "Entity not found: {0}"
 msgstr "Entity nicht gefunden: {0}"
 
@@ -186,6 +195,9 @@ msgstr "Formel"
 
 msgid "Formula (drop source fields here)"
 msgstr "Formel (Quellfelder hierher ziehen)"
+
+msgid "General Settings"
+msgstr "Allgemeine Einstellungen"
 
 msgid "Global job configuration (source_interface, destination_interfaces, process_source_entities)"
 msgstr "Globale Job-Konfiguration (source_interface, destination_interfaces, process_source_entities)"
@@ -294,6 +306,12 @@ msgstr "Überschriebene Werte"
 
 msgid "Parameters"
 msgstr "Parameter"
+
+msgid "Play jingle?"
+msgstr "Jingle abspielen?"
+
+msgid "Play sounds?"
+msgstr "Klang abspielen?"
 
 msgid "Raw Properties (.ifacex)"
 msgstr "Roh-Properties (.ifacex)"

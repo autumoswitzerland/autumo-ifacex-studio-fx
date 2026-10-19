@@ -1,16 +1,8 @@
-/**
- * Copyright 2026 autumo GmbH, Michael Gasche.
- * All Rights Reserved.
- * 
- * NOTICE: All information contained herein is, and remains
- * the property of autumo GmbH The intellectual and technical
- * concepts contained herein are proprietary to autumo GmbH
- * and are protected by trade secret or copyright law.
- * 
- * Dissemination of this information or reproduction of this material
- * is strictly forbidden unless prior written permission is obtained
- * from autumo GmbH.
- * 
+/*
+ * Copyright 2026 autumo GmbH.
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 package ch.autumo.ifacex.studio.ui;
 
@@ -58,8 +50,8 @@ import javafx.scene.control.Tooltip;
 import javafx.scene.control.cell.CheckBoxTableCell;
 import javafx.scene.control.cell.TextFieldListCell;
 import javafx.scene.control.cell.TextFieldTableCell;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
+import ch.autumo.ui.fx.control.Icons;
+import javafx.scene.text.Text;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.DataFormat;
 import javafx.scene.input.Dragboard;
@@ -186,8 +178,10 @@ final class FormBuilder {
         jobBox.setPadding(new Insets(4));
 
         // Source interface = the reader. Picking one creates the reader section (new configuration).
+        final java.util.List<String> readerSuggestions = new java.util.ArrayList<>(InterfaceTypes.readerNames());
+        readerSuggestions.add("<other>");
         final ComboBox<String> srcIface = new ComboBox<>(
-                FXCollections.observableArrayList(InterfaceTypes.readerNames()));
+                FXCollections.observableArrayList(readerSuggestions));
         srcIface.setEditable(true);
         srcIface.setMaxWidth(Double.MAX_VALUE);
         srcIface.setValue(cfg.sourceInterface());
@@ -208,10 +202,12 @@ final class FormBuilder {
         final Label destLabel = new Label(t("Destination interfaces (writers)"));
         destLabel.getStyleClass().add("field-label");
         destLabel.setTooltip(new Tooltip(t("The writers of the job. Add a writer to create its section.")));
+        final java.util.List<String> writerSuggestions = new java.util.ArrayList<>(InterfaceTypes.writerNames());
+        writerSuggestions.add("<other>");
         jobBox.getChildren().add(new VBox(2, destLabel, stringListEditor(
                 caption(""), t("writer (e.g. csv_out)"),
                 FXCollections.observableList(cfg.destinationInterfaces()),
-                this::syncWritersFromList)));
+                this::syncWritersFromList, writerSuggestions)));
 
         box.getChildren().add(collapsed(t("Job wiring"), jobBox, true));
 
@@ -334,11 +330,11 @@ final class FormBuilder {
                 rw.name() + (rw.isReader() ? "  " + t("(reader)") : "  " + t("(writer)"))));
 
         if (!rw.global().isEmpty()) {
-            box.getChildren().add(collapsed(t("Parameters"), mapGrid(rw.global()), true));
+            box.getChildren().add(collapsed(t("Parameters"), mapGrid(rw.global(), rw), true));
         }
         if (!rw.wildcard().isEmpty()) {
             box.getChildren().add(collapsed(t("Defaults (*, all entities)"),
-                    mapGrid(rw.wildcard()), false));
+                    mapGrid(rw.wildcard(), rw), false));
         }
         for (final Map.Entry<String, EntityConfig> e : rw.entities().entrySet()) {
             box.getChildren().add(collapsed(format("Entity: {0}", e.getKey()),
@@ -426,7 +422,7 @@ final class FormBuilder {
         }
         final Map<String, String> rest = remainingSettings(ec, rw);
         if (!rest.isEmpty()) {
-            box.getChildren().add(mapGrid(rest));
+            box.getChildren().add(mapGrid(rest, rw));
         }
         if (box.getChildren().isEmpty()) {
             box.getChildren().add(hint("(empty)"));
@@ -535,7 +531,7 @@ final class FormBuilder {
             ffc.setTooltip(new Tooltip(t("Only these fields are used to build the destination "
                     + "filter (DB/Mongo) or the id lookup (REST).")));
             box.getChildren().add(stringListEditor(ffc, t("field name"),
-                    commaList(ec.settings(), "dest_filter_fields"), () -> { }));
+                    commaList(ec.settings(), "dest_filter_fields"), () -> { }, null));
         }
 
         // --- field mapping (source fields -> formula -> mapping table) -----------------------
@@ -603,12 +599,13 @@ final class FormBuilder {
                 mappingTable(rows));
     }
 
-    /** The original Studio's auto-mapping control: a clickable drag-and-drop icon. */
+    /** The original Studio's auto-mapping control: a clickable icon that auto-maps every source
+     *  field to the destination field with the same name (magic-wand = "do it automatically"). */
     private Button dndButton(Runnable action) {
-        final ImageView view = new ImageView(
-                new Image(FormBuilder.class.getResource("images/dnd-48.png").toExternalForm()));
-        view.setPreserveRatio(true);
-        view.setFitHeight(48);
+        final Text view = Icons.create("magic-wand", 40);
+        if (view != null) {
+            view.setStyle("-fx-fill: #dddddd;");
+        }
         final Button b = new Button(null, view);
         b.setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
         b.getStyleClass().add("dnd-button");
@@ -706,7 +703,7 @@ final class FormBuilder {
         final ObservableList<String> items = FXCollections.observableList(ec.fields());
         final Label caption = caption(t("Fields (source)"));
         caption.setTooltip(new Tooltip(t("Source entity fields; order matters for CSV/JSON readers.")));
-        return stringListEditor(caption, t("New field name"), items, this::changed);
+        return stringListEditor(caption, t("New field name"), items, this::changed, null);
     }
 
     /**
@@ -715,11 +712,29 @@ final class FormBuilder {
      * mutation that is not already reported by a backing list listener.
      */
     private Node stringListEditor(Label caption, String prompt, ObservableList<String> items,
-            Runnable onEdit) {
+            Runnable onEdit, List<String> suggestions) {
         final ListView<String> list = new ListView<>(items);
         list.setEditable(true);
         list.setPrefHeight(132);
-        list.setCellFactory(TextFieldListCell.forListView());
+        if (suggestions != null) {
+            // Unknown interface names are shown as the "<other>" placeholder, as in the
+            // legacy Studio; known names are shown verbatim.
+            list.setCellFactory(lv -> new TextFieldListCell<String>() {
+                @Override
+                public void updateItem(String item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (empty || item == null) {
+                        setText(null);
+                    } else if (suggestions.contains(item)) {
+                        setText(item);
+                    } else {
+                        setText("<other>");
+                    }
+                }
+            });
+        } else {
+            list.setCellFactory(TextFieldListCell.forListView());
+        }
         list.setOnEditCommit(ev -> {
             final String v = ev.getNewValue() == null ? "" : ev.getNewValue().trim();
             if (v.isEmpty() || items.contains(v)) {
@@ -730,20 +745,47 @@ final class FormBuilder {
             }
         });
 
-        final TextField input = new TextField();
-        input.setPromptText(prompt);
-        HBox.setHgrow(input, Priority.ALWAYS);
+        // Input control: a free-text field by default, or an editable combo box populated
+        // with the predefined interface names (+ "<other>") when suggestions are given, so the
+        // reader/writer is picked from the legacy Studio's predefined list instead of being
+        // typed by hand.
+        final javafx.scene.control.Control input;
+        final java.util.function.Supplier<String> readInput;
+        if (suggestions != null) {
+            final ComboBox<String> combo = new ComboBox<>(FXCollections.observableArrayList(suggestions));
+            combo.setEditable(true);
+            combo.setPromptText(prompt);
+            combo.setMaxWidth(Double.MAX_VALUE);
+            HBox.setHgrow(combo, Priority.ALWAYS);
+            input = combo;
+            readInput = () -> combo.getEditor().getText();
+        } else {
+            final TextField tf = new TextField();
+            tf.setPromptText(prompt);
+            HBox.setHgrow(tf, Priority.ALWAYS);
+            input = tf;
+            readInput = tf::getText;
+        }
         final Runnable addItem = () -> {
-            final String v = input.getText() == null ? "" : input.getText().trim();
-            if (!v.isEmpty() && !items.contains(v)) {
+            final String v = readInput.get() == null ? "" : readInput.get().trim();
+            if (!v.isEmpty() && !"<other>".equals(v) && !items.contains(v)) {
                 items.add(v);
                 list.getSelectionModel().select(v);
                 list.scrollTo(v);
-                input.clear();
+                if (input instanceof TextField) {
+                    ((TextField) input).clear();
+                } else if (input instanceof ComboBox) {
+                    ((ComboBox<?>) input).getEditor().clear();
+                    ((ComboBox<String>) input).setValue(null);
+                }
                 onEdit.run();
             }
         };
-        input.setOnAction(e -> addItem.run());
+        if (input instanceof TextField) {
+            ((TextField) input).setOnAction(e -> addItem.run());
+        } else {
+            ((ComboBox<?>) input).getEditor().setOnAction(e -> addItem.run());
+        }
 
         final Button add = toolButton("+", t("Add"), addItem);
         final Button remove = toolButton("\u2212", t("Remove selected"), () -> {
@@ -818,12 +860,12 @@ final class FormBuilder {
         if (general.isEmpty()) {
             box.getChildren().add(hint(t("(none)")));
         } else {
-            box.getChildren().add(mapGrid(general));
+            box.getChildren().add(mapGrid(general, null));
         }
         return box;
     }
 
-    private GridPane mapGrid(Map<String, String> map) {
+    private GridPane mapGrid(Map<String, String> map, RwConfig rw) {
         final GridPane grid = new GridPane();
         grid.setHgap(10);
         grid.setVgap(6);
@@ -837,12 +879,12 @@ final class FormBuilder {
             // fallback, so a translation file can translate parameters by their key.
             final Label label = new Label(t(key, d.label()));
             // "field-label" is the shared CSS class, "param-label" marks an engine parameter
-            // label (as opposed to a caption) and is used by the headless self-test.
+            // label (as opposed to a caption) and is queried by the UI tests.
             label.getStyleClass().addAll("field-label", "param-label");
             if (!d.help().isEmpty()) {
                 label.setTooltip(new Tooltip(t(key + ".help", d.help())));
             }
-            final Node control = control(map, key, d);
+            final Node control = control(map, key, d, rw);
             GridPane.setHgrow(control, Priority.ALWAYS);
             grid.add(label, 0, row);
             grid.add(control, 1, row);
@@ -851,7 +893,22 @@ final class FormBuilder {
         return grid;
     }
 
-    private Node control(Map<String, String> map, String key, FieldDescriptor d) {
+    private Node control(Map<String, String> map, String key, FieldDescriptor d, RwConfig rw) {
+        // MongoDB uses its own protocol values (mongodb, mongodb+srv), not the generic
+        // "https/http/mongodb/tcp" list, and only Mongo/REST expose a protocol field.
+        if ("protocol".equals(key) && rw != null) {
+            final String prefix = InterfaceTypes.of(rw.name()).prefix();
+            final List<String> opts;
+            if ("mongo".equals(prefix)) {
+                opts = List.of("mongodb", "mongodb+srv");
+            } else if ("rest".equals(prefix)) {
+                opts = List.of("https", "http");
+            } else {
+                opts = d.options(); // fall back to the descriptor's options
+            }
+            final FieldDescriptor pd = new FieldDescriptor(d.param(), d.label(), FieldType.SELECT, opts, d.help());
+            d = pd;
+        }
         final String value = map.getOrDefault(key, "");
         switch (d.type()) {
             case BOOLEAN: {
@@ -888,7 +945,7 @@ final class FormBuilder {
                 return tf;
             }
             case SECRET: {
-                final ch.autumo.ui.fx.control.SecretField sf = new ch.autumo.ui.fx.control.SecretField(app);
+                final ch.autumo.ui.fx.control.SecretField sf = ch.autumo.ui.fx.control.SecretField.create(app);
                 sf.setText(value);
                 sf.textProperty().addListener((o, a, b) -> {
                     map.put(key, b == null ? "" : b);

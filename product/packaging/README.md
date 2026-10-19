@@ -2,8 +2,7 @@
 
 Assets used when the Studio is packaged into a native application with `jpackage`
 (roadmap phase 7, see `docs/06-roadmap.md`). Nothing here is needed to run the
-`mvn javafx:run` development launcher.
-
+`./gradlew :ui:run` development launcher.
 ## File associations (double-click / "Open with")
 
 `file-associations/` holds one `jpackage` file-association descriptor per

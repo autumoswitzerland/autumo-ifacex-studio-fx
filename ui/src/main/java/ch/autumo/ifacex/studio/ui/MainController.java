@@ -1,16 +1,8 @@
-/**
- * Copyright 2026 autumo GmbH, Michael Gasche.
- * All Rights Reserved.
- * 
- * NOTICE: All information contained herein is, and remains
- * the property of autumo GmbH The intellectual and technical
- * concepts contained herein are proprietary to autumo GmbH
- * and are protected by trade secret or copyright law.
- * 
- * Dissemination of this information or reproduction of this material
- * is strictly forbidden unless prior written permission is obtained
- * from autumo GmbH.
- * 
+/*
+ * Copyright 2026 autumo GmbH.
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 package ch.autumo.ifacex.studio.ui;
 
@@ -20,13 +12,9 @@ import static ch.autumo.ifacex.studio.ui.Messages.t;
 import java.io.File;
 import java.net.URL;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.ResourceBundle;
-import java.util.Set;
 
 import ch.autumo.ifacex.studio.core.io.PropertiesConfigReader;
 import ch.autumo.ifacex.studio.core.io.PropertiesConfigWriter;
@@ -39,6 +27,7 @@ import ch.autumo.ifacex.studio.core.model.RwConfig;
 import ch.autumo.ui.Constants;
 import ch.autumo.ui.fx.BaseApp;
 import ch.autumo.ui.fx.controller.BaseController;
+import ch.autumo.ui.fx.control.Icons;
 import ch.autumo.ui.fx.model.BaseModel;
 import ch.autumo.ui.utils.Helper;
 import ch.autumo.ui.utils.UI;
@@ -56,12 +45,10 @@ import javafx.scene.control.Label;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
-import javafx.scene.control.RadioMenuItem;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Separator;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TextArea;
-import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.ToolBar;
 import javafx.scene.control.Tooltip;
 import javafx.scene.control.TreeCell;
@@ -73,6 +60,7 @@ import javafx.scene.input.KeyCombination;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
+import javafx.scene.text.Text;
 import javafx.scene.layout.Pane;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
@@ -105,7 +93,7 @@ public class MainController extends BaseController {
     static final String K_DEST = "DEST";
     static final String K_ENTITY = "ENTITY";
 
-    /** Style class that renders a navigation entry in bold (see studio.css). */
+    /** Style class that renders a navigation entry in bold (see style/application.css). */
     private static final String NAV_EMPHASIS = "nav-emphasis";
 
     /**
@@ -123,73 +111,72 @@ public class MainController extends BaseController {
         super(app, stage, model, view);
     }
 
+    // The nodes the FXML file fills are package-private (not private): the UI tests of this
+    // module live in the same package and assert directly on the built shell, see
+    // src/test/java/ch/autumo/ifacex/studio/ui/. Nothing outside the package can reach them.
     @FXML
-    private TreeView<FormBuilder.NavNode> navTree;
+    TreeView<FormBuilder.NavNode> navTree;
     @FXML
-    private ScrollPane formScroll;
+    ScrollPane formScroll;
     @FXML
-    private TextArea rawYaml;
+    TextArea rawYaml;
     @FXML
-    private TextArea rawProps;
+    TextArea rawProps;
     @FXML
-    private Label statusLabel;
+    Label statusLabel;
     @FXML
-    private ToolBar leftToolBar;
+    ToolBar leftToolBar;
     @FXML
-    private ToolBar rightToolBar;
+    ToolBar rightToolBar;
     @FXML
-    private MenuItem miNew;
+    MenuItem miNew;
     @FXML
-    private MenuItem miOpen;
+    MenuItem miOpen;
     @FXML
-    private MenuItem miSave;
+    MenuItem miSave;
     @FXML
-    private MenuItem miExportIfcx;
+    MenuItem miExportIfcx;
     @FXML
-    private MenuItem miExportIfacex;
+    MenuItem miExportIfacex;
     @FXML
-    private MenuItem miClose;
+    MenuItem miClose;
     @FXML
-    private MenuItem miAbout;
+    MenuItem miAbout;
     @FXML
-    private MenuItem miLicense;
+    MenuItem miExit;
     @FXML
-    private MenuItem miExit;
+    MenuBar menuBar;
     @FXML
-    private MenuBar menuBar;
+    Menu menuFile;
     @FXML
-    private Menu menuFile;
+    Menu menuRecent;
     @FXML
-    private Menu menuRecent;
+    Menu menuConfig;
     @FXML
-    private Menu menuConfig;
+    MenuItem miEncoder;
     @FXML
-    private MenuItem miEncoder;
+    MenuItem miJsonFormatter;
     @FXML
-    private MenuItem miRemoveAppData;
+    MenuItem miRemoveAppData;
     @FXML
-    private MenuItem miDocumentation;
+    MenuItem miDocumentation;
     @FXML
-    private MenuItem miWebsite;
+    MenuItem miWebsite;
     @FXML
-    private MenuItem miUpdate;
+    MenuItem miUpdate;
     @FXML
-    private Menu menuHelp;
+    Menu menuHelp;
     @FXML
-    private Menu menuLanguage;
+    Menu menuLanguage;
     @FXML
-    private RadioMenuItem miLangEn;
-    @FXML
-    private RadioMenuItem miLangDe;
-    @FXML
-    private Tab tabForm;
+    Tab tabForm;
     @FXML
     private Tab tabRawYaml;
     @FXML
     private Tab tabRawProps;
 
-    private final FormBuilder formBuilder = new FormBuilder(app, this::onModelChanged, this::rebuild);
-
+    /** Builds the metadata-driven forms; package-private for the UI tests, like the nodes above. */
+    final FormBuilder formBuilder = new FormBuilder(app, this::onModelChanged, this::rebuild);
     private IpcConfig config;
     private Path sourceFile;
     /** Toolbar buttons that only make sense once a configuration is loaded. */
@@ -210,7 +197,9 @@ public class MainController extends BaseController {
         navTree.getSelectionModel().selectedItemProperty().addListener(
                 (o, a, b) -> showForm(b));
         applyTexts();
-        buildLanguageMenu();
+        // The language menu belongs to the framework: one item per supported language, the
+        // current one selected, switching through BaseController.switchLanguage().
+        initializeLanguageMenu(menuLanguage);
         buildAccelerators();
         buildRecentMenu();
         formScroll.setContent(FormBuilder.message(t("Open a .ifacex or .ifcx file to begin.")));
@@ -256,61 +245,16 @@ public class MainController extends BaseController {
     }
 
     /**
-     * Builds the {@code Help › Language} sub-menu: one radio item per supported language, each
-     * with the framework's flag icon. Picking an item switches the language live, see
-     * {@link #switchLanguage(String)}.
+     * {@inheritDoc}
      *
-     * <p>The language names are deliberately <em>not</em> translated — a language list reads
-     * best in the language itself ("English", "Deutsch").</p>
+     * <p>The framework already did its part — its bundles, the window title, the stored
+     * {@code language} parameter and the language menu selection follow in
+     * {@link #switchLanguage(String)} — so only the Studio's own texts are re-applied here: the
+     * static FXML shell, the toolbar and the navigation tree plus the open form, so no stale text
+     * is left anywhere.</p>
      */
-    private void buildLanguageMenu() {
-        final ToggleGroup group = new ToggleGroup();
-        miLangEn.setToggleGroup(group);
-        miLangDe.setToggleGroup(group);
-        miLangEn.setGraphic(icon("lang_en.png"));
-        miLangDe.setGraphic(icon("lang_de.png"));
-        selectLanguageItem(Messages.getLanguage());
-    }
-
-    /**
-     * Marks the radio item of the given language as selected <em>without</em> triggering a switch;
-     * a programmatic selection does not fire {@code onAction} in JavaFX.
-     *
-     * @param lang language code, e.g. {@code de}
-     */
-    private void selectLanguageItem(String lang) {
-        if (Messages.LANG_DE.equals(lang)) {
-            miLangDe.setSelected(true);
-        } else {
-            miLangEn.setSelected(true);
-        }
-    }
-
-    /**
-     * {@code Help › Language}: switches the UI language live.
-     */
-    @FXML
-    private void onLanguage() {
-        switchLanguage(miLangDe.isSelected() ? Messages.LANG_DE : Messages.LANG_EN);
-    }
-
-    /**
-     * Switches the whole UI to the given language at runtime.
-     *
-     * <p>Two catalogues have to follow: the <b>autumo-ui framework</b> resources (window title,
-     * About/license HTML panes, framework dialogs) via {@link Helper#setLanguage(String)}, and the
-     * <b>application</b> texts via {@link Messages#setLanguage(String)}. Afterwards the static FXML
-     * shell and the toolbar are re-texted and the navigation tree plus the open form are rebuilt,
-     * so no stale text is left anywhere.</p>
-     *
-     * @param lang language code, e.g. {@code de}
-     */
-    private void switchLanguage(String lang) {
-        if (lang == null || lang.equals(Messages.getLanguage())) {
-            return;
-        }
-        Helper.setLanguage(lang);
-        Messages.setLanguage(lang);
+    @Override
+    protected void languageChanged() {
         applyTexts();
         buildToolBar();
         buildRecentMenu();
@@ -319,9 +263,9 @@ public class MainController extends BaseController {
         } else {
             rebuild();
         }
-        selectLanguageItem(lang);
         renderStatus();
     }
+
 
     /**
      * Applies the translated texts of the static FXML shell. FXML cannot read PO files, so the
@@ -342,15 +286,15 @@ public class MainController extends BaseController {
         miExit.setText(t("Exit"));
         miAbout.setText(t("About"));
         miEncoder.setText(t("Encoder"));
+        miJsonFormatter.setText(t("JSON Formatter"));
         miRemoveAppData.setText(t("Remove App Data"));
         miDocumentation.setText(t("Open Online Documentation"));
         miWebsite.setText(t("Visit Website"));
         miUpdate.setText(t("Check for Updates"));
-        miLicense.setText(t("License"));
         tabForm.setText(t("Form"));
         tabRawYaml.setText(t("Raw YAML (.ifcx)"));
         tabRawProps.setText(t("Raw Properties (.ifacex)"));
-        statusLabel.setText(t("Ready"));
+        renderStatus();
     }
 
     /**
@@ -403,27 +347,27 @@ public class MainController extends BaseController {
         // Idempotent: also called again on a live language switch, so drop the old items first.
         leftToolBar.getItems().clear();
         rightToolBar.getItems().clear();
-        final Button tbNew = toolButton("project-new-48.png", t("New"),
+        final Button tbNew = toolButton("file-plus", t("New"),
                 t("Create a new, empty configuration"), () -> onNew());
-        final Button tbOpen = toolButton("project-open-48.png", t("Open"),
+        final Button tbOpen = toolButton("folder-open", t("Open"),
                 t("Open an .ifacex or .ifcx configuration"), () -> onOpen());
-        tbSave = toolButton("project-save-48.png", t("Save"),
+        tbSave = toolButton("floppy-disk", t("Save"),
                 t("Save as .ifcx (new format)"), () -> onSave());
-        tbClose = toolButton("project-close-48.png", t("Close"),
+        tbClose = toolButton("x", t("Close"),
                 t("Close the current configuration"), () -> onClose());
 
-        tbConfig = toolButton("settings-48.png", t("Configuration"),
+        tbConfig = toolButton("gear-six", t("Configuration"),
                 t("Edit file metadata and job wiring (selects the root node)"), this::selectRoot);
-        final Button tbRun = toolButton("process-48.png", t("Run"),
+        final Button tbRun = toolButton("play", t("Run"),
                 t("Run the IPC — engine integration follows later"), null);
-        final Button tbFolder = toolButton("folder-48.png", t("External Edit"),
+        final Button tbFolder = toolButton("arrow-u-up-right", t("External Edit"),
                 t("Open in an external editor — follows later"), null);
 
         leftToolBar.getItems().addAll(
                 tbNew, tbOpen, tbSave, tbClose,
-                sep(), tbConfig,
-                sep(), tbRun,
-                sep(), tbFolder);
+                sep(leftToolBar), tbConfig,
+                sep(leftToolBar), tbRun,
+                sep(leftToolBar), tbFolder);
 
         // Right side mirrors the original Studio: the ifaceX Studio title logo and, to its
         // right, the clickable ifaceX mark (label underneath) that opens the website.
@@ -433,7 +377,7 @@ public class MainController extends BaseController {
     /** The ifaceX Studio title logo (banner) as in the original toolbar; not clickable. */
     private HBox titleLogo() {
         final ImageView iv = new ImageView(new Image(
-                StudioApp.class.getResource("images/ifacex-studio-reddot2-40.png").toExternalForm()));
+                StudioApp.class.getResource("icons/ifacex-studio-reddot2-40.png").toExternalForm()));
         iv.setSmooth(true);
         iv.setPreserveRatio(true);
         iv.setFitHeight(40);
@@ -447,6 +391,8 @@ public class MainController extends BaseController {
     private Button ifaceXButton() {
         final Button b = new Button("ifaceX", icon("ifaceX48.png"));
         b.setContentDisplay(ContentDisplay.TOP);
+        b.setGraphicTextGap(2);
+        b.setStyle("-fx-padding: 3 10 5 10;");
         b.getStyleClass().add("toolbar-button");
         b.setTooltip(new Tooltip(t("Visit the ifaceX website")));
         b.setOnAction(e -> Helper.openURL(
@@ -465,21 +411,21 @@ public class MainController extends BaseController {
      * same set the toolbar uses). Icons are language independent and are set once at start-up.
      */
     private void buildMenuIcons() {
-        menuRecent.setGraphic(icon("project-open-16.png"));
-        miNew.setGraphic(icon("project-new-16.png"));
-        miOpen.setGraphic(icon("project-open-16.png"));
-        miSave.setGraphic(icon("project-save-16.png"));
-        miExportIfcx.setGraphic(icon("project-save-16.png"));
-        miExportIfacex.setGraphic(icon("project-save-16.png"));
-        miClose.setGraphic(icon("project-close-16.png"));
-        miExit.setGraphic(icon("exit-16.png"));
-        miEncoder.setGraphic(icon("config-16.png"));
-        miRemoveAppData.setGraphic(icon("remove-config-16.png"));
-        miDocumentation.setGraphic(icon("help-16.png"));
-        miWebsite.setGraphic(icon("ifaceX16.png"));
-        miUpdate.setGraphic(icon("update-16.png"));
-        miAbout.setGraphic(icon("about-16.png"));
-        miLicense.setGraphic(icon("about-16.png"));
+        menuRecent.setGraphic(Icons.create("clock-counter-clockwise", 16));
+        miNew.setGraphic(Icons.create("file-plus", 16));
+        miOpen.setGraphic(Icons.create("folder-open", 16));
+        miSave.setGraphic(Icons.create("floppy-disk", 16));
+        miExportIfcx.setGraphic(Icons.create("export", 16));
+        miExportIfacex.setGraphic(Icons.create("export", 16));
+        miClose.setGraphic(Icons.create("x", 16));
+        miExit.setGraphic(Icons.create("sign-out", 16));
+        miEncoder.setGraphic(Icons.create("lock-key", 16));
+        miJsonFormatter.setGraphic(Icons.create("brackets-curly", 16));
+        miRemoveAppData.setGraphic(Icons.create("trash", 16));
+        miDocumentation.setGraphic(Icons.create("book-open", 16));
+        miWebsite.setGraphic(Icons.create("globe-hemisphere-west", 16));
+        miUpdate.setGraphic(Icons.create("download-simple", 16));
+        miAbout.setGraphic(Icons.create("info", 16));
     }
 
     /**
@@ -519,9 +465,19 @@ public class MainController extends BaseController {
         rebuildRecentList();
     }
 
-    private Button toolButton(String iconFile, String text, String tip, Runnable action) {
-        final Button b = new Button(text, icon(iconFile));
+    private Button toolButton(String iconName, String text, String tip, Runnable action) {
+        final Text icon = Icons.create(iconName, 40);
+        final javafx.scene.layout.StackPane iconBox = new javafx.scene.layout.StackPane();
+        iconBox.setPrefSize(48, 48);
+        iconBox.setMinSize(48, 48);
+        iconBox.setMaxSize(48, 48);
+        iconBox.setAlignment(javafx.geometry.Pos.CENTER);
+        if (icon != null) {
+            iconBox.getChildren().add(icon);
+        }
+        final Button b = new Button(text, iconBox);
         b.setContentDisplay(ContentDisplay.TOP);
+        b.setGraphicTextGap(2);
         b.getStyleClass().add("toolbar-button");
         b.setTooltip(new Tooltip(tip));
         if (action == null) {
@@ -534,11 +490,19 @@ public class MainController extends BaseController {
 
     private ImageView icon(String iconFile) {
         return new ImageView(new Image(
-                Helper.getBaseResource(ICONS + iconFile), 0, 0, true, true));
+                Helper.getAppResourceOrBase(app, ICONS + iconFile), 0, 0, true, true));
     }
 
-    private Separator sep() {
-        return new Separator(Orientation.VERTICAL);
+    private javafx.scene.layout.Region sep(ToolBar bar) {
+        final javafx.scene.layout.Region r = new javafx.scene.layout.Region();
+        r.setPrefWidth(1);
+        r.setMinWidth(1);
+        r.setMaxWidth(1);
+        r.setStyle("-fx-background-color: #444444;");
+        r.setPrefHeight(68);
+        r.setMaxHeight(68);
+        r.setMinHeight(68);
+        return r;
     }
 
     private void setConfigActionsEnabled(boolean enabled) {
@@ -553,24 +517,6 @@ public class MainController extends BaseController {
         }
     }
 
-    /** Count toolbar buttons whose icon image actually loaded (width &gt; 0). */
-    private int toolbarIconsOk() {
-        int ok = 0;
-        for (final ToolBar bar : new ToolBar[] {leftToolBar, rightToolBar}) {
-            for (final Node n : bar.getItems()) {
-                if (n instanceof Button b && b.getGraphic() instanceof ImageView iv
-                        && iv.getImage() != null && iv.getImage().getWidth() > 0) {
-                    ok++;
-                }
-            }
-        }
-        return ok;
-    }
-
-    private int toolbarItemCount() {
-        return leftToolBar.getItems().size() + rightToolBar.getItems().size();
-    }
-
     @FXML
     private void onNew() {
         config = new IpcConfig();
@@ -580,7 +526,7 @@ public class MainController extends BaseController {
     }
 
     @FXML
-    private void onClose() {
+    void onClose() {
         config = null;
         sourceFile = null;
         rootItem = null;
@@ -622,8 +568,8 @@ public class MainController extends BaseController {
      *
      * <p>Loads the configuration and files it in the framework's recent list, which
      * {@link BaseController#rebuildRecentList()} renders as {@code File › Open Recent}. The recent
-     * list is deliberately <em>not</em> touched by {@link #loadConfig(Path)}: a head-less self-test
-     * run must not pollute the list that is persisted on exit.</p>
+     * list is deliberately <em>not</em> touched by {@link #loadConfig(Path)}: a test that loads a
+     * configuration directly must not pollute the list that is persisted on exit.</p>
      */
     @Override
     protected void innerOpen(File file) {
@@ -646,193 +592,6 @@ public class MainController extends BaseController {
         rebuild();
         final boolean legacy = name.endsWith(".ifacex");
         status(legacy ? t("Converted from legacy .ifacex") : t("Loaded"));
-    }
-
-    /** Headless self-test support: load a file and describe what the UI would show. */
-    String selfTest(Path path) throws Exception {
-        loadConfig(path);
-        final String startLang = Messages.getLanguage();
-        final TreeItem<FormBuilder.NavNode> root = navTree.getRoot();
-        // exercise the form builder for every nav node
-        final int[] acc = new int[4]; // forms, list views (source fields), tables, dnd buttons
-        final List<String> fieldLabels = new ArrayList<>();
-        for (final TreeItem<FormBuilder.NavNode> child : root.getChildren()) {
-            countForms(child, acc, fieldLabels);
-        }
-        final var destNode = firstDestinationEntity(root);
-        if (destNode != null) {
-            showForm(destNode);
-        }
-        final Node rootForm = formBuilder.build(root.getValue());
-        final int rootFormParts = rootForm instanceof javafx.scene.layout.Pane p
-                ? p.getChildren().size() : -1;
-        // Parameter labels are rendered through the message lookup; keep only texts that match
-        // a known engine parameter so captions do not pollute the sample.
-        final Set<String> knownLabels = new HashSet<>();
-        for (final String param : FieldCatalog.knownParams()) {
-            knownLabels.add(t(param, FieldCatalog.descriptor(param).label()));
-        }
-        final List<String> paramLabels = fieldLabels.stream().filter(knownLabels::contains)
-                .distinct().sorted().toList();
-        final String metrics = "nodes=" + countNodes(root)
-                + " forms=" + acc[0]
-                + " rootFormParts=" + rootFormParts
-                + " toolbarItems=" + toolbarItemCount()
-                + " toolbarIconsOk=" + toolbarIconsOk()
-                + " fieldLists=" + acc[1]
-                + " mappingTables=" + acc[2]
-                + " interFontOk=" + javafx.scene.text.Font.getFamilies().contains("Inter")
-                + " yamlChars=" + rawYaml.getText().length()
-                + " propsChars=" + rawProps.getText().length()
-                + " formClass=" + (formScroll.getContent() == null
-                        ? "null" : formScroll.getContent().getClass().getSimpleName())
-                + " statusFileOk=" + (statusLabel.getText() != null
-                        && statusLabel.getText().startsWith(t("File") + ": "))
-                + " rootLabel=\"" + root.getValue().label() + "\""
-                + " title=\"" + (config.meta().title() == null ? "" : config.meta().title()) + "\""
-                + " dndButtons=" + acc[3]
-                // proves the metadata parameter labels go through the message lookup (key =
-                // msgid, derived English label = fallback)
-                + " paramLabels=" + paramLabels.size() + " \"" + paramLabels.stream().limit(6)
-                        .collect(java.util.stream.Collectors.joining(", ")) + "\""
-                + " nav=\"" + root.getChildren().stream()
-                        .map(c -> c.getValue().label()).collect(java.util.stream.Collectors.joining(" | "))
-                        + "\""
-                + " statusText=\"" + (statusLabel.getText() == null ? "" : statusLabel.getText()) + "\""
-                + " statusOk=" + (statusLabel.getText() != null && !statusLabel.getText().isBlank())
-                // the framework's HTML about/license panes resolve these per language; a typo in
-                // the package/resource name would only show up as a WebView error page, so pin it
-                + " aboutHtmlOk=" + (getClass().getResource("html/about_en.html") != null
-                        && getClass().getResource("html/about_de.html") != null
-                        && getClass().getResource("html/license_en.html") != null
-                        && getClass().getResource("html/license_de.html") != null)
-                + " aboutPaneOk=" + frameworkPaneSelfTest(() -> UI.showAboutWithLicense(app, "/ch/autumo/ifacex/studio/ui/images/about-48.png"))
-                + " encoderPaneOk=" + frameworkPaneSelfTest(() -> UI.showEncoder(app))
-                + " licensePaneOk=" + frameworkPaneSelfTest(() -> UI.showLicense(app))
-                + " recentItems=" + menuRecent.getItems().size()
-                + " langItems=" + menuLanguage.getItems().size()
-                + " langSwitchOk=" + languageSwitchSelfTest(startLang)
-                + " langRestoredOk=" + Messages.getLanguage().equals(startLang);
-        return metrics;
-    }
-
-    /**
-     * Drives one full live language switch — to the "other" language and back — and reports whether
-     * the shell text, the framework language and the radio selection all followed. Used by
-     * {@link #selfTest(Path)} to prove the {@code Help › Language} switch works headlessly.
-     *
-     * @param startLang language the self-test started in
-     * @return {@code true} if the switch and the restore behaved as expected
-     */
-    private boolean languageSwitchSelfTest(String startLang) {
-        final String other = Messages.LANG_DE.equals(startLang) ? Messages.LANG_EN : Messages.LANG_DE;
-        switchLanguage(other);
-        final boolean ok = other.equals(Messages.getLanguage())
-                && other.equals(Helper.getLanguage())
-                && menuFile.getText().equals(t("File"))
-                && (Messages.LANG_DE.equals(other) ? miLangDe.isSelected() : miLangEn.isSelected());
-        switchLanguage(startLang);
-        return ok;
-    }
-
-    /**
-     * Opens one of the framework panes exactly like its menu item does, verifies that a window was
-     * actually shown and closes it again.
-     *
-     * <p>This exercises the whole framework-pane path headlessly: the framework bundle keys
-     * ({@code About.title}, {@code Encoder.*}, {@code License.title}, {@code button.License} …) must
-     * resolve and the pane must build — a missing key would otherwise only surface as an exception
-     * when the user clicks the menu item.</p>
-     *
-     * @param opener the same call the menu item makes, e.g. {@code () -> UI.showEncoder(app)}
-     * @return {@code true} if the pane was created and shown
-     */
-    private boolean frameworkPaneSelfTest(Runnable opener) {
-        opener.run();
-        final List<Stage> extra = Window.getWindows().stream()
-                .filter(w -> w instanceof Stage).map(w -> (Stage) w)
-                .filter(s -> s != getStage()).toList();
-        final boolean showing = !extra.isEmpty() && extra.stream().allMatch(Stage::isShowing);
-        extra.forEach(Stage::close);
-        return showing;
-    }
-
-    /** Builds every nav node's form and accumulates [forms, listViews, tables, dndButtons]. */
-    private void countForms(TreeItem<FormBuilder.NavNode> item, int[] acc, List<String> fieldLabels) {
-        final Node n = formBuilder.build(item.getValue());
-        if (n != null) {
-            acc[0]++;
-            acc[1] += count(n, javafx.scene.control.ListView.class);
-            acc[2] += count(n, javafx.scene.control.TableView.class);
-            acc[3] += countDnd(n);
-            collectFieldLabels(n, fieldLabels);
-        }
-        for (final TreeItem<FormBuilder.NavNode> c : item.getChildren()) {
-            countForms(c, acc, fieldLabels);
-        }
-    }
-
-    /**
-     * Collects the text of all rendered parameter labels ({@code .param-label}). The walk
-     * descends into {@link javafx.scene.control.TitledPane} content because a control's children
-     * only exist once its skin is built.
-     */
-    private static void collectFieldLabels(Node node, List<String> out) {
-        if (node == null) {
-            return;
-        }
-        if (node instanceof javafx.scene.control.Label l
-                && l.getStyleClass().contains("param-label")) {
-            out.add(l.getText());
-        }
-        if (node instanceof javafx.scene.control.TitledPane tp) {
-            collectFieldLabels(tp.getContent(), out);
-        } else if (node instanceof javafx.scene.control.ScrollPane sp) {
-            collectFieldLabels(sp.getContent(), out);
-        } else if (node instanceof javafx.scene.Parent p) {
-            for (final Node child : p.getChildrenUnmodifiable()) {
-                collectFieldLabels(child, out);
-            }
-        }
-    }
-
-    /** Counts the auto-mapping drag-and-drop buttons ({@code .dnd-button}). */
-    private static int countDnd(Node node) {
-        int n = node.getStyleClass().contains("dnd-button") ? 1 : 0;
-        if (node instanceof javafx.scene.Parent p) {
-            for (final Node child : p.getChildrenUnmodifiable()) {
-                n += countDnd(child);
-            }
-        }
-        return n;
-    }
-
-    private static int count(Node node, Class<?> type) {
-        int n = type.isInstance(node) ? 1 : 0;
-        if (node instanceof javafx.scene.Parent p) {
-            for (final Node child : p.getChildrenUnmodifiable()) {
-                n += count(child, type);
-            }
-        }
-        return n;
-    }
-
-    private int countNodes(TreeItem<FormBuilder.NavNode> item) {
-        int n = 1;
-        for (final TreeItem<FormBuilder.NavNode> c : item.getChildren()) {
-            n += countNodes(c);
-        }
-        return n;
-    }
-
-    private TreeItem<FormBuilder.NavNode> firstDestinationEntity(TreeItem<FormBuilder.NavNode> root) {
-        for (final TreeItem<FormBuilder.NavNode> child : root.getChildren()) {
-            if (child.getValue() != null && K_DEST.equals(child.getValue().kind())
-                    && !child.getChildren().isEmpty()) {
-                return child.getChildren().get(0);
-            }
-        }
-        return null;
     }
 
     private void rebuild() {
@@ -926,7 +685,13 @@ public class MainController extends BaseController {
         }
     }
 
-    private void showForm(TreeItem<FormBuilder.NavNode> item) {
+    /**
+     * Shows the form of a navigation entry. Package-private on purpose: the UI tests build the
+     * shell in the same package and walk the navigation tree with it.
+     *
+     * @param item navigation entry
+     */
+    void showForm(TreeItem<FormBuilder.NavNode> item) {
         if (item == null) {
             return;
         }
@@ -1004,16 +769,18 @@ public class MainController extends BaseController {
     /**
      * Shows the About window through the autumo-ui pane, with the license button.
      *
-     * <p>The framework builds the dialog ({@code about-48.png} header, HTML body, footer) and
+     * <p>The framework builds the dialog header, HTML body, footer) and
      * loads the body from {@code html/about_<lang>.html} plus, behind the license button,
-     * {@code html/license_<lang>.html}. Both are resolved relative to {@link StudioApp}, and the
+     * {@code html/license_<lang>.html}. That button is the only way to the license — there is no
+     * {@code Help › License} item, just as in the original Studio. Both files are resolved
+     * relative to {@link StudioApp}, and the
      * language is the one autumo-ui reads from the {@code user.language} system property, which
      * {@link Messages#setLanguage(String)} keeps in sync. The text is therefore a translatable
      * resource and no dialog code changes per language — see {@code docs/12-i18n.md}.</p>
      */
     @FXML
     private void onAbout() {
-        UI.showAboutWithLicense(app, "/ch/autumo/ifacex/studio/ui/images/about-48.png");
+        UI.showAboutWithLicense(app, "info");
     }
 
     /**
@@ -1030,6 +797,13 @@ public class MainController extends BaseController {
     @FXML
     private void onEncoder() {
         UI.showEncoder(app, false);
+    }
+
+    /** {@code Configuration › JSON Formatter}: the framework's JSON formatter window (legacy Studio
+     *  used to show this pane in the Help menu; the Configuration menu groups all tool panes). */
+    @FXML
+    private void onJsonFormatter() {
+        UI.showJsonFormatter(app);
     }
 
     /** {@code Configuration › Remove App Data}: the framework's pane (it asks before deleting). */
@@ -1057,12 +831,6 @@ public class MainController extends BaseController {
         UI.showUpdatePane(app);
     }
 
-    /** {@code Help › License}: the framework's license pane (same HTML as the About button). */
-    @FXML
-    private void onLicense() {
-        UI.showLicense(app);
-    }
-
     /** State shown behind the file: "Loaded", "Converted ...", "Modified", "Saved ...". */
     private String statusState = "";
 
@@ -1081,8 +849,11 @@ public class MainController extends BaseController {
      * state behind it. Without a loaded file it shows {@code File: -}.
      */
     private void renderStatus() {
-        final String file = sourceFile == null
-                ? t("File") + " -" : t("File") + ": " + sourceFile.toAbsolutePath();
+        if (sourceFile == null) {
+            statusLabel.setText(t("Ready"));
+            return;
+        }
+        final String file = t("File") + ": " + sourceFile.toAbsolutePath();
         statusLabel.setText(statusState.isEmpty() ? file : file + "   \u2014   " + statusState);
     }
 

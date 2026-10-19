@@ -435,9 +435,9 @@ legacy Studio set its language once at start-up (`SwingLocaleChanger`), not at r
 | Help: Format JSON | open — the formatter is not rebuilt yet |
 | Help: Open Online Documentation / Visit Website | wired, URLs from `cfg/app.cfg` |
 | Help: Check for Updates | `UI.showUpdatePane(app)` (framework) |
-| Help: About | `UI.showAboutWithLicense(app)` |
-| Help: License | `UI.showLicense(app)` — **new item**; the legacy Studio had the license behind About |
-| Language | `Help › Language` (English/Deutsch) — **new**, the legacy had no language menu (see above) |
+| Help: About | `UI.showAboutWithLicense(app)` — the dialog carries a **License** button (same as the legacy Studio; there is deliberately no `Help › License` item) |
+| Help: License | **no menu item** — the license lives behind the License button of the About dialog, as in the legacy Studio |
+| Language | `Help › Language` (English/Deutsch) — **new**, the legacy had no language menu (see above); the menu carries the framework's `language-16.png` |
 
 The accelerators are set in code (`MainController.buildAccelerators()`) with
 `KeyCombination.SHORTCUT_DOWN`, so macOS keeps the ⌘ shortcuts of the original without hard-coding

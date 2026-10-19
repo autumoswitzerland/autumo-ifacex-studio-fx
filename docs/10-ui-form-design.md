@@ -89,7 +89,7 @@ Candidate layouts (to evaluate in the PoC): a **defaults + overrides table**, or
   **mapping table**. The buttons carry the original wording, spelled out: **`Add standard
   mapping`** (legacy `Add std. mapping`) and **`Add insert mapping`**. The legacy "map all
   fields" action is not a text button but the original **clickable drag-and-drop icon**
-  (`icons/dnd-48.png`, copied from the legacy resources) with the original Studio's tooltip
+  (Phosphor `magic-wand`, 40px, replacing the legacy `icons/dnd-48.png`) with the original Studio's tooltip
   (legacy `csv_out_dndPanel` + `ImagePanel` + `generateMappings`); it maps every source field to
   itself as `field:{field}`. Formula validation mirrors the legacy rules (`split(":")` must be
   exactly 2 parts, target `[A-z0-9$.#\-_]+`).
@@ -135,7 +135,9 @@ Decisions and explanations:
 ## 10.9 Implementation (PoC status)
 
 The FXML decision is **resolved: hybrid** (see doc 07 §7.3). The application shell is **built on
-the autumo-ui framework** (decision D12), in **portable mode** for development:
+the autumo-ui framework** (decision D12) and **installed, not portable** since 2026-10-18
+(`StudioApp.isPortableApp()` → `false`, so the first start runs the framework's wizard and a user
+`cfg/app.cfg` exists afterwards):
 `StudioApp extends BaseApp` (autumo-ui) provides lifecycle/resources; it loads our FXML shell.
 
 **Shell (FXML).** `ui/src/main/resources/ch/autumo/ifacex/studio/ui/main.fxml` declares the
@@ -165,28 +167,36 @@ from the model + field metadata:
 - a form that has nothing editable to show (start-up placeholder, "select an element") is
   rendered as a **padded** text body so the text does not stick to the top-left corner.
 
-**Typography.** The UI uses the bundled **Inter** family (SIL OFL, `fonts/Inter-OFL.txt`),
-loaded at start-up in `StudioApp` and applied via `studio.css` (`.root` → `Inter`, headings
-and field labels → `Inter SemiBold`). Inter is the modern web-GUI typeface (the look that
-React Native for Web / the system font stack approximates) and is bundled so rendering is
+**Typography.** The UI uses the **Inter** family provided by the autumo-ui framework
+(SIL OFL, `fonts/Inter-OFL.txt` in the framework), loaded at start-up in `BaseApp.start()`
+and applied via `style/application.css` (`.root` → `Inter`,
+headings and field labels → `Inter SemiBold`). Inter is the modern web-GUI typeface (the look
+that React Native for Web / the system font stack approximates) and is bundled so rendering is
 identical on every machine.
 
 **Theme.** The scene loads the **autumo-ui base stylesheet**
-(`ch/autumo/ui/style/application.css`, a modern **dark** palette) first, then the Studio
-`studio.css` overrides (navigation tree, collapsible headers, status bar, editor surfaces).
-Dialogs reuse the same base stylesheet so they match the main window. `studio.css` also
+(`ch/autumo/ui/style/application.css`, a modern **dark** palette) first, then the Studio's own
+stylesheet — `ui/src/main/resources/ch/autumo/ifacex/studio/ui/style/application.css`, at the
+application path the autumo-ui resource structure expects (DevGuide §4.5) — with the Studio
+overrides (navigation tree, collapsible headers, status bar, editor surfaces). **The Studio
+sheet carries only overrides and must therefore never be applied alone** — the framework
+dialogs (`UI.showConfirmationDialog`, …) load the same combination as the window, base style
+first and the application's sheet on top (`Helper.getApplicationStyleSheets`), so they are dark
+as well. The sheet also
 raises the base font size to **14px** and enables LCD font smoothing for readability on the
 dark palette.
 
 **Toolbar.** The toolbar mirrors the original Studio editor (same structure as the FX
 reference `autumo-documents-ui`): a `MenuBar` plus a `tool-bar-pane` `BorderPane` holding a
-left and a right `ToolBar` (transparent inner bars; each button is a 48px autumo-ui icon with
-the label underneath). Left: **New · Open · Save · Close | Configuration | Run | External
-Edit**. `Configuration` selects the root node (file metadata + job wiring); `Run` and
-`External Edit` are placeholders until engine integration. Right (as in the original): the
-**ifaceX Studio title logo** (`ifacex-studio-reddot2-40.png`) and the clickable **ifaceX mark
-with the label `ifaceX` underneath**, which opens `url.website`. The same 16px icons are used
-in the File menu. **Save always writes the new `.ifcx` format**; `.ifacex` is export-only.
+left and a right `ToolBar` (transparent inner bars; each button carries a **Phosphor** icon
+glyph at 32px with the label underneath — the icon font ships with autumo-ui, see
+`ch.autumo.ui.fx.control.Icons`; the legacy 48px PNGs are no longer used). Left: **New · Open ·
+Save · Close | Configuration | Run | External Edit**. `Configuration` selects the root node (file
+metadata + job wiring); `Run` and `External Edit` are placeholders until engine integration.
+Right (as in the original): the **ifaceX Studio title logo** (`ifacex-studio-reddot2-40.png`)
+and the clickable **ifaceX mark with the label `ifaceX` underneath**, which opens
+`url.website`. The same 16px Phosphor glyphs are used in the File menu. **Save always writes the
+new `.ifcx` format**; `.ifacex` is export-only.
 
 The toolbar carries the `tool-bar-pane` background/gradient and a top+bottom border, giving a
 **continuous separation line** across the full width (also under the navigation tree).
@@ -210,10 +220,10 @@ sync while the title is edited), then `Overwritten Values` (the base section) an
 `Source:` / `Destination:` sections — the latter three rendered in bold. Reader/writer entries
 carry a coloured type pill.
 
-**CSS live reload (dev).** `CssLiveReload` watches `studio.css`, writes a versioned copy to a
-temp directory and swaps the scene stylesheet entry (JavaFX caches per URL), so CSS changes are
-visible without restarting. Active only in a `file:`-under-`target/classes` dev layout;
-`-Difacex.livereload=false` disables it. Java changes still need a rebuild + restart.
+**CSS live reload (dev).** `CssLiveReload` watches `style/application.css`, writes a versioned
+copy to a temp directory and swaps the scene stylesheet entry (JavaFX caches per URL), so CSS
+changes are visible without restarting. Active only in a `file:`-under-`target/classes` dev
+layout; `-Difacex.livereload=false` disables it. Java changes still need a rebuild + restart.
 
 **Per-entity UI (open).** The PoC currently uses collapsible per-entity sections; the
 table-vs-tabs evaluation (§10.8, item 2) is still open and only matters for multi-entity IPCs.

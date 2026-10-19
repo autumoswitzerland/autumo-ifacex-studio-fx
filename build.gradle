@@ -1,0 +1,50 @@
+/**
+ *
+ * Multi-module Gradle build for ifaceX Studio FX.
+ * Version: 1.0
+ *
+ * 2026 autumo GmbH
+ *
+ */
+
+plugins {
+    // Applied here: java-library, eclipse. Versions for the subprojects (applied
+    // where needed): shadow, badass-runtime, openjfx.
+    id 'java-library'
+    id 'eclipse'
+    id 'com.gradleup.shadow' version '9.6.1' apply false
+    id 'org.beryx.runtime' version '2.0.1' apply false
+    id 'org.openjfx.javafxplugin' version '0.1.0' apply false
+}
+
+allprojects {
+    group = 'ch.autumo.ifacex.studio'
+    version = '3.0.0-SNAPSHOT'
+    repositories {
+        mavenLocal()
+        mavenCentral()
+    }
+}
+
+subprojects {
+    apply plugin: 'java-library'
+
+    java {
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(25)
+            // Azul Zulu is the JDK of choice; the foojay resolver (settings.gradle)
+            // auto-provisions a Zulu JDK when no local Zulu 25 is found.
+            vendor = JvmVendorSpec.AZUL
+        }
+    }
+
+    dependencies {
+        testImplementation 'org.junit.jupiter:junit-jupiter:6.1.3'
+        testImplementation platform('org.junit:junit-bom:6.1.3')
+        testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    }
+
+    tasks.named('test') {
+        useJUnitPlatform()
+    }
+}

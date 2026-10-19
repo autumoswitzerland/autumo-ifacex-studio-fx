@@ -1,22 +1,15 @@
-/**
- * Copyright 2026 autumo GmbH, Michael Gasche.
- * All Rights Reserved.
- * 
- * NOTICE: All information contained herein is, and remains
- * the property of autumo GmbH The intellectual and technical
- * concepts contained herein are proprietary to autumo GmbH
- * and are protected by trade secret or copyright law.
- * 
- * Dissemination of this information or reproduction of this material
- * is strictly forbidden unless prior written permission is obtained
- * from autumo GmbH.
- * 
+/*
+ * Copyright 2026 autumo GmbH.
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 package ch.autumo.ifacex.studio.ui;
 
-import java.net.URL;
+
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Locale;
 import java.util.Properties;
 
 import ch.autumo.ifacex.studio.core.cli.CommandLine;
@@ -26,10 +19,9 @@ import ch.autumo.ui.fx.BaseApp;
 import ch.autumo.ui.utils.Helper;
 import ch.autumo.ui.utils.UI;
 
-import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.layout.Pane;
-import javafx.scene.text.Font;
+
 import javafx.stage.Stage;
 
 /**
@@ -40,9 +32,8 @@ import javafx.stage.Stage;
  * The Studio-specific editor UI — the static {@code main.fxml} shell and the metadata-driven
  * {@link FormBuilder} forms — stays our own.</p>
  *
- * <p>This milestone runs in {@link #isPortableApp() portable mode} (no installer/licensing) so
- * development does not require a license. The installer and registration/licensing UI are wired
- * in later. See docs 04 and 07 (decision D12).</p>
+ * <p>The Studio is installed by the framework's installer ({@link #isPortableApp()}); the
+ * registration/licensing UI is wired in later. See docs 04 and 07 (decision D12).</p>
  */
 public class StudioApp extends BaseApp {
 
@@ -52,6 +43,12 @@ public class StudioApp extends BaseApp {
 
     /** Application base resource path (autumo-ui convention). */
     private static final String BASE = "/ch/autumo/ifacex/studio/ui/";
+
+    /** System property that overrides the configured language, e.g. {@code -Difacex.lang=de}. */
+    private static final String PROP_LANG = "ifacex.lang";
+
+    /** Legacy alias of {@link Constants#PROP_KEY_LANGUAGE}. */
+    private static final String PROP_LANG_ALIAS = "lang";
 
     /** Current application instance (the framework creates exactly one). */
     private static StudioApp instance;
@@ -71,26 +68,33 @@ public class StudioApp extends BaseApp {
      * Resolves the language before the UI is built, keeps the autumo-ui framework in sync and
      * installs the application view.
      *
-     * <p>English is the default and does <em>not</em> follow the operating system locale.
-     * Precedence: {@code -Difacex.lang=de} &gt; {@code language=de} in {@code cfg/app.cfg}
-     * (autumo-ui convention) &gt; the {@code lang} alias &gt; English. The framework is switched
-     * first (it owns the window title, the About/license panes and framework dialogs), then the
-     * Studio's own PO catalogue is layered on top.</p>
+     * <p>The language is taken from {@code -Difacex.lang=de}, otherwise from {@code language=de} in
+     * {@code cfg/app.cfg} (autumo-ui convention), otherwise from its {@code lang} alias, otherwise
+     * from the desktop language of the operating system. Only when none of them is a language the
+     * application carries a translation for, English is used — that is also the rule for an
+     * unsupported desktop language such as French without a PO catalogue. English is the first
+     * candidate only for an unknown value, never because of the operating system alone.</p>
+     *
+     * <p>The framework is switched first (it owns the window title, the About/license panes and
+     * framework dialogs), then the Studio's own PO catalogue is layered on top.</p>
+     *
+     * <p>On the very first start of an installed application {@code configuration} is
+     * {@code null}: the framework has not written {@code cfg/app.cfg} yet, because that happens in
+     * the installer phase ({@code BaseApp.completed}, see {@link #isPortableApp()}). The language
+     * is then resolved from the request parameter and the desktop only.</p>
      *
      * @param primaryStage  primary window
-     * @param configuration resolved application configuration
+     * @param configuration resolved application configuration, {@code null} before the installer
+     *                      wrote {@code cfg/app.cfg}
      * @return the root pane of the application view
      */
     @Override
     protected Pane preInitialize(Stage primaryStage, Properties configuration) {
         instance = this;
-        // English is the default and does NOT follow the operating system locale: earlier builds
-        // showed German framework texts because autumo-ui resolves its bundle through the JVM
-        // default locale. Precedence: -Difacex.lang=de > "language=de" in cfg/app.cfg (autumo-ui
-        // convention, Constants.PROP_KEY_LANGUAGE) > the "lang" alias > English.
-        final String configured = configuration.getProperty(Constants.PROP_KEY_LANGUAGE,
-                configuration.getProperty("lang", Messages.LANG_EN));
-        final String lang = System.getProperty("ifacex.lang", configured);
+        // Precedence: -Difacex.lang=de > "language=de" in cfg/app.cfg (autumo-ui convention,
+        // Constants.PROP_KEY_LANGUAGE) > the "lang" alias > the desktop language of the JVM
+        // (user.language, so a German desktop starts in German) > English for everything else.
+        final String lang = resolveLanguage(configuration);
         // Keep the autumo-ui framework in sync first (it owns the window title, About/license HTML
         // panes and framework dialogs), then set our own PO catalogue on top of it.
         Helper.setLanguage(lang);
@@ -99,7 +103,8 @@ public class StudioApp extends BaseApp {
             System.out.println("[dev] language=" + Messages.getLanguage()
                     + " (" + translations + " translations)");
         }
-        loadFonts();
+        // Fonts (Inter) are loaded by the autumo-ui framework (BaseApp.start), which is the
+        // standard font of the framework; the Studio only consumes the family names in CSS.
         // Create the main view and hand it to the autumo-ui loader: UI.setup() remembers our
         // base resource path, loads main.fxml into the view and binds this controller. It is
         // also what makes the framework's info panes (UI.showAbout, …) work, and it walks our
@@ -114,9 +119,51 @@ public class StudioApp extends BaseApp {
     }
 
     /**
+     * Resolves the language the Studio starts in.
+     *
+     * <p>In order: the {@code -Difacex.lang} system property, the {@code language} key of the
+     * application configuration ({@link Constants#PROP_KEY_LANGUAGE}) and its {@code lang} alias,
+     * then the language of the desktop ({@link Locale#getDefault()}, which the JVM filled from the
+     * operating system — e.g. {@code de_CH} on a Swiss German desktop).</p>
+     *
+     * <p>The result is not checked here: {@link Helper#setLanguage(String)} normalises a region
+     * away ({@code de_CH} → {@code de}) and maps an unsupported or blank value — including a
+     * desktop language the application has no PO catalogue for — to English.</p>
+     *
+     * @param configuration application configuration, may be {@code null}
+     * @return the resolved language code, e.g. {@code de}
+     */
+    static String resolveLanguage(Properties configuration) {
+        // No configuration at all: the first start of an installed application, where the
+        // framework runs the installer before it writes cfg/app.cfg (see isPortableApp()).
+        final Properties config = configuration == null ? new Properties() : configuration;
+        String lang = System.getProperty(PROP_LANG);
+        if (isBlank(lang)) {
+            lang = config.getProperty(Constants.PROP_KEY_LANGUAGE);
+        }
+        if (isBlank(lang)) {
+            lang = config.getProperty(PROP_LANG_ALIAS);
+        }
+        if (isBlank(lang)) {
+            lang = Locale.getDefault().getLanguage();
+        }
+        return lang;
+    }
+
+    /**
+     * Checks whether a language configuration value is absent or only whitespace; such a value
+     * does not take part in the precedence and the next candidate is used instead.
+     *
+     * @param value value to check, may be {@code null}
+     * @return {@code true} when the value carries nothing
+     */
+    private static boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
+    }
+
+    /**
      * Finishes the window set-up after the view exists: adds the Studio style sheet, sizes the
-     * stage and either runs the headless self-test or shows the window and opens the file handed
-     * in on the command line.
+     * stage, shows the window and opens the file handed in on the command line.
      *
      * @param primaryStage  primary window
      * @param configuration resolved application configuration
@@ -126,31 +173,23 @@ public class StudioApp extends BaseApp {
         final List<String> args = getParameters().getRaw();
 
         // The scene already exists: BaseBorderView (via MainView) created it on the stage and
-        // installed the autumo-ui base style. Our own style sheet goes on top of it.
+        // installed the autumo-ui base style (MainView passes 'null' as style sheet on purpose).
+        // Our own style sheet — the application stylesheet of the autumo-ui resource structure
+        // (style/application.css, DevGuide §4.5) — goes on top of the base look.
         final Scene scene = primaryStage.getScene();
-        final String studioCss = StudioApp.class.getResource("studio.css").toExternalForm();
-        scene.getStylesheets().add(studioCss);
+        final String appCss = Helper.getAppResource(this, Constants.STYLESHEET);
+        scene.getStylesheets().add(appCss);
         primaryStage.setWidth(1100);
         primaryStage.setHeight(720);
 
-        // Headless self-test: load a config file, exercise the UI, print a summary and exit.
-        if (args.size() >= 2 && "--selftest".equals(args.get(0))) {
-            try {
-                System.out.println("SELFTEST: " + controller.selfTest(Path.of(args.get(1))));
-                System.out.println("SELFTEST-STYLES: count=" + scene.getStylesheets().size()
-                        + " " + scene.getStylesheets());
-            } catch (Exception e) {
-                System.out.println("SELFTEST-FAILED: " + e);
-            }
-            Platform.exit();
-            return;
-        }
-
+        // Headless UI checks live in the JUnit tests of this module (see src/test/java):
+        // the whole shell is built there on the JavaFX thread and asserted, so nothing
+        // about it is wired into the application itself.
         primaryStage.setScene(scene);
         primaryStage.show();
 
-        // Dev convenience: apply studio.css edits without a restart (no-op in packaged builds).
-        CssLiveReload.install(scene, studioCss);
+        // Dev convenience: apply style edits without a restart (no-op in packaged builds).
+        CssLiveReload.install(scene, appCss);
 
         // Optional: open a configuration file handed in on the command line. Two shapes are
         // accepted, because two launchers exist:
@@ -171,28 +210,12 @@ public class StudioApp extends BaseApp {
     /**
      * {@inheritDoc}
      *
-     * <p>Nothing to clean up in portable mode.</p>
+     * <p>The framework has already stored the application configuration and the recent files on
+     * exit (see {@link ch.autumo.ui.fx.BaseApp#stop()}); the Studio has nothing else to release.</p>
      */
     @Override
     public void finish(Stage primaryStage) {
-        // nothing to clean up in portable mode
-    }
-
-    /**
-     * Loads the bundled <b>Inter</b> font faces (SIL OFL, see {@code fonts/Inter-OFL.txt}) so the
-     * UI has the modern web-GUI look. Called before the scene is built; the family is applied in
-     * {@code studio.css}.
-     */
-    private static void loadFonts() {
-        for (final String face : new String[] {
-                "Inter-Regular.ttf", "Inter-Medium.ttf", "Inter-SemiBold.ttf", "Inter-Bold.ttf" }) {
-            final URL url = StudioApp.class.getResource("fonts/" + face);
-            if (url != null) {
-                Font.loadFont(url.toExternalForm(), 14);
-            } else {
-                System.err.println("Studio: bundled font not found: " + face);
-            }
-        }
+        // nothing to clean up
     }
 
     /**
@@ -269,14 +292,26 @@ public class StudioApp extends BaseApp {
     /**
      * {@inheritDoc}
      *
-     * <p>The Studio currently runs in portable mode: no installer and no licensing, so
-     * development does not require a license. The installer and the registration/licensing UI are
-     * wired in later.</p>
+     * <p><b>This is the switch that writes {@code cfg/app.cfg}.</b> The Studio is an installed
+     * application: on the first start no application configuration exists in the user's
+     * application data directory, so the framework hands {@code null} to
+     * {@link #preInitialize(Stage, Properties)} and runs the installer instead - the steps listed
+     * in {@code ui/…/ui/cfg/installer-steps.cfg}, the last of which calls
+     * {@link ch.autumo.ui.fx.BaseApp#completed(ProcessException)}. That writes the application
+     * configuration into the user's application data directory
+     * ({@code <app data>/autumo/ifaceXStudioFX/cfg/app.cfg}) and calls
+     * {@link #initialize(Stage, Properties)} afterwards.</p>
      *
-     * @return {@code true}
+     * <p>From then on that file is the configuration: the general values of the bundled template
+     * {@code ui/…/ui/cfg/app.cfg} plus every user setting - the recent files, {@code language} and
+     * the values the installer steps collect via
+     * {@link ch.autumo.ui.fx.BaseApp#setConfigurationParameter(String, String)}. The template
+     * itself is never touched; it is the general configuration the file is created from.</p>
+     *
+     * @return {@code false}: the Studio is installed, not portable
      */
     @Override
     protected boolean isPortableApp() {
-        return true;
+        return false;
     }
 }

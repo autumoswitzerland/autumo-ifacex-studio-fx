@@ -1,4 +1,4 @@
-# --- Java / Maven ---
+# --- Java / Maven / Gradle ---
 target/
 build/
 out/
@@ -15,6 +15,7 @@ replay_pid*
 .classpath
 .factorypath
 .settings/
+.gradle/
 .idea/
 *.iml
 *.ipr
