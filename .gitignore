@@ -1,4 +1,5 @@
 # --- Java / Maven / Gradle ---
+bin/default/
 target/
 build/
 out/

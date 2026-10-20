@@ -13,8 +13,9 @@
  */
 package ch.autumo.ifacex.studio.ui;
 
-import static ch.autumo.ifacex.studio.ui.Messages.format;
-import static ch.autumo.ifacex.studio.ui.Messages.t;
+import static ch.autumo.ifacex.studio.ui.StudioHelper.format;
+import static ch.autumo.ifacex.studio.ui.StudioHelper.t;
+
 import java.util.ArrayList;
 
 import java.util.List;
@@ -42,12 +43,10 @@ import javafx.scene.Node;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
-import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
-import javafx.scene.control.PasswordField;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
@@ -146,21 +145,21 @@ final class FormBuilder {
         metaBox.setPadding(new Insets(4));
 
         final TextField metaTitle = new TextField(cfg.meta().title());
-        metaTitle.textProperty().addListener((o, a, b) -> {
+        metaTitle.textProperty().addListener((_, _, b) -> {
             cfg.setMeta(cfg.meta().withTitle(b));
             changed();
         });
         metaBox.getChildren().add(labeled(t("Title"), metaTitle));
 
         final TextField metaVersion = new TextField(cfg.meta().version());
-        metaVersion.textProperty().addListener((o, a, b) -> {
+        metaVersion.textProperty().addListener((_, _, b) -> {
             cfg.setMeta(cfg.meta().withVersion(b));
             changed();
         });
         metaBox.getChildren().add(labeled(t("Version"), metaVersion));
 
         final TextField metaAuthor = new TextField(cfg.meta().author());
-        metaAuthor.textProperty().addListener((o, a, b) -> {
+        metaAuthor.textProperty().addListener((_, _, b) -> {
             cfg.setMeta(cfg.meta().withAuthor(b));
             changed();
         });
@@ -168,7 +167,7 @@ final class FormBuilder {
 
         final TextArea metaNotes = new TextArea(stripTrailingNewline(cfg.meta().notes()));
         metaNotes.setPrefRowCount(3);
-        metaNotes.textProperty().addListener((o, a, b) -> {
+        metaNotes.textProperty().addListener((_, _, b) -> {
             cfg.setMeta(cfg.meta().withNotes(b));
             changed();
         });
@@ -192,7 +191,7 @@ final class FormBuilder {
         srcIface.setEditable(true);
         srcIface.setMaxWidth(Double.MAX_VALUE);
         srcIface.setValue(cfg.sourceInterface());
-        srcIface.valueProperty().addListener((o, a, b) -> {
+        srcIface.valueProperty().addListener((_, _, b) -> {
             if (b == null || b.isBlank()) {
                 return;
             }
@@ -269,7 +268,7 @@ final class FormBuilder {
                 structureChanged();
             }
         };
-        input.setOnAction(e -> add.run());
+        input.setOnAction(_ -> add.run());
 
         final Button addBtn = toolButton("+", t("Add source entity"), add);
         final Button removeBtn = toolButton("\u2212", t("Remove source entity (fields and mappings)"),
@@ -471,7 +470,7 @@ final class FormBuilder {
      */
     private Node destField(EntityConfig ec, String key, String label) {
         final TextField tf = new TextField(ec.settings().getOrDefault(key, ""));
-        tf.textProperty().addListener((o, a, b) -> {
+        tf.textProperty().addListener((_, _, b) -> {
             if (b == null || b.isEmpty()) {
                 ec.settings().remove(key);
             } else {
@@ -513,7 +512,7 @@ final class FormBuilder {
                 ? ec.mapping().destEntity() : "";
         final TextField destEntity = new TextField(dest);
         destEntity.setPromptText(t("destination entity (e.g. COMPANIES)"));
-        destEntity.textProperty().addListener((o, a, b) -> {
+        destEntity.textProperty().addListener((_, _, b) -> {
             if (b.isBlank() && !ec.hasMapping()) {
                 return; // nothing to clear yet
             }
@@ -559,7 +558,7 @@ final class FormBuilder {
 
         final ObservableList<FieldMappingRec> rows = FXCollections.observableArrayList(
                 ec.hasMapping() ? new ArrayList<>(ec.mapping().fields()) : new ArrayList<>());
-        rows.addListener((javafx.collections.ListChangeListener<FieldMappingRec>) c -> {
+        rows.addListener((javafx.collections.ListChangeListener<FieldMappingRec>) _ -> {
             final WriterMapping m = ec.ensureMapping();
             m.fields().clear();
             m.fields().addAll(rows);
@@ -617,7 +616,7 @@ final class FormBuilder {
         b.setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
         b.getStyleClass().add("dnd-button");
         b.setTooltip(new Tooltip(t(DND_TOOLTIP)));
-        b.setOnAction(e -> action.run());
+        b.setOnAction(_ -> action.run());
         return b;
     }
 
@@ -726,7 +725,7 @@ final class FormBuilder {
         if (suggestions != null) {
             // Unknown interface names are shown as the "<other>" placeholder, as in the
             // legacy Studio; known names are shown verbatim.
-            list.setCellFactory(lv -> new TextFieldListCell<String>() {
+            list.setCellFactory(_ -> new TextFieldListCell<String>() {
                 @Override
                 public void updateItem(String item, boolean empty) {
                     super.updateItem(item, empty);
@@ -773,7 +772,8 @@ final class FormBuilder {
             input = tf;
             readInput = tf::getText;
         }
-        final Runnable addItem = () -> {
+        @SuppressWarnings("unchecked")
+		final Runnable addItem = () -> {
             final String v = readInput.get() == null ? "" : readInput.get().trim();
             if (!v.isEmpty() && !"<other>".equals(v) && !items.contains(v)) {
                 items.add(v);
@@ -789,9 +789,9 @@ final class FormBuilder {
             }
         };
         if (input instanceof TextField) {
-            ((TextField) input).setOnAction(e -> addItem.run());
+            ((TextField) input).setOnAction(_ -> addItem.run());
         } else {
-            ((ComboBox<?>) input).getEditor().setOnAction(e -> addItem.run());
+            ((ComboBox<?>) input).getEditor().setOnAction(_ -> addItem.run());
         }
 
         final Button add = toolButton("+", t("Add"), addItem);
@@ -830,7 +830,7 @@ final class FormBuilder {
             }
         }
         final ObservableList<String> items = FXCollections.observableArrayList(initial);
-        items.addListener((javafx.collections.ListChangeListener<String>) c -> {
+        items.addListener((javafx.collections.ListChangeListener<String>) _ -> {
             if (items.isEmpty()) {
                 settings.remove(key);
             } else {
@@ -856,7 +856,7 @@ final class FormBuilder {
         final Button b = new Button(text);
         b.setTooltip(new Tooltip(tooltip));
         b.setMinWidth(34);
-        b.setOnAction(e -> action.run());
+        b.setOnAction(_ -> action.run());
         return b;
     }
 
@@ -923,7 +923,7 @@ final class FormBuilder {
                         FXCollections.observableArrayList("", "yes", "no"));
                 cb.setValue(value);
                 cb.setMaxWidth(Double.MAX_VALUE);
-                cb.valueProperty().addListener((o, a, b) -> {
+                cb.valueProperty().addListener((_, _, b) -> {
                     map.put(key, b == null ? "" : b);
                     changed();
                 });
@@ -935,7 +935,7 @@ final class FormBuilder {
                 cb.setEditable(true);
                 cb.setValue(value);
                 cb.setMaxWidth(Double.MAX_VALUE);
-                cb.valueProperty().addListener((o, a, b) -> {
+                cb.valueProperty().addListener((_, _, b) -> {
                     map.put(key, b == null ? "" : b);
                     changed();
                 });
@@ -945,7 +945,7 @@ final class FormBuilder {
                 final TextField tf = new TextField(value);
                 tf.setTextFormatter(new javafx.scene.control.TextFormatter<>(
                         s -> s.getControlNewText().matches("-?\\d*") ? s : null));
-                tf.textProperty().addListener((o, a, b) -> {
+                tf.textProperty().addListener((_, _, b) -> {
                     map.put(key, b);
                     changed();
                 });
@@ -954,7 +954,7 @@ final class FormBuilder {
             case SECRET: {
                 final ch.autumo.ui.fx.control.SecretField sf = ch.autumo.ui.fx.control.SecretField.create(app);
                 sf.setText(value);
-                sf.textProperty().addListener((o, a, b) -> {
+                sf.textProperty().addListener((_, _, b) -> {
                     map.put(key, b == null ? "" : b);
                     changed();
                 });
@@ -963,7 +963,7 @@ final class FormBuilder {
             case TEXT_AREA: {
                 final TextArea ta = new TextArea(value);
                 ta.setPrefRowCount(2);
-                ta.textProperty().addListener((o, a, b) -> {
+                ta.textProperty().addListener((_, _, b) -> {
                     map.put(key, b);
                     changed();
                 });
@@ -971,7 +971,7 @@ final class FormBuilder {
             }
             default: {
                 final TextField tf = new TextField(value);
-                tf.textProperty().addListener((o, a, b) -> {
+                tf.textProperty().addListener((_, _, b) -> {
                     map.put(key, b);
                     changed();
                 });

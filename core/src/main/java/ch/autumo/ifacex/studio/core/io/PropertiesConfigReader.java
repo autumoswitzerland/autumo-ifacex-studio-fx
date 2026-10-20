@@ -179,7 +179,7 @@ public final class PropertiesConfigReader {
                 final String[] parts = splitFirstColon(val);
                 final FieldMappingRec rec = new FieldMappingRec(parts[0], parts[1], insert);
                 (insert ? insFields : stdFields)
-                        .computeIfAbsent(scopeKey(prefix, entity), k -> new TreeMap<>())
+                        .computeIfAbsent(scopeKey(prefix, entity), _ -> new TreeMap<>())
                         .put(idx, rec);
                 ec.ensureMapping();
             } else {

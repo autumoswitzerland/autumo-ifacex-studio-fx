@@ -18,6 +18,12 @@ javafx {
     modules = ['javafx.controls', 'javafx.fxml', 'javafx.web', 'javafx.swing']
 }
 
+eclipse {
+    project {
+        name = 'autumo-ifacex-studio-fx-ui'
+    }
+}
+
 dependencies {
     api project(':core')
 
@@ -37,8 +43,13 @@ application {
 }
 
 // JavaFX loads native libraries; on macOS this needs the native access flag.
+// bin/run.sh can pass '-D...' system properties through '-PstudioJvmArgs=...'
+// (e.g. -Dapp.livereload=true for the development CSS live reload).
 tasks.named('run') {
     jvmArgs '--enable-native-access=javafx.graphics'
+    if (project.hasProperty('studioJvmArgs')) {
+        project.property('studioJvmArgs').toString().split(/\s+/).findAll { it }.each { jvmArgs it }
+    }
 }
 
 // The Studio is an installed application: autumo-ui resolves the user's application data

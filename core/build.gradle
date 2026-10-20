@@ -2,6 +2,12 @@
  * UI-free core module: configuration model, legacy properties IO, new YAML (.ifcx) IO.
  */
 
+eclipse {
+    project {
+        name = 'autumo-ifacex-studio-fx-core'
+    }
+}
+
 dependencies {
     api 'org.snakeyaml:snakeyaml-engine:2.9'
 }

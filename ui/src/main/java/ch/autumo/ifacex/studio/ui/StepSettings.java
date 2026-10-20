@@ -15,6 +15,7 @@ package ch.autumo.ifacex.studio.ui;
 
 import java.io.File;
 
+import ch.autumo.ui.exception.ProcessException;
 import ch.autumo.ui.fx.controller.actions.installer.BaseStep;
 import ch.autumo.ui.utils.Helper;
 import javafx.geometry.Insets;
@@ -74,9 +75,9 @@ public class StepSettings extends BaseStep {
         GridPane.setHgrow(rootField, Priority.ALWAYS);
 
         final Button browse = new Button("...");
-        browse.setOnAction(e -> {
+        browse.setOnAction(_ -> {
             final DirectoryChooser chooser = new DirectoryChooser();
-            chooser.setTitle(Messages.t("Choose root configuration folder…"));
+            chooser.setTitle(StudioHelper.t("Choose root configuration folder…"));
             final File current = new File(rootField.getText());
             chooser.setInitialDirectory(current.isDirectory()
                     ? current : new File(System.getProperty("user.home")));
@@ -85,12 +86,12 @@ public class StepSettings extends BaseStep {
                 rootField.setText(selected.getAbsolutePath());
         });
 
-        final CheckBox playSounds = new CheckBox(Messages.t("Play sounds?"));
+        final CheckBox playSounds = new CheckBox(StudioHelper.t("Play sounds?"));
         playSounds.setSelected(readBooleanParameter(StudioConstants.PROP_KEY_PLAY_SOUNDS, true));
-        final CheckBox playJingle = new CheckBox(Messages.t("Play jingle?"));
+        final CheckBox playJingle = new CheckBox(StudioHelper.t("Play jingle?"));
         playJingle.setSelected(readBooleanParameter(StudioConstants.PROP_KEY_PLAY_JINGLE, true));
 
-        grid.add(new Label(Messages.t("Configuration root folder:")), 0, 0);
+        grid.add(new Label(StudioHelper.t("Configuration root folder:")), 0, 0);
         grid.add(rootField, 1, 0);
         grid.add(browse, 2, 0);
         grid.add(playSounds, 1, 1);
@@ -99,7 +100,7 @@ public class StepSettings extends BaseStep {
 
         final Button next = controller.getFooterButton();
         next.setText(Helper.getTranslatedText(app, "Installer.next"));
-        next.setOnAction(e -> {
+        next.setOnAction(_ -> {
             storeSettings(rootField.getText(), playSounds.isSelected(), playJingle.isSelected());
             ic.next();
         });
@@ -111,12 +112,12 @@ public class StepSettings extends BaseStep {
         back.setMinWidth(100);
         back.getStyleClass().add("default-info-footer-button");
         buttons.setCenter(back);
-        back.setOnAction(e -> ic.back());
+        back.setOnAction(_ -> ic.back());
     }
 
     @Override
     public String getTitle() {
-        return Messages.t("General Settings");
+        return StudioHelper.t("General Settings");
     }
 
     /**

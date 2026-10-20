@@ -36,23 +36,23 @@ class LanguageResolutionTest {
     /** Remembers the request parameter so a test can set and the next one can clear it. */
     @BeforeEach
     void rememberRequestParameter() {
-        originalIfacexLang = System.getProperty("ifacex.lang");
+        originalIfacexLang = System.getProperty("app.lang");
     }
 
     /** Restores the environment of the test run. */
     @AfterEach
     void restoreRequestParameter() {
         if (originalIfacexLang == null) {
-            System.clearProperty("ifacex.lang");
+            System.clearProperty("app.lang");
         } else {
-            System.setProperty("ifacex.lang", originalIfacexLang);
+            System.setProperty("app.lang", originalIfacexLang);
         }
     }
 
     /** The request parameter beats everything, including the configuration. */
     @Test
     void requestParameterWins() {
-        System.setProperty("ifacex.lang", "en");
+        System.setProperty("app.lang", "en");
         final Properties config = new Properties();
         config.setProperty("language", "de");
         assertEquals("en", StudioApp.resolveLanguage(config));
@@ -61,7 +61,7 @@ class LanguageResolutionTest {
     /** The configuration key is the second candidate. */
     @Test
     void configurationLanguageIsUsed() {
-        System.clearProperty("ifacex.lang");
+        System.clearProperty("app.lang");
         final Properties config = new Properties();
         config.setProperty("language", "de");
         assertEquals("de", StudioApp.resolveLanguage(config));
@@ -70,7 +70,7 @@ class LanguageResolutionTest {
     /** Its {@code lang} alias is the third candidate and beats the desktop. */
     @Test
     void configurationAliasIsUsed() {
-        System.clearProperty("ifacex.lang");
+        System.clearProperty("app.lang");
         final Properties config = new Properties();
         config.setProperty("lang", "de");
         assertEquals("de", StudioApp.resolveLanguage(config));
@@ -79,7 +79,7 @@ class LanguageResolutionTest {
     /** A blank (or absent) value is skipped, not treated as a language. */
     @Test
     void blankValueIsSkipped() {
-        System.clearProperty("ifacex.lang");
+        System.clearProperty("app.lang");
         final Properties config = new Properties();
         config.setProperty("language", "   ");
         config.setProperty("lang", "de");
@@ -92,7 +92,7 @@ class LanguageResolutionTest {
      */
     @Test
     void nullConfigurationFallsBackToTheDesktop() {
-        System.clearProperty("ifacex.lang");
+        System.clearProperty("app.lang");
         assertEquals(Locale.getDefault().getLanguage(), StudioApp.resolveLanguage(null));
     }
 }

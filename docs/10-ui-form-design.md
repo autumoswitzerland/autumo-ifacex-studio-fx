@@ -222,8 +222,9 @@ carry a coloured type pill.
 
 **CSS live reload (dev).** `CssLiveReload` watches `style/application.css`, writes a versioned
 copy to a temp directory and swaps the scene stylesheet entry (JavaFX caches per URL), so CSS
-changes are visible without restarting. Active only in a `file:`-under-`target/classes` dev
-layout; `-Difacex.livereload=false` disables it. Java changes still need a rebuild + restart.
+changes are visible without restarting. Off by default; the application switches it on with
+`-Dapp.livereload=true` (e.g. in `bin/run.sh`). Active only in a `file:`-under-`target/classes`
+dev layout (in a packaged build it is a no-op). Java changes still need a rebuild + restart.
 
 **Per-entity UI (open).** The PoC currently uses collapsible per-entity sections; the
 table-vs-tabs evaluation (§10.8, item 2) is still open and only matters for multi-entity IPCs.

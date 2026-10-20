@@ -28,6 +28,9 @@ package ch.autumo.ifacex.studio.ui;
  */
 public final class StudioConstants {
 
+    /** Base resource path of the Studio UI; must match {@link StudioApp#getBaseResourcePath()}. */
+    public static final String BASE = "/ch/autumo/ifacex/studio/ui/";
+	
     /** Root folder of the configuration files, e.g. {@code /home/user/ifaceXProjects}. */
     public static final String PROP_KEY_PROJECT_ROOT = "project.root";
 
@@ -40,8 +43,16 @@ public final class StudioConstants {
     /** Name of the default project root folder below the user's home directory. */
     public static final String DEFAULT_PROJECT_ROOT_FOLDER = "ifaceXProjects";
 
-    /** Utility class: not instantiable. */
-    private StudioConstants() {
-    }
+    /** Extension of the legacy properties configuration (Java properties). */
+    public static final String EXT_IFACEX = ".ifacex";
+
+    /** Extension of the new YAML configuration. */
+    public static final String EXT_IFCX = ".ifcx";
+
+    /** Plain YAML spelling the open dialog also accepts. */
+    public static final String EXT_YAML = ".yaml";
+
+    /** Plain YAML spelling the open dialog also accepts. */
+    public static final String EXT_YML = ".yml";
 
 }

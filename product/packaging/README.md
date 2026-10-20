@@ -31,8 +31,9 @@ jpackage \
 ```
 
 The launcher accepts the file the OS hands it as the **first argument**
-(`ch.autumo.ifacex.studio.core.cli.CommandLine`), so no option is required in
-the packaged form. The development launcher still uses the explicit
+(`BaseApp.openTargetFromCommandLine`, which consults the endings the
+application registered via `BaseApp.registerOpenExtension`), so no option is
+required in the packaged form. The development launcher still uses the explicit
 `--open <file>` form.
 
 ## Still open (phase 7)

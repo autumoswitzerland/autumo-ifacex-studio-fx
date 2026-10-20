@@ -17,6 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -35,22 +36,22 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 
+import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
-
 import ch.autumo.commons.configuration.ConfigurationManager;
 import ch.autumo.ifacex.studio.core.meta.FieldCatalog;
 import ch.autumo.ui.Constants;
+import ch.autumo.ui.fx.control.Icons;
 import ch.autumo.ui.fx.controller.DefaultInfoController;
 import ch.autumo.ui.fx.controller.actions.RemoveAction;
-import ch.autumo.ui.fx.control.Icons;
 import ch.autumo.ui.fx.view.DefaultCodeEditorView;
 import ch.autumo.ui.fx.view.JsonFormatterView;
 import ch.autumo.ui.utils.Helper;
+import ch.autumo.ui.utils.Messages;
 import ch.autumo.ui.utils.UI;
 import javafx.application.Platform;
 import javafx.geometry.Bounds;
@@ -106,7 +107,7 @@ class StudioUiTest {
     private static final String START_LANG = Messages.LANG_EN;
 
     /** The other supported language. */
-    private static final String OTHER_LANG = Messages.LANG_DE;
+    private static final String OTHER_LANG = "de";
 
     /** The user's application configuration of this test run. */
     private static Path appCfg;
@@ -140,8 +141,8 @@ class StudioUiTest {
             app = new StudioApp();
             // BaseApp.start(…) initialises the configuration manager from the template before the
             // view is built; UI.setup(…) reads the macOS menu-detach switch from it.
-            ConfigurationManager.getInstance()
-                    .initializeWithProperties(Helper.loadTemplateConfiguration(app));
+            Properties props = Helper.loadTemplateConfiguration(app);
+            ConfigurationManager.getInstance().initializeWithProperties(props);
             final MainView view = (MainView) app.preInitialize(stage, configuration);
             controller = (MainController) view.getController();
             // The style sheet StudioApp.initialize(…) adds on top of the autumo-ui base style:
@@ -208,14 +209,14 @@ class StudioUiTest {
             assertFalse(controller.isLanguageSelected(OTHER_LANG));
             assertNotNull(controller.menuLanguage.getGraphic(),
                     "the language menu carries the framework's language icon");
-            final String licenseText = Messages.t("License");
+            final String licenseText = StudioHelper.t("License");
             for (final MenuItem helpItem : controller.menuHelp.getItems())
                 assertFalse(licenseText.equals(helpItem.getText()),
                         "no separate Help \u203a License item: the license lives behind About");
             assertEquals("File", controller.menuFile.getText());
             assertEquals("Help", controller.menuHelp.getText());
             // Without a configuration the status bar simply reads "Ready.".
-            assertEquals(Messages.t("Ready"), controller.statusLabel.getText(),
+            assertEquals(StudioHelper.t("Ready"), controller.statusLabel.getText(),
                     "no configuration loaded: " + controller.statusLabel.getText());
             return null;
         });
@@ -337,7 +338,7 @@ class StudioUiTest {
         // label the fallback. Only real engine parameters count, captions pollute the sample.
         final Set<String> known = new HashSet<>();
         for (final String param : FieldCatalog.knownParams()) {
-            known.add(Messages.t(param, FieldCatalog.descriptor(param).label()));
+            known.add(StudioHelper.t(param, FieldCatalog.descriptor(param).label()));
         }
         final List<String> paramLabels = labels.stream().filter(known::contains).distinct().toList();
         assertTrue(paramLabels.size() >= 10, "expected translated parameter labels, got " + paramLabels);
@@ -358,7 +359,7 @@ class StudioUiTest {
             assertTrue(controller.rawProps.getText().contains("rest_in_host=api.hubapi.com"),
                     "the .ifacex view must show the configuration as properties");
             final String status = controller.statusLabel.getText();
-            assertTrue(status.startsWith(Messages.t("File") + ": "), "the status bar names the file: " + status);
+            assertTrue(status.startsWith(StudioHelper.t("File") + ": "), "the status bar names the file: " + status);
             assertTrue(status.contains(SAMPLE.toAbsolutePath().toString()),
                     "the status bar must carry the loaded file: " + status);
             return null;
@@ -383,9 +384,9 @@ class StudioUiTest {
                 assertEquals(OTHER_LANG, Helper.getLanguage());
                 // … the Studio's own catalogue followed …
                 assertEquals("Datei", controller.menuFile.getText());
-                assertEquals("Schließen", Messages.t("Close"));
+                assertEquals("Schließen", StudioHelper.t("Close"));
                 // … and the framework's catalogue, which the Studio's PO does not define.
-                assertEquals("Okay", Messages.t("button.Alright"));
+                assertEquals("Okay", StudioHelper.t("button.Alright"));
                 // The Studio's catalogues override the framework's application name.
                 assertEquals("ifaceX Studio FX", stage.getTitle());
                 assertTrue(controller.isLanguageSelected(OTHER_LANG), "the menu shows German as selected");
@@ -397,7 +398,7 @@ class StudioUiTest {
             }
             assertEquals(START_LANG, Messages.getLanguage());
             assertEquals("File", controller.menuFile.getText());
-            assertEquals("Alright", Messages.t("button.Alright"));
+            assertEquals("Alright", StudioHelper.t("button.Alright"));
             assertTrue(controller.isLanguageSelected(START_LANG));
             assertFalse(controller.isLanguageSelected(OTHER_LANG));
             return null;
@@ -577,16 +578,10 @@ class StudioUiTest {
             Files.deleteIfExists(unknown);
         }
 
-        // The extension lookup itself: case-insensitive; the Studio's interface files: the legacy
-        // .ifacex format is Java properties, its successor format .ifcx is YAML.
+        // The extension lookup itself: case-insensitive, framework formats only. The Studio's own
+        // interface files (.ifacex, .ifcx) are registered per editor (see the registration below).
         assertEquals(SyntaxConstants.SYNTAX_STYLE_PROPERTIES_FILE,
                 DefaultCodeEditorView.syntaxStyleFor("app.PROPERTIES"));
-        assertEquals(SyntaxConstants.SYNTAX_STYLE_PROPERTIES_FILE,
-                DefaultCodeEditorView.syntaxStyleFor("002-hubspot-v3-companies.ifacex"),
-                "the legacy .ifacex interface format is Java properties");
-        assertEquals(SyntaxConstants.SYNTAX_STYLE_YAML,
-                DefaultCodeEditorView.syntaxStyleFor("002-hubspot-v3-companies.ifcx"),
-                "the new .ifcx interface format is YAML");
         assertEquals(SyntaxConstants.SYNTAX_STYLE_PROPERTIES_FILE,
                 DefaultCodeEditorView.syntaxStyleFor("app.cfg"),
                 "the application configuration .cfg is Java properties");
@@ -594,6 +589,32 @@ class StudioUiTest {
                 DefaultCodeEditorView.syntaxStyleFor("web.xml"));
         assertEquals(SyntaxConstants.SYNTAX_STYLE_NONE,
                 DefaultCodeEditorView.syntaxStyleFor(null));
+        assertEquals(SyntaxConstants.SYNTAX_STYLE_NONE,
+                DefaultCodeEditorView.syntaxStyleFor("002-hubspot-v3-companies.ifacex"),
+                "the framework does not know the Studio's interface formats");
+
+        // The Studio adds its own formats per editor: the legacy .ifacex format is Java
+        // properties, its successor format .ifcx is YAML; the registration wins over the
+        // built-in table and is case-insensitive.
+        call(() -> {
+            final DefaultCodeEditorView view = new DefaultCodeEditorView(app, new Stage(), null);
+            view.registerSyntaxStyle("ifacex", SyntaxConstants.SYNTAX_STYLE_PROPERTIES_FILE);
+            view.registerSyntaxStyle("ifcx", SyntaxConstants.SYNTAX_STYLE_YAML);
+
+            assertEquals(SyntaxConstants.SYNTAX_STYLE_PROPERTIES_FILE,
+                    view.syntaxStyleForExtension("002-hubspot-v3-companies.ifacex"),
+                    "the legacy .ifacex interface format is Java properties");
+            assertEquals(SyntaxConstants.SYNTAX_STYLE_YAML,
+                    view.syntaxStyleForExtension("002-hubspot-v3-companies.IFCX"),
+                    "the new .ifcx interface format is YAML");
+            assertEquals(SyntaxConstants.SYNTAX_STYLE_PROPERTIES_FILE,
+                    view.syntaxStyleForExtension("app.cfg"),
+                    "the registration does not affect the built-in formats");
+            assertEquals(SyntaxConstants.SYNTAX_STYLE_NONE,
+                    view.syntaxStyleForExtension("unknown.txt"));
+            assertThrows(IllegalArgumentException.class, () -> view.registerSyntaxStyle(" ", "x"));
+            return null;
+        });
     }
 
     /**

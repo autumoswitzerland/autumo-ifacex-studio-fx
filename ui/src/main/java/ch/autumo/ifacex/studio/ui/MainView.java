@@ -37,15 +37,14 @@ public class MainView extends BaseBorderView {
     /**
      * Creates the main view and its scene on the given stage.
      *
-     * <p>{@code null} as style sheet is deliberate: {@link BaseBorderView} then installs the
-     * <em>autumo-ui base</em> look, and {@link StudioApp#initialize(Stage, java.util.Properties)}
-     * puts the application's own stylesheet — the conventional
-     * {@code style/application.css} of the autumo-ui resource structure — on top of it. Passing a
-     * style sheet here would <em>replace</em> the base look instead of extending it.</p>
+     * <p>The application's own stylesheet — the conventional {@code style/application.css} of the
+     * autumo-ui resource structure — is passed in as the style resource path:
+     * {@link BaseBorderView} installs the <em>autumo-ui base</em> look first and puts the
+     * application's sheet on top of it, so the sheet only overrides what it really defines.</p>
      *
      * @param app               owning application instance
      * @param stage             primary stage this view is shown on
-     * @param styleResourcePath relative style file or {@code null} to use the autumo-ui base style
+     * @param styleResourcePath relative style file or {@code null} for the base look only
      */
     public MainView(BaseApp app, Stage stage, String styleResourcePath) {
         super(app, stage, styleResourcePath);

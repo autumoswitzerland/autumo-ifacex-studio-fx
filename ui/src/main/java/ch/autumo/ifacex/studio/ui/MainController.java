@@ -14,8 +14,9 @@
 package ch.autumo.ifacex.studio.ui;
 
 
-import static ch.autumo.ifacex.studio.ui.Messages.format;
-import static ch.autumo.ifacex.studio.ui.Messages.t;
+import static ch.autumo.ifacex.studio.ui.StudioHelper.format;
+import static ch.autumo.ifacex.studio.ui.StudioHelper.t;
+
 import java.io.File;
 import java.net.URL;
 import java.nio.file.Path;
@@ -27,23 +28,19 @@ import ch.autumo.ifacex.studio.core.io.PropertiesConfigReader;
 import ch.autumo.ifacex.studio.core.io.PropertiesConfigWriter;
 import ch.autumo.ifacex.studio.core.io.YamlConfigReader;
 import ch.autumo.ifacex.studio.core.io.YamlConfigWriter;
-import ch.autumo.ifacex.studio.core.meta.FieldCatalog;
 import ch.autumo.ifacex.studio.core.model.IpcConfig;
 import ch.autumo.ifacex.studio.core.model.RwConfig;
-
 import ch.autumo.ui.Constants;
 import ch.autumo.ui.fx.BaseApp;
-import ch.autumo.ui.fx.controller.BaseController;
 import ch.autumo.ui.fx.control.Icons;
+import ch.autumo.ui.fx.controller.BaseController;
 import ch.autumo.ui.fx.model.BaseModel;
 import ch.autumo.ui.utils.Helper;
+import ch.autumo.ui.utils.Messages;
 import ch.autumo.ui.utils.UI;
-
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
-import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
-import javafx.scene.Node;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ContentDisplay;
@@ -53,7 +50,6 @@ import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.ScrollPane;
-import javafx.scene.control.Separator;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.ToolBar;
@@ -61,13 +57,12 @@ import javafx.scene.control.Tooltip;
 import javafx.scene.control.TreeCell;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
-import javafx.scene.text.Text;
 import javafx.scene.layout.Pane;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
@@ -90,9 +85,6 @@ import javafx.stage.Window;
  * @see StudioApp#preInitialize(Stage, java.util.Properties)
  */
 public class MainController extends BaseController {
-
-    /** Toolbar icons ship with the autumo-ui framework (base resource path). */
-    private static final String ICONS = "icons/";
 
     static final String K_ROOT = "ROOT";
     static final String K_GENERAL = "GENERAL";
@@ -200,9 +192,9 @@ public class MainController extends BaseController {
      */
     @Override
     public void init(URL location, ResourceBundle resources, double toolBarShift) {
-        navTree.setCellFactory(tv -> navCell());
+        navTree.setCellFactory(_ -> navCell());
         navTree.getSelectionModel().selectedItemProperty().addListener(
-                (o, a, b) -> showForm(b));
+                (_, _, b) -> showForm(b));
         applyTexts();
         // The language menu belongs to the framework: one item per supported language, the
         // current one selected, switching through BaseController.switchLanguage().
@@ -372,9 +364,10 @@ public class MainController extends BaseController {
 
         leftToolBar.getItems().addAll(
                 tbNew, tbOpen, tbSave, tbClose,
-                sep(leftToolBar), tbConfig,
-                sep(leftToolBar), tbRun,
-                sep(leftToolBar), tbFolder);
+                toolSeparator(), tbConfig,
+                toolSeparator(), tbRun,
+                toolSeparator(), tbFolder
+    		);
 
         // Right side mirrors the original Studio: the ifaceX Studio title logo and, to its
         // right, the clickable ifaceX mark (label underneath) that opens the website.
@@ -402,7 +395,7 @@ public class MainController extends BaseController {
         b.setStyle("-fx-padding: 3 10 5 10;");
         b.getStyleClass().add("toolbar-button");
         b.setTooltip(new Tooltip(t("Visit the ifaceX website")));
-        b.setOnAction(e -> Helper.openURL(
+        b.setOnAction(_ -> Helper.openURL(
                 configUrl(Constants.CONFIG_ENTRY_URL_WEB, Constants.DEF_CONFIG_ENTRY_URL_WEB)));
         return b;
     }
@@ -470,46 +463,6 @@ public class MainController extends BaseController {
     private void buildRecentMenu() {
         initializeRecentMenu(menuRecent, new MenuItem(t("Clear Entries")));
         rebuildRecentList();
-    }
-
-    private Button toolButton(String iconName, String text, String tip, Runnable action) {
-        final Text icon = Icons.create(iconName, 40);
-        final javafx.scene.layout.StackPane iconBox = new javafx.scene.layout.StackPane();
-        iconBox.setPrefSize(48, 48);
-        iconBox.setMinSize(48, 48);
-        iconBox.setMaxSize(48, 48);
-        iconBox.setAlignment(javafx.geometry.Pos.CENTER);
-        if (icon != null) {
-            iconBox.getChildren().add(icon);
-        }
-        final Button b = new Button(text, iconBox);
-        b.setContentDisplay(ContentDisplay.TOP);
-        b.setGraphicTextGap(2);
-        b.getStyleClass().add("toolbar-button");
-        b.setTooltip(new Tooltip(tip));
-        if (action == null) {
-            b.setDisable(true);
-        } else {
-            b.setOnAction(e -> action.run());
-        }
-        return b;
-    }
-
-    private ImageView icon(String iconFile) {
-        return new ImageView(new Image(
-                Helper.getAppResourceOrBase(app, ICONS + iconFile), 0, 0, true, true));
-    }
-
-    private javafx.scene.layout.Region sep(ToolBar bar) {
-        final javafx.scene.layout.Region r = new javafx.scene.layout.Region();
-        r.setPrefWidth(1);
-        r.setMinWidth(1);
-        r.setMaxWidth(1);
-        r.setStyle("-fx-background-color: #444444;");
-        r.setPrefHeight(68);
-        r.setMaxHeight(68);
-        r.setMinHeight(68);
-        return r;
     }
 
     private void setConfigActionsEnabled(boolean enabled) {

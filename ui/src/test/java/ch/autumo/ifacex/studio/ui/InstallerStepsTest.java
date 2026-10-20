@@ -24,6 +24,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import ch.autumo.ui.fx.controller.actions.installer.BaseStep;
+import ch.autumo.ui.utils.Messages;
 
 /**
  * Tests the installer configuration of the Studio.
@@ -41,7 +42,7 @@ class InstallerStepsTest {
 
     @AfterEach
     void restoreLanguage() {
-        Messages.setLanguage(Messages.LANG_EN);
+        Messages.setLanguage(Messages.LANG_EN, StudioConstants.BASE);
     }
 
     @Test
@@ -66,16 +67,16 @@ class InstallerStepsTest {
 
     @Test
     void settingsTextsAreTranslated() {
-        Messages.setLanguage("en");
-        assertEquals("General Settings", Messages.t("General Settings"));
-        assertEquals("Configuration root folder:", Messages.t("Configuration root folder:"));
-        assertEquals("Play sounds?", Messages.t("Play sounds?"));
-        assertEquals("Play jingle?", Messages.t("Play jingle?"));
-        Messages.setLanguage("de");
-        assertEquals("Allgemeine Einstellungen", Messages.t("General Settings"));
-        assertEquals("Wurzelverzeichnis der Konfiguration:", Messages.t("Configuration root folder:"));
-        assertEquals("Klang abspielen?", Messages.t("Play sounds?"));
-        assertEquals("Jingle abspielen?", Messages.t("Play jingle?"));
+        Messages.setLanguage("en", StudioConstants.BASE);
+        assertEquals("General Settings", StudioHelper.t("General Settings"));
+        assertEquals("Configuration root folder:", StudioHelper.t("Configuration root folder:"));
+        assertEquals("Play sounds?", StudioHelper.t("Play sounds?"));
+        assertEquals("Play jingle?", StudioHelper.t("Play jingle?"));
+        Messages.setLanguage("de", StudioConstants.BASE);
+        assertEquals("Allgemeine Einstellungen", StudioHelper.t("General Settings"));
+        assertEquals("Wurzelverzeichnis der Konfiguration:", StudioHelper.t("Configuration root folder:"));
+        assertEquals("Klang abspielen?", StudioHelper.t("Play sounds?"));
+        assertEquals("Jingle abspielen?", StudioHelper.t("Play jingle?"));
     }
 
     @Test

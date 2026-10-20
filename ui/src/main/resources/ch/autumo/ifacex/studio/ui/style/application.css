@@ -57,41 +57,6 @@
     -fx-border-color: #111111 transparent #111111 transparent;
     -fx-border-width: 1 0 2 0;
 }
-.left-tool-bar,
-.right-tool-bar {
-    -fx-background-color: transparent;
-    -fx-border-color: transparent;
-    -fx-focus-color: transparent;
-    -fx-padding: 6 6 6 6;
-}
-.toolbar-button {
-    -fx-padding: 4 10 4 10;
-    -fx-font-size: 12px;
-    -fx-text-fill: #e6e6e6;
-    -fx-background-color: transparent;
-    -fx-content-display: top;
-}
-.toolbar-button:hover {
-    -fx-background-color: #0E4E74;
-    -fx-background-radius: 4;
-    -fx-text-fill: #ffffff;
-}
-.toolbar-button:disabled {
-    -fx-opacity: 0.45;
-}
-
-/* 1px toolbar separator (flat, no 3D effect) */
-.toolbar-sep {
-    -fx-background-color: #888888;
-    -fx-pref-width: 1px;
-    -fx-max-width: 1px;
-    -fx-padding: 0;
-}
-.toolbar-sep > .line {
-    -fx-background-color: transparent;
-    -fx-border-color: transparent;
-    -fx-padding: 0;
-}
 
 /* --- status bar ----------------------------------------------------------- */
 .statusBar {
