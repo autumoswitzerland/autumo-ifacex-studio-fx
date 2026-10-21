@@ -8,6 +8,7 @@
  */
 
 plugins {
+    id 'eclipse'
     id 'com.gradleup.shadow'
     id 'org.beryx.runtime'
     id 'org.openjfx.javafxplugin'

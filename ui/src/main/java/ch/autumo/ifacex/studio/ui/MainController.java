@@ -38,6 +38,7 @@ import ch.autumo.ui.fx.model.BaseModel;
 import ch.autumo.ui.utils.Helper;
 import ch.autumo.ui.utils.Messages;
 import ch.autumo.ui.utils.UI;
+import ch.autumo.ui.utils.UI.HyperLinkRedirectListener;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -62,8 +63,15 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundImage;
+import javafx.scene.layout.BackgroundPosition;
+import javafx.scene.layout.BackgroundRepeat;
+import javafx.scene.layout.BackgroundSize;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.StackPane;
+import javafx.scene.web.WebView;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.stage.Window;
@@ -115,6 +123,10 @@ public class MainController extends BaseController {
     // src/test/java/ch/autumo/ifacex/studio/ui/. Nothing outside the package can reach them.
     @FXML
     TreeView<FormBuilder.NavNode> navTree;
+    @FXML
+    StackPane navHost;
+    @FXML
+    WebView aboutView;
     @FXML
     ScrollPane formScroll;
     @FXML
@@ -184,6 +196,8 @@ public class MainController extends BaseController {
     private Button tbConfig;
     private TreeItem<FormBuilder.NavNode> rootItem;
 
+    private boolean navShown = false;
+    
     /**
      * {@inheritDoc}
      *
@@ -201,13 +215,15 @@ public class MainController extends BaseController {
         initializeLanguageMenu(menuLanguage);
         buildAccelerators();
         buildRecentMenu();
-        formScroll.setContent(FormBuilder.message(t("Open a .ifacex or .ifcx file to begin.")));
+        // Start with the About page in the navigation pane; the tree appears once a file is loaded.
+        showAboutInNav();
+        showEmptyForm();
         buildToolBar();
         buildMenuIcons();
         setConfigActionsEnabled(false);
     }
 
-    /**
+	/**
      * Returns the menu bar that may be detached to the macOS system menu bar.
      *
      * <p>The framework sets {@code useSystemMenuBarProperty()} on it when running on macOS; the
@@ -263,6 +279,11 @@ public class MainController extends BaseController {
             rebuild();
         }
         renderStatus();
+        if (navShown) {
+        	showTreeInNav();
+        } else {
+        	showAboutInNav();
+        }
     }
 
 
@@ -491,11 +512,56 @@ public class MainController extends BaseController {
         sourceFile = null;
         rootItem = null;
         navTree.setRoot(null);
+        showAboutInNav();
         rawYaml.clear();
         rawProps.clear();
-        formScroll.setContent(FormBuilder.message(t("Open a .ifacex or .ifcx file to begin.")));
+        showEmptyForm();
         setConfigActionsEnabled(false);
         status(t("Closed"));
+    }
+
+    private void showEmptyForm() {
+        formScroll.setContent(FormBuilder.message(t("Open a .ifacex or .ifcx file to begin.")));
+        Image image = new Image(StudioApp.class.getResource("icons/ifaceX-reddot-256.png").toExternalForm());
+        formScroll.setBackground(new Background(new BackgroundImage(
+            image,
+            BackgroundRepeat.NO_REPEAT,
+            BackgroundRepeat.NO_REPEAT,
+            BackgroundPosition.CENTER,
+            BackgroundSize.DEFAULT
+        )));
+    }
+    
+    /** Shows the About page in the navigation pane (used when no file is loaded). */
+    private void showAboutInNav() {
+        if (aboutView == null || navTree == null) return;
+        final String lang = Messages.getLanguage();
+        final String resource = "html/about_" + lang + ".html";
+        final java.net.URL url = StudioApp.class.getResource(resource);
+        if (url != null) {
+        	aboutView.getEngine().getLoadWorker().stateProperty().addListener(new HyperLinkRedirectListener(aboutView));
+			aboutView.getEngine().setUserStyleSheetLocation(Helper.getBaseHTMLStyle());
+            aboutView.getEngine().load(url.toExternalForm());
+        } else {
+            // fall back to English
+            final java.net.URL fallback = StudioApp.class.getResource("html/about_en.html");
+            if (fallback != null) aboutView.getEngine().load(fallback.toExternalForm());
+        }
+        navTree.setVisible(false);
+        navTree.setManaged(false);
+        aboutView.setVisible(true);
+        aboutView.setManaged(true);
+    	navShown = false;
+    }
+
+    /** Shows the navigation tree (used when a file is loaded). */
+    private void showTreeInNav() {
+        if (aboutView == null || navTree == null) return;
+        aboutView.setVisible(false);
+        aboutView.setManaged(false);
+        navTree.setVisible(true);
+        navTree.setManaged(true);
+    	navShown = true;
     }
 
     @FXML
@@ -577,6 +643,7 @@ public class MainController extends BaseController {
 
         navTree.setRoot(root);
         rootItem = root;
+        showTreeInNav();
         final TreeItem<FormBuilder.NavNode> restore = findNode(root, prev);
         navTree.getSelectionModel().select(restore != null ? restore : root);
         setConfigActionsEnabled(true);
@@ -656,6 +723,7 @@ public class MainController extends BaseController {
             return;
         }
         formScroll.setContent(formBuilder.build(item.getValue()));
+        formScroll.setBackground(null);
     }
 
     private void onModelChanged() {

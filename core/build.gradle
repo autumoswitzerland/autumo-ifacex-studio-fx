@@ -2,6 +2,10 @@
  * UI-free core module: configuration model, legacy properties IO, new YAML (.ifcx) IO.
  */
 
+plugins {
+    id 'eclipse'
+}
+
 eclipse {
     project {
         name = 'autumo-ifacex-studio-fx-core'

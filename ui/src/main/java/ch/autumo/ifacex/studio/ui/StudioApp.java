@@ -24,6 +24,8 @@ import ch.autumo.ui.utils.Messages;
 import ch.autumo.ui.utils.UI;
 import javafx.scene.Scene;
 import javafx.scene.layout.Pane;
+import javafx.geometry.Rectangle2D;
+import javafx.stage.Screen;
 import javafx.stage.Stage;
 
 /**
@@ -140,8 +142,16 @@ public class StudioApp extends BaseApp {
         // installed the autumo-ui base style first and the application's own style sheet
         // (style/application.css, DevGuide §4.5) on top of it.
         final Scene scene = primaryStage.getScene();
-        primaryStage.setWidth(1100);
-        primaryStage.setHeight(720);
+        // Size the window to ~1600x1000, but never larger than the available
+        // screen: on smaller displays fall back to the previous size (1100x720).
+        final Screen screen = Screen.getPrimary();
+        final Rectangle2D bounds = screen.getVisualBounds();
+        final double targetW = 1600.0;
+        final double targetH = 1000.0;
+        final double w = Math.min(targetW, bounds.getWidth());
+        final double h = Math.min(targetH, bounds.getHeight());
+        primaryStage.setWidth(Math.max(w, 1100.0));
+        primaryStage.setHeight(Math.max(h, 720.0));
 
         // Headless UI checks live in the JUnit tests of this module (see src/test/java):
         // the whole shell is built there on the JavaFX thread and asserted, so nothing

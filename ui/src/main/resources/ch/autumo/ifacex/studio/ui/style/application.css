@@ -18,50 +18,17 @@
  * (ch/autumo/ui/style/application.css) so these rules win where they overlap.
  * The base theme supplies the modern dark palette (#1f1f1f / #2F2F2F / #444444,
  * accent #0E4E74); this file only refines the editor surfaces.
+ * Inherited values (font family/size/smoothing, toolbar gradient, ...) are
+ * provided by the base theme and are not repeated here.
  */
 
-.root {
-    /* Inter is provided by the autumo-ui framework (SIL OFL) and loaded at start-up in
-       BaseApp.start(); it is the modern web-GUI look (React Native Web / system-stack inspired). */
-    -fx-font-family: "Inter";
-    -fx-font-size: 14px;
-    -fx-font-smoothing-type: lcd;
-}
-
-/* Crisper/bolder text on the dark palette (LCD sub-pixel smoothing where supported). */
-.label,
-.button,
-.tree-cell,
-.titled-pane > .title,
-.text-field,
-.text-area,
-.check-box,
-.combo-box {
-    -fx-font-smoothing-type: lcd;
-}
-
-.mono {
-    -fx-font-family: "Menlo", "Consolas", "DejaVu Sans Mono", monospace;
-    -fx-font-size: 13px;
-}
-
-/* --- tooltips: a bit larger than the body text ---------------------------- */
-.tooltip {
-    -fx-font-family: "Inter";
-    -fx-font-size: 13px;
-}
-
 /* --- toolbar (icons with the label underneath, as in the original Studio) - */
-.tool-bar-pane {
-    -fx-background-color: linear-gradient(to top, #1a1a1a, #2f2f2f);
-    -fx-border-color: #111111 transparent #111111 transparent;
-    -fx-border-width: 1 0 2 0;
-}
+/* background gradient, border colour and width are provided by the base theme. */
 
 /* --- status bar ----------------------------------------------------------- */
 .statusBar {
     -fx-padding: 4 8 4 8;
-    -fx-background-color: #1a1a1a;
+    -fx-background-color: #222222;
     -fx-border-color: #111111 transparent transparent transparent;
     -fx-border-width: 2 0 0 0;
 }
@@ -194,6 +161,11 @@
     -fx-padding: 0;
 }
 
+/* --- scroll pane ---------------------------------------------------------- */
+.scroll-pane > .viewport {
+    -fx-background-color: transparent;
+}
+
 /* --- editable lists (entity source fields) -------------------------------- */
 .list-view {
     -fx-background-color: #262626;
@@ -203,7 +175,6 @@
     -fx-border-radius: 6;
 }
 .list-view .list-cell {
-    -fx-background-color: transparent;
     -fx-text-fill: #dddddd;
     -fx-padding: 3 8 3 8;
 }
