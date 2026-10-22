@@ -142,8 +142,12 @@ the autumo-ui framework** (decision D12) and **installed, not portable** since 2
 
 **Shell (FXML).** `ui/src/main/resources/ch/autumo/ifacex/studio/ui/main.fxml` declares the
 static frame: `MenuBar` (File/Help), `ToolBar`, a `SplitPane` with a navigation `TreeView`
-on the left and a `TabPane` on the right (tabs: **Form**, **Raw YAML (.ifcx)**,
-**Raw Properties (.ifacex)**), and a status bar. Controller: `MainController`.
+on the left and a `TabPane` on the right (tabs: **Form**, **Raw**), and a status bar.
+Controller: `MainController`. The **Raw** tab shows the loaded configuration as editable YAML
+in an `RSyntaxTextArea` (`RawEditor`, syntax style YAML, dark scrollbars) and is kept in sync
+with the form editor both ways (leaving the tab adopts its text, entering it shows the model).
+The window title carries the loaded file name and a trailing `*` while there are unsaved
+changes.
 
 **Forms (programmatic).** `FormBuilder` renders a form for the selected navigation node
 from the model + field metadata:

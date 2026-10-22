@@ -25,7 +25,6 @@ import java.util.Objects;
 import java.util.ResourceBundle;
 
 import ch.autumo.ifacex.studio.core.io.PropertiesConfigReader;
-import ch.autumo.ifacex.studio.core.io.PropertiesConfigWriter;
 import ch.autumo.ifacex.studio.core.io.YamlConfigReader;
 import ch.autumo.ifacex.studio.core.io.YamlConfigWriter;
 import ch.autumo.ifacex.studio.core.model.IpcConfig;
@@ -39,6 +38,7 @@ import ch.autumo.ui.utils.Helper;
 import ch.autumo.ui.utils.Messages;
 import ch.autumo.ui.utils.UI;
 import ch.autumo.ui.utils.UI.HyperLinkRedirectListener;
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -52,7 +52,7 @@ import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Tab;
-import javafx.scene.control.TextArea;
+import javafx.scene.control.TabPane;
 import javafx.scene.control.ToolBar;
 import javafx.scene.control.Tooltip;
 import javafx.scene.control.TreeCell;
@@ -130,10 +130,6 @@ public class MainController extends BaseController {
     @FXML
     ScrollPane formScroll;
     @FXML
-    TextArea rawYaml;
-    @FXML
-    TextArea rawProps;
-    @FXML
     Label statusLabel;
     @FXML
     ToolBar leftToolBar;
@@ -146,9 +142,7 @@ public class MainController extends BaseController {
     @FXML
     MenuItem miSave;
     @FXML
-    MenuItem miExportIfcx;
-    @FXML
-    MenuItem miExportIfacex;
+    MenuItem miSaveAs;
     @FXML
     MenuItem miClose;
     @FXML
@@ -182,9 +176,9 @@ public class MainController extends BaseController {
     @FXML
     Tab tabForm;
     @FXML
-    private Tab tabRawYaml;
+    TabPane tabPane;
     @FXML
-    private Tab tabRawProps;
+    Tab tabRaw;
 
     /** Builds the metadata-driven forms; package-private for the UI tests, like the nodes above. */
     final FormBuilder formBuilder = new FormBuilder(app, this::onModelChanged, this::rebuild);
@@ -195,6 +189,9 @@ public class MainController extends BaseController {
     private Button tbClose;
     private Button tbConfig;
     private TreeItem<FormBuilder.NavNode> rootItem;
+
+    /** The raw YAML editor of the "Raw" tab; built in {@link #init}. Package-private for the UI tests. */
+    RawEditor rawEditor;
 
     private boolean navShown = false;
     
@@ -215,12 +212,14 @@ public class MainController extends BaseController {
         initializeLanguageMenu(menuLanguage);
         buildAccelerators();
         buildRecentMenu();
+        buildRawEditor();
         // Start with the About page in the navigation pane; the tree appears once a file is loaded.
         showAboutInNav();
         showEmptyForm();
         buildToolBar();
         buildMenuIcons();
         setConfigActionsEnabled(false);
+        renderTitle();
     }
 
 	/**
@@ -299,9 +298,8 @@ public class MainController extends BaseController {
         menuRecent.setText(t("Open Recent"));
         miNew.setText(t("New"));
         miOpen.setText(t("Open…"));
-        miSave.setText(t("Save As… (.ifcx)"));
-        miExportIfcx.setText(t("Export .ifcx"));
-        miExportIfacex.setText(t("Export .ifacex"));
+        miSave.setText(t("Save"));
+        miSaveAs.setText(t("Save As…"));
         miClose.setText(t("Close"));
         miExit.setText(t("Exit"));
         miAbout.setText(t("About"));
@@ -312,9 +310,9 @@ public class MainController extends BaseController {
         miWebsite.setText(t("Visit Website"));
         miUpdate.setText(t("Check for Updates"));
         tabForm.setText(t("Form"));
-        tabRawYaml.setText(t("Raw YAML (.ifcx)"));
-        tabRawProps.setText(t("Raw Properties (.ifacex)"));
+        tabRaw.setText(t("Raw"));
         renderStatus();
+        renderTitle();
     }
 
     /**
@@ -372,7 +370,7 @@ public class MainController extends BaseController {
         final Button tbOpen = toolButton("folder-open", t("Open"),
                 t("Open an .ifacex or .ifcx configuration"), () -> onOpen());
         tbSave = toolButton("floppy-disk", t("Save"),
-                t("Save as .ifcx (new format)"), () -> onSave());
+                t("Save the configuration (.ifcx)"), () -> onSave());
         tbClose = toolButton("x", t("Close"),
                 t("Close the current configuration"), () -> onClose());
 
@@ -436,8 +434,7 @@ public class MainController extends BaseController {
         miNew.setGraphic(Icons.create("file-plus", 16));
         miOpen.setGraphic(Icons.create("folder-open", 16));
         miSave.setGraphic(Icons.create("floppy-disk", 16));
-        miExportIfcx.setGraphic(Icons.create("export", 16));
-        miExportIfacex.setGraphic(Icons.create("export", 16));
+        miSaveAs.setGraphic(Icons.create("export", 16));
         miClose.setGraphic(Icons.create("x", 16));
         miExit.setGraphic(Icons.create("sign-out", 16));
         miEncoder.setGraphic(Icons.create("lock-key", 16));
@@ -461,6 +458,8 @@ public class MainController extends BaseController {
         miNew.setAccelerator(new KeyCodeCombination(KeyCode.N, KeyCombination.SHORTCUT_DOWN));
         miOpen.setAccelerator(new KeyCodeCombination(KeyCode.O, KeyCombination.SHORTCUT_DOWN));
         miSave.setAccelerator(new KeyCodeCombination(KeyCode.S, KeyCombination.SHORTCUT_DOWN));
+        miSaveAs.setAccelerator(new KeyCodeCombination(KeyCode.S, KeyCombination.SHORTCUT_DOWN,
+                KeyCombination.SHIFT_DOWN));
         miClose.setAccelerator(new KeyCodeCombination(KeyCode.W, KeyCombination.SHORTCUT_DOWN));
         miEncoder.setAccelerator(new KeyCodeCombination(KeyCode.E, KeyCombination.SHORTCUT_DOWN));
         miRemoveAppData.setAccelerator(
@@ -513,8 +512,7 @@ public class MainController extends BaseController {
         rootItem = null;
         navTree.setRoot(null);
         showAboutInNav();
-        rawYaml.clear();
-        rawProps.clear();
+        setRawText("");
         showEmptyForm();
         setConfigActionsEnabled(false);
         status(t("Closed"));
@@ -532,7 +530,9 @@ public class MainController extends BaseController {
         )));
     }
     
-    /** Shows the About page in the navigation pane (used when no file is loaded). */
+    /**
+     * Shows the About page in the navigation pane (used when no file is loaded).
+     */
     private void showAboutInNav() {
         if (aboutView == null || navTree == null) return;
         final String lang = Messages.getLanguage();
@@ -732,66 +732,194 @@ public class MainController extends BaseController {
         markModified();
     }
 
+    /**
+     * Builds the raw editor of the "Raw" tab and wires the two-way sync: switching to the form
+     * tab parses the raw text back into the model; switching to the raw tab refreshes the text
+     * from the model.
+     */
+    private void buildRawEditor() {
+        rawEditor = new RawEditor();
+        // A change in the raw text marks the configuration as modified - the window title gets
+        // its asterisk and the status bar says so, exactly as a change in the form does.
+        rawEditor.setOnEdit(this::markModified);
+        tabRaw.setContent(rawEditor.node());
+        tabRaw.setOnSelectionChanged(_ -> {
+            if (!tabRaw.isSelected()) {
+                // Left the raw tab: adopt its text into the model.
+                applyRawText();
+            } else if (config != null) {
+                // Entered the raw tab: show the current model.
+                refreshRaw();
+            }
+        });
+    }
+
+    /** Writes the model into the raw editor (no re-parse of that text). */
     private void refreshRaw() {
         if (config == null) {
             return;
         }
-        rawYaml.setText(YamlConfigWriter.toText(config));
-        rawProps.setText(PropertiesConfigWriter.toText(config));
+        setRawText(YamlConfigWriter.toText(config));
     }
 
+    /** Sets the raw editor text. */
+    private void setRawText(String text) {
+        if (rawEditor == null) {
+            return;
+        }
+        rawEditor.setText(text);
+    }
+
+    /**
+     * Parses the raw editor text and adopts it into the model - the counterpart of
+     * {@link #refreshRaw()}. A malformed document is reported and leaves the model untouched, so
+     * the form editor never sees a half-broken configuration.
+     *
+     * @return {@code true} if the text was adopted (or there was nothing to adopt),
+     *         {@code false} if it could not be parsed
+     */
+    private boolean applyRawText() {
+        if (config == null || rawEditor == null) {
+            return true;
+        }
+        final String text = rawEditor.getText();
+        if (text.equals(YamlConfigWriter.toText(config))) {
+            return true;
+        }
+        final IpcConfig parsed;
+        try {
+            parsed = YamlConfigReader.read(text);
+        } catch (Exception e) {
+            error(t("The raw configuration is not valid YAML."), e);
+            return false;
+        }
+        config = parsed;
+        rebuild();
+        markModified();
+        return true;
+    }
+
+    /**
+     * {@code File › Save}: writes the configuration back to the file it was loaded from. Only a
+     * configuration that has no {@code .ifcx} file yet falls back to the "Save As…" dialog; a
+     * loaded {@code .ifcx} is overwritten directly. The legacy {@code .ifacex} format is no
+     * longer written here - it is a read-only import.
+     */
     @FXML
     private void onSave() {
+        save();
+    }
+
+    /**
+     * The save itself: adopts pending raw edits, then overwrites the loaded {@code .ifcx} file
+     * or asks for a target file ("Save As…") when there is none.
+     *
+     * <p>Package-private for the UI tests, which assert the decision
+     * ({@link #saveTarget()}) before the write happens.</p>
+     */
+    void save() {
         if (config == null) {
             status(t("Nothing to save."));
             return;
         }
-        // Save always uses the new YAML format (.ifcx); .ifacex is export-only (legacy).
-        export(YamlConfigWriter.toText(config), ".ifcx", t("ifaceX YAML (new format)"),
-                t("Save as .ifcx"));
-    }
-
-    @FXML
-    private void onExportIfcx() {
-        export(YamlConfigWriter.toText(config), ".ifcx", t("ifaceX YAML"), t("Export .ifcx"));
-    }
-
-    @FXML
-    private void onExportIfacex() {
-        export(PropertiesConfigWriter.toText(config), ".ifacex", t("Legacy properties"),
-                t("Export .ifacex"));
-    }
-
-    private void export(String text, String extension, String description, String title) {
-        if (config == null) {
-            status(t("Nothing to export."));
+        if (tabRaw.isSelected()) {
+            // The user may have edited the raw text and hit Save without leaving the tab.
+            if (!applyRawText()) {
+                return;
+            }
+        }
+        final Path target = saveTarget();
+        if (target == null) {
+            saveAs();
             return;
         }
+        write(target, YamlConfigWriter.toText(config));
+    }
+
+    /**
+     * The file {@code File › Save} writes to, or {@code null} when the "Save As…" dialog is
+     * needed - a configuration that was never saved as {@code .ifcx} yet.
+     *
+     * @return the file to overwrite or {@code null}
+     */
+    Path saveTarget() {
+        return sourceFile != null && isIfcx(sourceFile) ? sourceFile : null;
+    }
+
+    /** {@code File › Save As…}: always asks for a target file. */
+    @FXML
+    private void onSaveAs() {
+        if (config == null) {
+            status(t("Nothing to save."));
+            return;
+        }
+        if (tabRaw.isSelected()) {
+            if (!applyRawText()) {
+                return;
+            }
+        }
+        saveAs();
+    }
+
+    private void saveAs() {
         final FileChooser chooser = new FileChooser();
-        chooser.setTitle(title);
+        chooser.setTitle(t("Save as .ifcx"));
         chooser.getExtensionFilters().add(
-                new FileChooser.ExtensionFilter(description, "*" + extension));
+                new FileChooser.ExtensionFilter(t("ifaceX YAML (new format)"), "*.ifcx"));
         if (sourceFile != null) {
             final String base = sourceFile.getFileName().toString().replaceAll("\\.[^.]+$", "");
-            chooser.setInitialFileName(base + extension);
+            chooser.setInitialFileName(base + ".ifcx");
         }
         final File out = chooser.showSaveDialog(window());
         if (out == null) {
             return;
         }
+        write(out.toPath(), YamlConfigWriter.toText(config));
+    }
+
+    /** Whether the path carries the new {@code .ifcx} format (case-insensitive). */
+    private static boolean isIfcx(Path path) {
+        return path.getFileName().toString().toLowerCase(Locale.ROOT).endsWith(".ifcx");
+    }
+
+    /**
+     * Writes the given text to the file, files it in the recent list and updates title/status.
+     *
+     * @param out  the file to write
+     * @param text the content
+     */
+    void write(Path out, String text) {
         try {
-            java.nio.file.Files.writeString(out.toPath(), text);
-            app.addRecentFile(out);
+            java.nio.file.Files.writeString(out, text);
+            sourceFile = out;
+            app.addRecentFile(out.toFile());
             buildRecentMenu();
-            status(format("Saved {0} ({1})", out.getName(), extension));
+            status(format("Saved {0}", out.getFileName().toString()));
+            renderTitle();
         } catch (Exception e) {
-            error(format("Could not write {0}", out.getName()), e);
+            error(format("Could not write {0}", out.getFileName().toString()), e);
         }
     }
 
     @FXML
     private void onExit() {
-        window().hide();
+        disposeEditor();
+        // The application ends: on macOS hiding the window would only leave the process
+        // running in the dock.
+        Platform.exit();
+    }
+
+    /**
+     * Releases the raw editor before the window goes away.
+     *
+     * <p>The editor is a Swing component: removing it makes macOS call into the native input
+     * method, which can block the AWT thread forever. Switching its input methods off first
+     * avoids that - see {@link RawEditor#dispose()}.</p>
+     */
+    void disposeEditor() {
+        if (rawEditor != null) {
+            rawEditor.dispose();
+        }
     }
 
     /**
@@ -870,6 +998,7 @@ public class MainController extends BaseController {
         statusState = text == null ? "" : text;
         modified = false;
         renderStatus();
+        renderTitle();
     }
 
     /**
@@ -885,6 +1014,23 @@ public class MainController extends BaseController {
         statusLabel.setText(statusState.isEmpty() ? file : file + "   \u2014   " + statusState);
     }
 
+    /**
+     * The window title reads like the original Studio: the application name, then a dash and the
+     * loaded file name, and a trailing {@code *} while the configuration holds unsaved changes.
+     * Without a loaded file it is the application name alone.
+     */
+    private void renderTitle() {
+        final String base = t("application.name");
+        final StringBuilder title = new StringBuilder(base);
+        if (sourceFile != null) {
+            title.append(" - ").append(sourceFile.getFileName());
+            if (modified) {
+                title.append(" *");
+            }
+        }
+        stage.setTitle(title.toString());
+    }
+
     /** Flag the configuration as changed, without repeating an existing "Modified". */
     private void markModified() {
         if (modified) {
@@ -893,6 +1039,7 @@ public class MainController extends BaseController {
         modified = true;
         statusState = t("Modified");
         renderStatus();
+        renderTitle();
     }
 
     private void error(String message, Exception e) {

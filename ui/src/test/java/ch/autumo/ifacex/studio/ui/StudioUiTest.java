@@ -35,21 +35,22 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
-import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import ch.autumo.commons.configuration.ConfigurationManager;
+import ch.autumo.ifacex.studio.core.io.YamlConfigReader;
+import ch.autumo.ifacex.studio.core.io.YamlConfigWriter;
 import ch.autumo.ifacex.studio.core.meta.FieldCatalog;
+import ch.autumo.ifacex.studio.core.model.IpcConfig;
 import ch.autumo.ui.Constants;
 import ch.autumo.ui.fx.control.Icons;
 import ch.autumo.ui.fx.controller.DefaultInfoController;
 import ch.autumo.ui.fx.controller.actions.RemoveAction;
-import ch.autumo.ui.fx.view.DefaultCodeEditorView;
-import ch.autumo.ui.fx.view.JsonFormatterView;
 import ch.autumo.ui.utils.Helper;
 import ch.autumo.ui.utils.Messages;
 import ch.autumo.ui.utils.UI;
@@ -143,6 +144,7 @@ class StudioUiTest {
             // view is built; UI.setup(…) reads the macOS menu-detach switch from it.
             Properties props = Helper.loadTemplateConfiguration(app);
             ConfigurationManager.getInstance().initializeWithProperties(props);
+
             final MainView view = (MainView) app.preInitialize(stage, configuration);
             controller = (MainController) view.getController();
             // The style sheet StudioApp.initialize(…) adds on top of the autumo-ui base style:
@@ -345,7 +347,7 @@ class StudioUiTest {
     }
 
     /**
-     * The raw views show the loaded configuration in both formats and the status bar names the file.
+     * The raw view shows the loaded configuration as YAML and the status bar names the file.
      *
      * @throws Exception if the sample configuration cannot be loaded
      */
@@ -354,16 +356,147 @@ class StudioUiTest {
         assertSampleExists();
         call(() -> {
             controller.loadConfig(SAMPLE);
-            assertTrue(controller.rawYaml.getText().contains("api.hubapi.com"),
-                    "the YAML view must show the converted configuration");
-            assertTrue(controller.rawProps.getText().contains("rest_in_host=api.hubapi.com"),
-                    "the .ifacex view must show the configuration as properties");
+            assertTrue(controller.rawEditor.getText().contains("api.hubapi.com"),
+                    "the raw view must show the converted configuration as YAML");
             final String status = controller.statusLabel.getText();
             assertTrue(status.startsWith(StudioHelper.t("File") + ": "), "the status bar names the file: " + status);
             assertTrue(status.contains(SAMPLE.toAbsolutePath().toString()),
                     "the status bar must carry the loaded file: " + status);
             return null;
         });
+    }
+
+    /**
+     * The raw tab and the form editor are two views of the same model: an edit in the raw YAML is
+     * adopted into the model when the tab is left, and the form shows it from then on.
+     *
+     * @throws Exception if the sample configuration cannot be loaded
+     */
+    @Test
+    void rawEditsAreAdoptedByTheFormEditor() throws Exception {
+        assertSampleExists();
+        call(() -> {
+            controller.loadConfig(SAMPLE);
+
+            // The raw editor shows the model as YAML …
+            final String yaml = controller.rawEditor.getText();
+            assertTrue(yaml.contains("api.hubapi.com"), "the raw view shows the configuration");
+
+            // … the user opens the raw tab and changes the job title in the raw text …
+            controller.tabPane.getSelectionModel().select(controller.tabRaw);
+            final IpcConfig changed = YamlConfigReader.read(controller.rawEditor.getText());
+            changed.setMeta(changed.meta().withTitle("Title from the raw editor"));
+            controller.rawEditor.setText(YamlConfigWriter.toText(changed));
+
+            // … and leaving the raw tab adopts it into the model: the navigation root follows
+            // the title (see MainController.label()).
+            controller.tabPane.getSelectionModel().select(controller.tabForm);
+            final TreeItem<FormBuilder.NavNode> root = controller.navTree.getRoot();
+            assertNotNull(root, "the navigation tree has a root");
+            assertEquals("Title from the raw editor", root.getValue().label(),
+                    "the form editor must show the title typed in the raw view");
+            return null;
+        });
+    }
+
+    /**
+     * A change in the raw editor is a change of the configuration: the window title gets its
+     * asterisk and the status bar says "Modified" - just as a change in the form editor does.
+     *
+     * @throws Exception if the sample configuration cannot be loaded
+     */
+    @Test
+    void aChangeInTheRawEditorMarksTheConfigurationAsModified() throws Exception {
+        assertSampleExists();
+        call(() -> {
+            controller.loadConfig(SAMPLE);
+            assertFalse(stage.getTitle().endsWith(" *"),
+                    "a freshly loaded configuration is not modified: " + stage.getTitle());
+
+            // The editor reports the change of the user (the document listener of the editor
+            // widget calls it).
+            controller.rawEditor.fireEdit();
+
+            assertTrue(stage.getTitle().endsWith(" *"),
+                    "a change in the raw editor is marked with an asterisk: " + stage.getTitle());
+            assertTrue(controller.statusLabel.getText().contains(StudioHelper.t("Modified")),
+                    "the status bar shows the change: " + controller.statusLabel.getText());
+            return null;
+        });
+    }
+
+    /**
+     * The window title carries the loaded file name and a trailing {@code *} while the
+     * configuration holds unsaved changes - the marker of the original Studio.
+     *
+     * @throws Exception if the sample configuration cannot be loaded
+     */
+    @Test
+    void titleShowsTheFileNameAndTheModifiedMarker() throws Exception {
+        assertSampleExists();
+        final Path target = Files.createTempFile("autumo-studio-title", ".ifcx");
+        try {
+            call(() -> {
+                controller.loadConfig(SAMPLE);
+                assertEquals("ifaceX Studio FX - " + SAMPLE.getFileName(), stage.getTitle(),
+                        "the title shows the application and the loaded file");
+
+                // A change in the raw view marks the configuration as modified …
+                controller.tabPane.getSelectionModel().select(controller.tabRaw);
+                final IpcConfig changed = YamlConfigReader.read(controller.rawEditor.getText());
+                changed.setMeta(changed.meta().withTitle("Modified"));
+                controller.rawEditor.setText(YamlConfigWriter.toText(changed));
+                controller.tabPane.getSelectionModel().select(controller.tabForm);
+                assertTrue(stage.getTitle().endsWith(" *"),
+                        "an unsaved change is marked with an asterisk: " + stage.getTitle());
+
+                // … saving takes the marker away again.
+                controller.write(target, controller.rawEditor.getText());
+                assertFalse(stage.getTitle().endsWith(" *"),
+                        "a saved configuration is not marked any more: " + stage.getTitle());
+                return null;
+            });
+        } finally {
+            Files.deleteIfExists(target);
+        }
+    }
+
+    /**
+     * {@code File › Save} overwrites a configuration that is already stored as {@code .ifcx} and
+     * only asks for a file when there is none - the legacy {@code .ifacex} is an import, not a
+     * save target.
+     *
+     * @throws Exception if the sample configuration cannot be loaded
+     */
+    @Test
+    void saveOverwritesTheLoadedIfcxFileAndAsksOtherwise() throws Exception {
+        assertSampleExists();
+        final Path ifcx = Files.createTempFile("autumo-studio-save", ".ifcx");
+        try {
+            call(() -> {
+                controller.loadConfig(SAMPLE);
+                assertNull(controller.saveTarget(),
+                        "a legacy .ifacex file is not a save target - the dialog is needed");
+
+                // The same configuration as .ifcx …
+                Files.writeString(ifcx, controller.rawEditor.getText());
+                controller.loadConfig(ifcx);
+                assertEquals(ifcx, controller.saveTarget(),
+                        "an .ifcx file is overwritten directly, without a dialog");
+
+                // … a change in the raw view and a save: the file carries the new title.
+                controller.tabPane.getSelectionModel().select(controller.tabRaw);
+                final IpcConfig changed = YamlConfigReader.read(controller.rawEditor.getText());
+                changed.setMeta(changed.meta().withTitle("Saved title"));
+                controller.rawEditor.setText(YamlConfigWriter.toText(changed));
+                controller.save();
+                assertTrue(Files.readString(ifcx).contains("Saved title"),
+                        "the file must carry the saved configuration");
+                return null;
+            });
+        } finally {
+            Files.deleteIfExists(ifcx);
+        }
     }
 
     /**
@@ -387,8 +520,9 @@ class StudioUiTest {
                 assertEquals("Schließen", StudioHelper.t("Close"));
                 // … and the framework's catalogue, which the Studio's PO does not define.
                 assertEquals("Okay", StudioHelper.t("button.Alright"));
-                // The Studio's catalogues override the framework's application name.
-                assertEquals("ifaceX Studio FX", stage.getTitle());
+                // The Studio's catalogues override the framework's application name; the loaded
+                // file name follows behind a dash.
+                assertEquals("ifaceX Studio FX - " + SAMPLE.getFileName(), stage.getTitle());
                 assertTrue(controller.isLanguageSelected(OTHER_LANG), "the menu shows German as selected");
                 assertFalse(controller.isLanguageSelected(START_LANG));
                 assertTrue(controller.statusLabel.getText().startsWith("Datei: "),
@@ -531,90 +665,6 @@ class StudioUiTest {
         } finally {
             opened.forEach(Stage::close);
         }
-    }
-
-    /**
-     * The code editor's file convenience: {@code setSourceFile} reads the file as UTF-8, shows its
-     * content and picks the highlighting language from the file name extension - the caller never
-     * has to set the syntax style by hand. An unknown extension falls back to plain text; the
-     * language is never guessed from the content.
-     */
-    @Test
-    void codeEditorShowsAFileAndHighlightsItAccordingToItsExtension() throws Exception {
-        final Path json = Files.createTempFile("autumo-editor-test", ".json");
-        final Path yaml = Files.createTempFile("autumo-editor-test", ".yml");
-        final Path unknown = Files.createTempFile("autumo-editor-test", ".autumo");
-        try {
-            Files.writeString(json, "{\"a\": 1}");
-            Files.writeString(yaml, "a: 1");
-            Files.writeString(unknown, "just text");
-
-            call(() -> {
-                final JsonFormatterView view = new JsonFormatterView(app, new Stage(), null);
-                try {
-                    view.setSourceFile(json);
-                    assertEquals("{\"a\": 1}", view.getText(), "the file content is shown");
-                    assertEquals(SyntaxConstants.SYNTAX_STYLE_JSON,
-                            view.getTextArea().getSyntaxEditingStyle(),
-                            "a .json file is highlighted as JSON");
-
-                    view.setSourceFile(yaml);
-                    assertEquals(SyntaxConstants.SYNTAX_STYLE_YAML,
-                            view.getTextArea().getSyntaxEditingStyle(),
-                            "a .yml file is highlighted as YAML");
-
-                    view.setSourceFile(unknown);
-                    assertEquals(SyntaxConstants.SYNTAX_STYLE_NONE,
-                            view.getTextArea().getSyntaxEditingStyle(),
-                            "an unknown extension is shown as plain text");
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-                return null;
-            });
-        } finally {
-            Files.deleteIfExists(json);
-            Files.deleteIfExists(yaml);
-            Files.deleteIfExists(unknown);
-        }
-
-        // The extension lookup itself: case-insensitive, framework formats only. The Studio's own
-        // interface files (.ifacex, .ifcx) are registered per editor (see the registration below).
-        assertEquals(SyntaxConstants.SYNTAX_STYLE_PROPERTIES_FILE,
-                DefaultCodeEditorView.syntaxStyleFor("app.PROPERTIES"));
-        assertEquals(SyntaxConstants.SYNTAX_STYLE_PROPERTIES_FILE,
-                DefaultCodeEditorView.syntaxStyleFor("app.cfg"),
-                "the application configuration .cfg is Java properties");
-        assertEquals(SyntaxConstants.SYNTAX_STYLE_XML,
-                DefaultCodeEditorView.syntaxStyleFor("web.xml"));
-        assertEquals(SyntaxConstants.SYNTAX_STYLE_NONE,
-                DefaultCodeEditorView.syntaxStyleFor(null));
-        assertEquals(SyntaxConstants.SYNTAX_STYLE_NONE,
-                DefaultCodeEditorView.syntaxStyleFor("002-hubspot-v3-companies.ifacex"),
-                "the framework does not know the Studio's interface formats");
-
-        // The Studio adds its own formats per editor: the legacy .ifacex format is Java
-        // properties, its successor format .ifcx is YAML; the registration wins over the
-        // built-in table and is case-insensitive.
-        call(() -> {
-            final DefaultCodeEditorView view = new DefaultCodeEditorView(app, new Stage(), null);
-            view.registerSyntaxStyle("ifacex", SyntaxConstants.SYNTAX_STYLE_PROPERTIES_FILE);
-            view.registerSyntaxStyle("ifcx", SyntaxConstants.SYNTAX_STYLE_YAML);
-
-            assertEquals(SyntaxConstants.SYNTAX_STYLE_PROPERTIES_FILE,
-                    view.syntaxStyleForExtension("002-hubspot-v3-companies.ifacex"),
-                    "the legacy .ifacex interface format is Java properties");
-            assertEquals(SyntaxConstants.SYNTAX_STYLE_YAML,
-                    view.syntaxStyleForExtension("002-hubspot-v3-companies.IFCX"),
-                    "the new .ifcx interface format is YAML");
-            assertEquals(SyntaxConstants.SYNTAX_STYLE_PROPERTIES_FILE,
-                    view.syntaxStyleForExtension("app.cfg"),
-                    "the registration does not affect the built-in formats");
-            assertEquals(SyntaxConstants.SYNTAX_STYLE_NONE,
-                    view.syntaxStyleForExtension("unknown.txt"));
-            assertThrows(IllegalArgumentException.class, () -> view.registerSyntaxStyle(" ", "x"));
-            return null;
-        });
     }
 
     /**
@@ -885,6 +935,11 @@ class StudioUiTest {
     /**
      * Runs a callable on the JavaFX application thread and returns its result.
      *
+     * <p>A blocked JavaFX thread - a modal dialog the test opened by accident, for example -
+     * would otherwise make every following test wait for its timeout, which looks like a hanging
+     * test run. The wait is therefore short and the stack of the JavaFX thread is written to the
+     * log, so the cause is visible.</p>
+     *
      * @param <T> result type
      * @param callable callable to run
      * @return the result of the callable
@@ -894,9 +949,29 @@ class StudioUiTest {
         final FutureTask<T> task = new FutureTask<>(callable);
         Platform.runLater(task);
         try {
-            return task.get(30, TimeUnit.SECONDS);
+            return task.get(10, TimeUnit.SECONDS);
+        } catch (TimeoutException e) {
+            System.err.println("The JavaFX thread did not answer - its stack follows:");
+            for (final StackTraceElement element : javafxThread()) {
+                System.err.println("    at " + element);
+            }
+            throw new IllegalStateException("JavaFX call failed: " + e, e);
         } catch (Exception e) {
             throw new IllegalStateException("JavaFX call failed: " + e, e);
         }
+    }
+
+    /**
+     * The stack of the JavaFX application thread, empty if it cannot be found.
+     *
+     * @return the stack trace of the JavaFX thread
+     */
+    private static StackTraceElement[] javafxThread() {
+        for (final Thread thread : Thread.getAllStackTraces().keySet()) {
+            if ("JavaFX Application Thread".equals(thread.getName())) {
+                return thread.getStackTrace();
+            }
+        }
+        return new StackTraceElement[0];
     }
 }

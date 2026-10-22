@@ -154,12 +154,6 @@ msgstr ""
 msgid "Exit"
 msgstr ""
 
-msgid "Export .ifacex"
-msgstr ""
-
-msgid "Export .ifcx"
-msgstr ""
-
 msgid "External Edit"
 msgstr ""
 
@@ -301,10 +295,7 @@ msgstr ""
 msgid "Play sounds?"
 msgstr ""
 
-msgid "Raw Properties (.ifacex)"
-msgstr ""
-
-msgid "Raw YAML (.ifcx)"
+msgid "Raw"
 msgstr ""
 
 msgid "Ready"
@@ -331,13 +322,16 @@ msgstr ""
 msgid "Save"
 msgstr ""
 
-msgid "Save As… (.ifcx)"
+msgid "Save As…"
 msgstr ""
 
 msgid "Save as .ifcx"
 msgstr ""
 
-msgid "Save as .ifcx (new format)"
+msgid "Save the configuration (.ifcx)"
+msgstr ""
+
+msgid "Saved {0}"
 msgstr ""
 
 msgid "Saved {0} ({1})"
@@ -371,6 +365,9 @@ msgid "The destination mapping {0} has a wrong format!"
 msgstr ""
 
 msgid "The legacy GUI allows exactly one destination entity per source entity. For a second target, use a view or a second processor configuration."
+msgstr ""
+
+msgid "The raw configuration is not valid YAML."
 msgstr ""
 
 msgid "The single reader of the job; picking one creates its section."

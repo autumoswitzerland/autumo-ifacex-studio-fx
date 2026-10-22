@@ -166,11 +166,8 @@ msgstr "Beispiel: 'target-field:{source-field-1} und {source-field-4} whatever'.
 msgid "Exit"
 msgstr "Beenden"
 
-msgid "Export .ifacex"
-msgstr ".ifacex exportieren"
-
-msgid "Export .ifcx"
-msgstr ".ifcx exportieren"
+msgid "Form"
+msgstr "Formular"
 
 msgid "External Edit"
 msgstr "Extern bearbeiten"
@@ -313,11 +310,8 @@ msgstr "Jingle abspielen?"
 msgid "Play sounds?"
 msgstr "Klang abspielen?"
 
-msgid "Raw Properties (.ifacex)"
-msgstr "Roh-Properties (.ifacex)"
-
-msgid "Raw YAML (.ifcx)"
-msgstr "Roh-YAML (.ifcx)"
+msgid "Raw"
+msgstr "Roh"
 
 msgid "Ready"
 msgstr "Bereit"
@@ -343,14 +337,17 @@ msgstr "IPC ausführen — Engine-Integration folgt später"
 msgid "Save"
 msgstr "Speichern"
 
-msgid "Save As… (.ifcx)"
-msgstr "Speichern unter… (.ifcx)"
+msgid "Save As…"
+msgstr "Speichern unter…"
 
 msgid "Save as .ifcx"
 msgstr "Als .ifcx speichern"
 
-msgid "Save as .ifcx (new format)"
-msgstr "Als .ifcx speichern (neues Format)"
+msgid "Save the configuration (.ifcx)"
+msgstr "Die Konfiguration speichern (.ifcx)"
+
+msgid "Saved {0}"
+msgstr "{0} gespeichert"
 
 msgid "Saved {0} ({1})"
 msgstr "{0} gespeichert ({1})"
@@ -384,6 +381,9 @@ msgstr "Das Ziel-Mapping {0} hat ein falsches Format!"
 
 msgid "The legacy GUI allows exactly one destination entity per source entity. For a second target, use a view or a second processor configuration."
 msgstr "Die Legacy-GUI erlaubt genau eine Ziel-Entity pro Quell-Entity. Für ein zweites Ziel eine View oder eine zweite Processor-Konfiguration verwenden."
+
+msgid "The raw configuration is not valid YAML."
+msgstr "Die Roh-Konfiguration ist kein gültiges YAML."
 
 msgid "The single reader of the job; picking one creates its section."
 msgstr "Der einzige Reader des Jobs; die Auswahl erstellt dessen Bereich."

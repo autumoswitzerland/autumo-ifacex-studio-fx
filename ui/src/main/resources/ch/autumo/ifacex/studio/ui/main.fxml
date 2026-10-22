@@ -10,7 +10,6 @@
 <?import javafx.scene.control.SplitPane?>
 <?import javafx.scene.control.Tab?>
 <?import javafx.scene.control.TabPane?>
-<?import javafx.scene.control.TextArea?>
 <?import javafx.scene.control.ToolBar?>
 <?import javafx.scene.control.TreeView?>
 <?import javafx.scene.layout.BorderPane?>
@@ -35,10 +34,8 @@
                     <MenuItem fx:id="miNew" text="New" onAction="#onNew"/>
                     <MenuItem fx:id="miOpen" text="Open…" onAction="#onOpen"/>
                     <Menu fx:id="menuRecent" text="Open Recent"/>
-                    <MenuItem fx:id="miSave" text="Save As… (.ifcx)" onAction="#onSave"/>
-                    <SeparatorMenuItem/>
-                    <MenuItem fx:id="miExportIfcx" text="Export .ifcx" onAction="#onExportIfcx"/>
-                    <MenuItem fx:id="miExportIfacex" text="Export .ifacex" onAction="#onExportIfacex"/>
+                    <MenuItem fx:id="miSave" text="Save" onAction="#onSave"/>
+                    <MenuItem fx:id="miSaveAs" text="Save As…" onAction="#onSaveAs"/>
                     <SeparatorMenuItem/>
                     <MenuItem fx:id="miClose" text="Close" onAction="#onClose"/>
                     <MenuItem fx:id="miExit" text="Exit" onAction="#onExit"/>
@@ -90,12 +87,7 @@
                 <Tab fx:id="tabForm" text="Form">
                     <ScrollPane fx:id="formScroll" fitToWidth="true"/>
                 </Tab>
-                <Tab fx:id="tabRawYaml" text="Raw YAML (.ifcx)">
-                    <TextArea fx:id="rawYaml" editable="false" styleClass="mono"/>
-                </Tab>
-                <Tab fx:id="tabRawProps" text="Raw Properties (.ifacex)">
-                    <TextArea fx:id="rawProps" editable="false" styleClass="mono"/>
-                </Tab>
+                <Tab fx:id="tabRaw" text="Raw"/>
             </TabPane>
         </SplitPane>
     </center>

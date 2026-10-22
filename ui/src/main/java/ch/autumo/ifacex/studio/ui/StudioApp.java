@@ -20,13 +20,16 @@ import java.util.Properties;
 
 import ch.autumo.ui.Constants;
 import ch.autumo.ui.fx.BaseApp;
+import ch.autumo.ui.fx.view.SplashScreen;
 import ch.autumo.ui.utils.Messages;
 import ch.autumo.ui.utils.UI;
+import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.layout.Pane;
 import javafx.geometry.Rectangle2D;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 
 /**
  * Studio application entry point, built on the <b>autumo-ui</b> framework.
@@ -157,6 +160,18 @@ public class StudioApp extends BaseApp {
         // the whole shell is built there on the JavaFX thread and asserted, so nothing
         // about it is wired into the application itself.
         primaryStage.setScene(scene);
+
+        // The red button ends the application: on macOS it only hides the window (the process
+        // would stay alive in the dock), and the close request is not even fired there. The
+        // splash screen has switched the implicit exit off (a window must not end the
+        // application), so the application ends itself here.
+        primaryStage.showingProperty().addListener((_, _, showing) -> {
+            if (!showing) {
+                Platform.exit();
+            }
+        });
+        primaryStage.setOnCloseRequest(_ -> Platform.exit());
+
         primaryStage.show();
 
         // Optional: open a configuration file handed in on the command line. Two shapes are
@@ -178,14 +193,84 @@ public class StudioApp extends BaseApp {
     }
 
     /**
+     * How long the splash screen of the Studio stays up.
+     *
+     * <p>The About page of the navigation pane is loaded afterwards: the engine of its WebView
+     * blocks the JavaFX thread for about a second, and the splash screen should animate in that
+     * time.</p>
+     */
+    private static final Duration SPLASH_DURATION = Duration.seconds(4);
+
+    /**
+     * The Studio shows a splash screen while it starts: the ifaceX logo and the scanner bar of
+     * the framework. The screen stays up for a few seconds, so it is seen even though the Studio
+     * starts quickly.
+     */
+    @Override
+	protected boolean isSplashScreenEnabled() {
+		return true;
+	}
+
+    /**
+     * The splash screen of the Studio: the ifaceX logo, the scanner bar of the framework and the
+     * start-up jingle of the legacy Studio.
+     *
+     * <p>The jingle plays only if the setting says so - the one of the first-run wizard
+     * ({@code play.jingle}, see {@link StepSettings}). The framework creates the splash screen
+     * after the configuration has been read, so the user's choice is known here. An unset setting
+     * means the jingle plays - the same default the setting of the wizard has.</p>
+     *
+     * @return the splash screen of the Studio
+     */
+    @Override
+    protected SplashScreen createSplashScreen() {
+        final SplashScreen splash = new SplashScreen()
+                .setDuration(SPLASH_DURATION)
+                .setLogo(getClass().getResource("icons/autumo-ifacex-splash.png"));
+        if (booleanParameter(StudioConstants.PROP_KEY_PLAY_JINGLE, true)) {
+            splash.setJingle(getClass().getResource("sound/autumo-jingle-1.0.wav"));
+        }
+        return splash;
+    }
+
+    /**
+     * The Studio ends the JVM with the application: it embeds the Swing code editor (the raw
+     * tab), and the AWT event dispatch thread of that editor is not a daemon thread - it would
+     * keep the JVM alive after the JavaFX runtime is gone.
+     */
+    @Override
+    protected boolean isJvmExitOnStop() {
+        return true;
+    }
+
+    /**
+     * Reads a boolean parameter of the application configuration.
+     *
+     * @param key          the parameter
+     * @param defaultValue the value if the parameter is not set
+     * @return the value of the parameter
+     */
+    private boolean booleanParameter(String key, boolean defaultValue) {
+        final String value = getConfigurationParameter(key);
+        if (value == null || value.trim().isEmpty()) {
+            return defaultValue;
+        }
+        return Boolean.parseBoolean(value.trim());
+    }
+
+	/**
      * {@inheritDoc}
      *
      * <p>The framework has already stored the application configuration and the recent files on
-     * exit (see {@link ch.autumo.ui.fx.BaseApp#stop()}); the Studio has nothing else to release.</p>
+     * exit (see {@link ch.autumo.ui.fx.BaseApp#stop()}); the Studio releases the raw editor:
+     * it is a Swing component, and removing it makes macOS call into the native input method,
+     * which can block the AWT thread forever and keep the JVM from exiting.</p>
      */
     @Override
     public void finish(Stage primaryStage) {
-        // nothing to clean up
+        if (controller != null) {
+            controller.disposeEditor();
+        }
     }
 
     /**

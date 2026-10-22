@@ -161,6 +161,11 @@
     -fx-padding: 0;
 }
 
+/* --- raw YAML editor (the code editor in the "Raw" tab) -------------------- */
+.raw-editor {
+    -fx-background-color: #2f2f2f;
+}
+
 /* --- scroll pane ---------------------------------------------------------- */
 .scroll-pane > .viewport {
     -fx-background-color: transparent;
