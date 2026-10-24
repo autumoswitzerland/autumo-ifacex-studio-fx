@@ -145,7 +145,9 @@ public class SettingsActions extends BaseAction {
     
     /** Saves the values and closes the dialog. */
     private void saveAndClose() {
-        app.setConfigurationParameter(StudioConstants.PROP_KEY_PROJECT_ROOT, projectRootField.getText().trim());
+    	
+    	final String projectRoot = projectRootField.getText() == null ? "" : projectRootField.getText().trim();
+        app.setConfigurationParameter(StudioConstants.PROP_KEY_PROJECT_ROOT, projectRoot);
         
         final String seed = seedField.getText() == null ? "" : seedField.getText().trim();
         if (!seed.isEmpty() && seed.length() != 32) {
@@ -159,11 +161,11 @@ public class SettingsActions extends BaseAction {
         app.setConfigurationParameter(Constants.SEC_KEY_SEED, seed);
         ifacexApp.setSeed(seed);
         
-        final String ifacexFolder = ifacexFolderField.getText().trim();
-        app.setConfigurationParameter(StudioConstants.PROP_KEY_IFACEX_FOLDER, ifacexFolder);
-        if (ifacexFolder != null && ifacexFolder.length() > 0) {
+        final String ifacexFolder = ifacexFolderField.getText() == null ? "" : ifacexFolderField.getText().trim();
+        if (!ifacexFolder.isEmpty()) {
+            app.setConfigurationParameter(StudioConstants.PROP_KEY_IFACEX_FOLDER, ifacexFolder.trim());
             try {
-            	ifacexApp.initializeBaseConfig(ifacexFolder);
+            	ifacexApp.initializeBaseConfig(ifacexFolder.trim());
 			} catch (Exception e) {
 				LOG.error("Couldn't initialize ifaceX test instance!", e);
 				UI.showError(app, e);

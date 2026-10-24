@@ -103,7 +103,11 @@ public class StepSettings extends BaseStep {
         final Button next = controller.getFooterButton();
         next.setText(Helper.getTranslatedText(app, "Installer.next"));
         next.setOnAction(_ -> {
-            storeSettings(rootField.getText(), playSounds.isSelected(), playJingle.isSelected());
+            storeSettings(
+            		rootField.getText(), 
+            		playSounds.isSelected(),
+            		playJingle.isSelected()
+            	);
             ic.next();
         });
 
@@ -160,7 +164,8 @@ public class StepSettings extends BaseStep {
      * @param playJingle play the start-up jingle
      */
     private void storeSettings(String rootFolder, boolean playSounds, boolean playJingle) {
-        final File folder = new File(rootFolder);
+    	final String projectRoot = rootFolder == null ? "" : rootFolder;
+        final File folder = new File(projectRoot);
         folder.mkdirs();
         app.setConfigurationParameter(StudioConstants.PROP_KEY_PROJECT_ROOT, folder.getAbsolutePath());
         app.setConfigurationParameter(StudioConstants.PROP_KEY_PLAY_SOUNDS, String.valueOf(playSounds));

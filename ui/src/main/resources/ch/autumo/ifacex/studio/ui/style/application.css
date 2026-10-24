@@ -195,31 +195,6 @@
     -fx-text-fill: #ffffff;
 }
 
-/* --- form fields: rounded corners ---------------------------------------- */
-.text-field,
-.password-field,
-.combo-box,
-.text-area,
-.text-area .content {
-    -fx-background-radius: 6;
-    -fx-border-radius: 6;
-}
-.combo-box > .arrow-button {
-    -fx-background-radius: 0 6 6 0;
-    -fx-background-color: transparent;
-}
-.combo-box > .list-cell {
-    -fx-background-radius: 6 0 0 6;
-}
-.check-box > .box {
-    -fx-background-radius: 4;
-    -fx-border-radius: 4;
-}
-.table-view {
-    -fx-background-radius: 6;
-    -fx-border-radius: 6;
-}
-
 /* --- dialogs use the bundled Inter SemiBold for their headers ------------- */
 .dialog-pane:header .header-panel .label {
     -fx-font-family: "Inter SemiBold";

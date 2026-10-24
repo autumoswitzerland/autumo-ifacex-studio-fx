@@ -652,6 +652,10 @@ public class MainController extends BaseController {
     @FXML
     private void onOpen() {
         final FileChooser chooser = new FileChooser();
+        String folder = ((StudioApp) app).getProjectRoot();
+        if (folder != null && folder.length() > 0) {
+            chooser.setInitialDirectory(new File(folder));
+        }
         chooser.setTitle(t("Open configuration"));
         chooser.getExtensionFilters().addAll(
                 new FileChooser.ExtensionFilter(t("ifaceX configuration"), "*.ifacex", "*.ifcx", "*.yaml", "*.yml"),
