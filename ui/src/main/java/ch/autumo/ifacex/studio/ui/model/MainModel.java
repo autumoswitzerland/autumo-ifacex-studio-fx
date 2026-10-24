@@ -11,7 +11,7 @@
  * is strictly forbidden unless prior written permission is obtained
  * from autumo GmbH.
  */
-package ch.autumo.ifacex.studio.ui;
+package ch.autumo.ifacex.studio.ui.model;
 
 import ch.autumo.ui.fx.model.BaseModel;
 import javafx.scene.layout.Pane;

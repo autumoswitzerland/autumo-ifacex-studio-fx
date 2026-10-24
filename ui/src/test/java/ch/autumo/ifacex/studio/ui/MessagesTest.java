@@ -23,6 +23,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import ch.autumo.ifacex.studio.core.StudioConstants;
 import ch.autumo.ui.utils.Messages;
 
 /**

@@ -16,6 +16,8 @@ package ch.autumo.ifacex.studio.core.model;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import ch.autumo.ifacex.studio.core.meta.ParameterCatalog;
+
 /**
  * One reader or writer section ({@code <rw>_...}): global parameters, wildcard defaults
  * ({@code <rw>_*_<param>}) and the per-entity configuration.
@@ -24,8 +26,8 @@ public final class RwConfig {
 
     private final String name;
     private final boolean reader;
-    private final Map<String, String> global = new LinkedHashMap<>();
-    private final Map<String, String> wildcard = new LinkedHashMap<>();
+    private final Map<String, Object> global = new LinkedHashMap<>();
+    private final Map<String, Object> wildcard = new LinkedHashMap<>();
     private final Map<String, EntityConfig> entities = new LinkedHashMap<>();
 
     /**
@@ -62,7 +64,7 @@ public final class RwConfig {
      *
      * @return mutable map of parameter to value
      */
-    public Map<String, String> global() {
+    public Map<String, Object> global() {
         return global;
     }
 
@@ -71,7 +73,7 @@ public final class RwConfig {
      *
      * @return mutable map of parameter to value
      */
-    public Map<String, String> wildcard() {
+    public Map<String, Object> wildcard() {
         return wildcard;
     }
 
@@ -86,12 +88,31 @@ public final class RwConfig {
 
     /**
      * Returns the configuration for an entity, creating an empty one when necessary.
+     * Used by the legacy reader path; does <em>not</em> pre-populate parameters.
      *
      * @param entity entity name
      * @return entity configuration, never {@code null}
      */
     public EntityConfig ensureEntity(String entity) {
         return entities.computeIfAbsent(entity, EntityConfig::new);
+    }
+
+    /**
+     * Returns the configuration for an entity, creating it when necessary and pre-populating it
+     * with all entity-scoped catalogue parameters of the section (see {@link ParameterCatalog}).
+     * Used when the user creates a new entity/mapping in the GUI.
+     *
+     * @param entity entity name
+     * @return entity configuration, never {@code null}
+     */
+    public EntityConfig initializeEntity(String entity) {
+        final EntityConfig ec = ensureEntity(entity);
+        for (final ParameterCatalog.Entry e : ParameterCatalog.entriesFor(name)) {
+            if (e.scope() == ParameterCatalog.Scope.ENTITY) {
+                ec.settings().putIfAbsent(e.param(), e.defaultValue());
+            }
+        }
+        return ec;
     }
 
     /**

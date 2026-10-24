@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import ch.autumo.ifacex.studio.core.meta.ParameterCatalog;
+
 /**
  * Root of the in-memory configuration model: one IPC job.
  *
@@ -44,7 +46,7 @@ public final class IpcConfig {
     private final Map<String, RwConfig> writers = new LinkedHashMap<>();
 
     /** General (non reader/writer scoped) keys, e.g. {@code batch_mode}, {@code files_folder}. */
-    private final Map<String, String> general = new LinkedHashMap<>();
+    private final Map<String, Object> general = new LinkedHashMap<>();
 
     /**
      * The metadata (comment header) of this configuration.
@@ -125,7 +127,7 @@ public final class IpcConfig {
      *
      * @return mutable map of general key to value
      */
-    public Map<String, String> general() {
+    public Map<String, Object> general() {
         return general;
     }
 
@@ -187,6 +189,21 @@ public final class IpcConfig {
     }
 
     /**
+     * Creates a reader section and pre-populates it with <em>all</em> possible parameters of its
+     * type (see {@link ParameterCatalog}), even the empty ones - so a newly added reader shows
+     * its full parameter set in the GUI and the saved {@code .ifcx} carries every parameter.
+     * Does <em>not</em> touch an already existing section.
+     *
+     * @param name reader prefix
+     * @return reader section, never {@code null}
+     */
+    public RwConfig initializeReader(String name) {
+        final RwConfig r = ensureReader(name);
+        populateSection(r);
+        return r;
+    }
+
+    /**
      * Returns the writer section with the given prefix, creating it when necessary.
      *
      * @param name writer prefix
@@ -194,6 +211,46 @@ public final class IpcConfig {
      */
     public RwConfig ensureWriter(String name) {
         return writers.computeIfAbsent(name, n -> new RwConfig(n, false));
+    }
+
+    /**
+     * Creates a writer section and pre-populates it with <em>all</em> possible parameters of its
+     * type (see {@link ParameterCatalog}), even the empty ones.
+     * Does <em>not</em> touch an already existing section.
+     *
+     * @param name writer prefix
+     * @return writer section, never {@code null}
+     */
+    public RwConfig initializeWriter(String name) {
+        final RwConfig r = ensureWriter(name);
+        populateSection(r);
+        return r;
+    }
+
+    /** Fill every catalogue parameter of a section that is not yet present, keeping existing values. */
+    private void populateSection(RwConfig rw) {
+        for (final ParameterCatalog.Entry e : ParameterCatalog.entriesFor(rw.name())) {
+            switch (e.scope()) {
+                case GLOBAL -> rw.global().putIfAbsent(e.param(), e.defaultValue());
+                case WILDCARD -> rw.wildcard().putIfAbsent(e.param(), e.defaultValue());
+                case ENTITY -> {
+                    // Entity-scoped parameters are populated per entity when the entity is
+                    // created (see RwConfig.initializeEntity); the section level has no entity yet.
+                }
+            }
+        }
+        populateEntities(rw);
+    }
+
+    /** Fill every entity-scoped catalogue parameter of each entity of a section. */
+    private void populateEntities(RwConfig rw) {
+        for (final EntityConfig ec : rw.entities().values()) {
+            for (final ParameterCatalog.Entry e : ParameterCatalog.entriesFor(rw.name())) {
+                if (e.scope() == ParameterCatalog.Scope.ENTITY) {
+                    ec.settings().putIfAbsent(e.param(), e.defaultValue());
+                }
+            }
+        }
     }
 
     // ---------------------------------------------------------------- source entities
@@ -233,7 +290,7 @@ public final class IpcConfig {
         processSourceEntities.add(n);
         final RwConfig r = reader();
         if (r != null) {
-            r.ensureEntity(n);
+            r.initializeEntity(n);
         }
         return true;
     }

@@ -188,7 +188,19 @@ public final class YamlConfigReader {
     }
 
     private static String str(Object v) {
-        return v == null ? "" : v.toString();
+        if (v == null) {
+            return "";
+        }
+        if (v instanceof Map<?, ?> map && map.containsKey(YamlConfigWriter.K_ENC)) {
+            // An encoded secret in its structured form: the legacy notation is what the reader
+            // understands (and what the engine reads).
+            final Object mode = map.get(YamlConfigWriter.K_ENC);
+            final Object value = map.get(YamlConfigWriter.K_ENC_VALUE);
+            if (mode != null && value != null) {
+                return "{" + mode + ":" + value + "}";
+            }
+        }
+        return v.toString();
     }
 
     @SuppressWarnings("unchecked")

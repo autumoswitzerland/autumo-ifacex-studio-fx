@@ -27,7 +27,7 @@ import java.util.Map;
 public final class EntityConfig {
 
     private final String entity;
-    private final Map<String, String> settings = new LinkedHashMap<>();
+    private final Map<String, Object> settings = new LinkedHashMap<>();
     private final List<String> fields = new ArrayList<>();
     private WriterMapping mapping;
 
@@ -55,7 +55,7 @@ public final class EntityConfig {
      *
      * @return mutable map of parameter to value
      */
-    public Map<String, String> settings() {
+    public Map<String, Object> settings() {
         return settings;
     }
 

@@ -23,6 +23,8 @@ import java.util.Properties;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
+import ch.autumo.ifacex.studio.core.StudioConstants;
+import ch.autumo.ifacex.studio.ui.controller.actions.installer.StepSettings;
 import ch.autumo.ui.fx.controller.actions.installer.BaseStep;
 import ch.autumo.ui.utils.Messages;
 

@@ -14,4 +14,13 @@ eclipse {
 
 dependencies {
     api 'org.snakeyaml:snakeyaml-engine:2.9'
+    
+    // The framework's own JavaFX is excluded; the Studio pins its own JavaFX 25 (above).
+    api('ch.autumo.commons:autumo-ui:1.2.0') {
+        exclude group: 'org.openjfx'
+    }
+}
+
+test.testLogging { 
+    showStandardStreams = true
 }

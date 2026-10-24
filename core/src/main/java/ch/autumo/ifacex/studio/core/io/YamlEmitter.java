@@ -14,6 +14,7 @@
 package ch.autumo.ifacex.studio.core.io;
 
 import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -29,6 +30,31 @@ public final class YamlEmitter {
     private static final String SPECIALS = ":{}[],#&*!|>'\"%@`";
 
     private YamlEmitter() {
+    }
+
+    /**
+     * A map that is written in one line: {@code { enc: 3, value: "..." }}.
+     *
+     * <p>The structured form of an encoded secret is short and belongs to its parameter - the
+     * specification shows it inline (see docs/08-config-format.md, 8.5).</p>
+     */
+    public static final class InlineMap extends LinkedHashMap<String, Object> {
+
+        /**
+         * Creates an empty inline map.
+         */
+        public InlineMap() {
+            super();
+        }
+
+        /**
+         * Creates an inline map with the given entries.
+         *
+         * @param entries the entries of the map
+         */
+        public InlineMap(Map<String, Object> entries) {
+            super(entries);
+        }
     }
 
     /**
@@ -53,7 +79,9 @@ public final class YamlEmitter {
         for (final Map.Entry<?, ?> e : map.entrySet()) {
             sb.append(indent(indent)).append(key(String.valueOf(e.getKey()))).append(':');
             final Object v = e.getValue();
-            if (v instanceof Map<?, ?> m) {
+            if (v instanceof InlineMap m) {
+                sb.append(' ').append(inline(m)).append('\n');
+            } else if (v instanceof Map<?, ?> m) {
                 if (m.isEmpty()) {
                     sb.append(" {}\n");
                 } else {
@@ -71,6 +99,20 @@ public final class YamlEmitter {
                 sb.append(' ').append(scalar(v)).append('\n');
             }
         }
+    }
+
+    /** A map in one line: {@code { enc: 3, value: "..." }}. */
+    private static String inline(Map<String, Object> map) {
+        final StringBuilder sb = new StringBuilder("{");
+        boolean first = true;
+        for (final Map.Entry<String, Object> e : map.entrySet()) {
+            if (!first) {
+                sb.append(", ");
+            }
+            first = false;
+            sb.append(key(e.getKey())).append(": ").append(scalar(e.getValue()));
+        }
+        return sb.append('}').toString();
     }
 
     private static void dumpList(StringBuilder sb, List<?> list, int indent) {
@@ -152,6 +194,10 @@ public final class YamlEmitter {
             return true;
         }
         if (s.startsWith(" ") || s.endsWith(" ")) {
+            return true;
+        }
+        if (s.endsWith("=")) {
+            // A base64 value: quoted, the way the specification shows it.
             return true;
         }
         for (int i = 0; i < s.length(); i++) {

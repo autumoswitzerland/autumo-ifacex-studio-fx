@@ -27,16 +27,17 @@ eclipse {
 
 dependencies {
     api project(':core')
+    
+    implementation 'org.json:json:20260814'
 
-    // The framework's own JavaFX is excluded; the Studio pins its own JavaFX 25 (above).
-    api('ch.autumo.commons:autumo-ui:1.2.0') {
-        exclude group: 'org.openjfx'
-    }
+    implementation 'org.apache.logging.log4j:log4j-api:2.26.1'
+    implementation 'org.apache.logging.log4j:log4j-core:2.26.1'
+    implementation 'org.apache.logging.log4j:log4j-slf4j-impl:2.26.1'
 
     // Proprietary registration implementation (register test instances with a license
     // through the input mask). Deliberately NOT exposed by autumo-ui, so the Studio
     // declares it itself.
-    api 'ch.autumo.registration:autumo-registration:1.2.0'
+    implementation 'ch.autumo.registration:autumo-registration:1.2.0'
 }
 
 application {

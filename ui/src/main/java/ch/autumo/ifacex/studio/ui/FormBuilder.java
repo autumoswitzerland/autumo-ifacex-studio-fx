@@ -17,7 +17,6 @@ import static ch.autumo.ifacex.studio.ui.StudioHelper.format;
 import static ch.autumo.ifacex.studio.ui.StudioHelper.t;
 
 import java.util.ArrayList;
-
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -31,8 +30,10 @@ import ch.autumo.ifacex.studio.core.model.FieldMappingRec;
 import ch.autumo.ifacex.studio.core.model.IpcConfig;
 import ch.autumo.ifacex.studio.core.model.MappingFormula;
 import ch.autumo.ifacex.studio.core.model.RwConfig;
+import ch.autumo.ifacex.studio.core.model.Secret;
 import ch.autumo.ifacex.studio.core.model.WriterMapping;
-
+import ch.autumo.ifacex.studio.ui.controller.MainController;
+import ch.autumo.ui.fx.control.Icons;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
@@ -56,8 +57,6 @@ import javafx.scene.control.Tooltip;
 import javafx.scene.control.cell.CheckBoxTableCell;
 import javafx.scene.control.cell.TextFieldListCell;
 import javafx.scene.control.cell.TextFieldTableCell;
-import ch.autumo.ui.fx.control.Icons;
-import javafx.scene.text.Text;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.DataFormat;
 import javafx.scene.input.Dragboard;
@@ -66,6 +65,7 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import javafx.scene.text.Text;
 import javafx.util.converter.DefaultStringConverter;
 
 /**
@@ -73,10 +73,10 @@ import javafx.util.converter.DefaultStringConverter;
  * ({@link FieldCatalog}). The static shell is FXML; the dynamic parts are Java (see
  * docs/10-ui-form-design.md). Every parameter is shown, even when no descriptor exists.
  */
-final class FormBuilder {
+public final class FormBuilder {
 
     /** Selection carried by a navigation tree item. */
-    record NavNode(String kind, String label, Object payload, Object payload2) {
+    public record NavNode(String kind, String label, Object payload, Object payload2) {
         /**
          * The navigation tree shows the label only.
          *
@@ -94,25 +94,25 @@ final class FormBuilder {
     private final Runnable onChange;
     private final Runnable onStructureChange;
     private IpcConfig cfg;
-    private final ch.autumo.ui.fx.BaseApp app;
+    private final StudioApp app;
 
-    FormBuilder(ch.autumo.ui.fx.BaseApp app, Runnable onChange) {
+    public FormBuilder(StudioApp app, Runnable onChange) {
         this(app, onChange, null);
     }
 
-    FormBuilder(ch.autumo.ui.fx.BaseApp app, Runnable onChange, Runnable onStructureChange) {
+    public FormBuilder(StudioApp app, Runnable onChange, Runnable onStructureChange) {
         this.app = app;
         this.onChange = onChange;
         this.onStructureChange = onStructureChange;
     }
 
     /** The current configuration (needed to reach the shared source fields from a writer). */
-    void setConfig(IpcConfig cfg) {
+    public void setConfig(IpcConfig cfg) {
         this.cfg = cfg;
     }
 
     @SuppressWarnings("unchecked")
-    Node build(Object selection) {
+    public Node build(Object selection) {
         if (!(selection instanceof NavNode node)) {
             return message(t("Select an element on the left."));
         }
@@ -124,7 +124,7 @@ final class FormBuilder {
             case MainController.K_ENTITY ->
                     entity((RwConfig) node.payload(), (String) node.payload2());
             case MainController.K_GENERAL ->
-                    general((Map<String, String>) node.payload());
+                    general((Map<String, Object>) node.payload());
             default -> message(format("No form for: {0}", node.label()));
         };
     }
@@ -196,7 +196,7 @@ final class FormBuilder {
                 return;
             }
             cfg.setSourceInterface(b.trim());
-            cfg.ensureReader(b.trim());
+            cfg.initializeReader(b.trim());
             structureChanged();
         });
         final Label srcLabel = new Label(t("Source interface (reader)"));
@@ -315,7 +315,7 @@ final class FormBuilder {
         }
         for (final String name : new ArrayList<>(cfg.destinationInterfaces())) {
             if (!name.isBlank()) {
-                cfg.ensureWriter(name.trim());
+                cfg.initializeWriter(name.trim());
             }
         }
         cfg.writers().keySet().removeIf(w -> !cfg.destinationInterfaces().contains(w));
@@ -381,7 +381,7 @@ final class FormBuilder {
         final Button add = toolButton("+", t("Add an output mapping for this source entity"), () -> {
             final String sel = combo.getValue();
             if (sel != null && !sel.isBlank() && !rw.entities().containsKey(sel)) {
-                rw.ensureEntity(sel);
+                rw.initializeEntity(sel);
                 structureChanged();
             }
         });
@@ -426,7 +426,7 @@ final class FormBuilder {
         } else {
             box.getChildren().add(destinationMapping(ec, rw));
         }
-        final Map<String, String> rest = remainingSettings(ec, rw);
+        final Map<String, Object> rest = remainingSettings(ec, rw);
         if (!rest.isEmpty()) {
             box.getChildren().add(mapGrid(rest, rw));
         }
@@ -446,7 +446,7 @@ final class FormBuilder {
      * Entity settings minus the parameters that are edited by dedicated controls (so they are not
      * rendered twice in the generic settings grid).
      */
-    private static Map<String, String> remainingSettings(EntityConfig ec, RwConfig rw) {
+    private static Map<String, Object> remainingSettings(EntityConfig ec, RwConfig rw) {
         if (ec.settings().isEmpty()) {
             return Map.of();
         }
@@ -458,7 +458,7 @@ final class FormBuilder {
             handled.add("dest_id_path");
             handled.add("dest_filter_fields");
         }
-        final Map<String, String> rest = new java.util.TreeMap<>(ec.settings());
+        final Map<String, Object> rest = new java.util.TreeMap<>(ec.settings());
         rest.keySet().removeAll(handled);
         return rest;
     }
@@ -469,7 +469,7 @@ final class FormBuilder {
      * and the entity order field.
      */
     private Node destField(EntityConfig ec, String key, String label) {
-        final TextField tf = new TextField(ec.settings().getOrDefault(key, ""));
+        final TextField tf = new TextField(text(ec.settings().getOrDefault(key, "")));
         tf.textProperty().addListener((_, _, b) -> {
             if (b == null || b.isEmpty()) {
                 ec.settings().remove(key);
@@ -821,9 +821,9 @@ final class FormBuilder {
      * comma joined value back into the settings map (and remove the key when the list becomes
      * empty), so the model stays consistent.
      */
-    private ObservableList<String> commaList(Map<String, String> settings, String key) {
+    private ObservableList<String> commaList(Map<String, Object> settings, String key) {
         final List<String> initial = new ArrayList<>();
-        for (final String part : settings.getOrDefault(key, "").split(",")) {
+        for (final String part : text(settings.getOrDefault(key, "")).split(",")) {
             final String t = part.trim();
             if (!t.isEmpty()) {
                 initial.add(t);
@@ -860,7 +860,36 @@ final class FormBuilder {
         return b;
     }
 
-    private Node general(Map<String, String> general) {
+    /**
+     * Stores the value of a secret field in the model: an encoded value as a secret, a plain
+     * value as a string, an empty value not at all.
+     *
+     * @param map the parameter map of the model
+     * @param key the parameter
+     * @param mode the encryption mode of the field
+     * @param value the value of the field
+     */
+    private static void storeSecret(Map<String, Object> map, String key, int mode, String value) {
+        if (value == null || value.isEmpty()) {
+            map.remove(key);
+            return;
+        }
+        if (mode > 0) {
+            map.put(key, new Secret(mode, value));
+        } else {
+            map.put(key, value);
+        }
+    }
+
+    /** The text of a parameter value: an encoded secret shows its encoded value. */
+    private static String text(Object value) {
+        if (value instanceof Secret secret) {
+            return secret.value();
+        }
+        return value == null ? "" : value.toString();
+    }
+
+    private Node general(Map<String, Object> general) {
         final VBox box = new VBox(6);
         box.setPadding(new Insets(8));
         box.getChildren().add(title(t("Overwritten Values")));
@@ -872,14 +901,14 @@ final class FormBuilder {
         return box;
     }
 
-    private GridPane mapGrid(Map<String, String> map, RwConfig rw) {
+    private GridPane mapGrid(Map<String, Object> map, RwConfig rw) {
         final GridPane grid = new GridPane();
         grid.setHgap(10);
         grid.setVgap(6);
         grid.setPadding(new Insets(6, 6, 6, 6));
 
         int row = 0;
-        for (final Map.Entry<String, String> e : new TreeMap<>(map).entrySet()) {
+        for (final Map.Entry<String, Object> e : new TreeMap<>(map).entrySet()) {
             final String key = e.getKey();
             final FieldDescriptor d = FieldCatalog.descriptor(key);
             // The raw configuration key is the message id; the derived label is the English
@@ -900,7 +929,7 @@ final class FormBuilder {
         return grid;
     }
 
-    private Node control(Map<String, String> map, String key, FieldDescriptor d, RwConfig rw) {
+    private Node control(Map<String, Object> map, String key, FieldDescriptor d, RwConfig rw) {
         // MongoDB uses its own protocol values (mongodb, mongodb+srv), not the generic
         // "https/http/mongodb/tcp" list, and only Mongo/REST expose a protocol field.
         if ("protocol".equals(key) && rw != null) {
@@ -916,7 +945,17 @@ final class FormBuilder {
             final FieldDescriptor pd = new FieldDescriptor(d.param(), d.label(), FieldType.SELECT, opts, d.help());
             d = pd;
         }
-        final String value = map.getOrDefault(key, "");
+        final Object raw = map.getOrDefault(key, "");
+        final String rawStr = raw == null ? "" : raw.toString();
+        Secret secret = raw instanceof Secret ? (Secret) raw : null;
+        if (secret == null && !rawStr.isEmpty()) {
+            secret = Secret.parseLegacy(rawStr);
+            if (secret == null && rawStr.matches("^[A-Za-z0-9+/]+={0,2}$") && rawStr.length() > 16) {
+                // Plain base64 value without legacy {mode:value} wrapper: treat as mode 3.
+                secret = new Secret(3, rawStr);
+            }
+        }
+        final String value = secret != null ? secret.value() : rawStr;
         switch (d.type()) {
             case BOOLEAN: {
                 final ComboBox<String> cb = new ComboBox<>(
@@ -952,10 +991,19 @@ final class FormBuilder {
                 return tf;
             }
             case SECRET: {
-                final ch.autumo.ui.fx.control.SecretField sf = ch.autumo.ui.fx.control.SecretField.create(app);
+                final ch.autumo.ui.fx.control.SecretField sf = ch.autumo.ui.fx.control.SecretField.create(app, app.getIfacexApp());
                 sf.setText(value);
+                // The mode is taken over from the configuration: an encoded value keeps its mode,
+                // a plain value is explicitly mode 0 ("none") - without this the dropdown of a
+                // plain field stays empty. The value is set first, the mode after; the other way
+                // round the enc-mode listener would store an empty value into the map.
+                sf.setEncMode(secret != null ? secret.mode() : 0);
                 sf.textProperty().addListener((_, _, b) -> {
-                    map.put(key, b == null ? "" : b);
+                    storeSecret(map, key, sf.getEncMode(), b);
+                    changed();
+                });
+                sf.encModeProperty().addListener((_, _, mode) -> {
+                    storeSecret(map, key, mode.intValue(), sf.getText());
                     changed();
                 });
                 return sf;
@@ -1097,7 +1145,7 @@ final class FormBuilder {
      * A coloured type pill (legacy GUI colours: readers green, writers red, base blue) showing the
      * interface type (CSV, JSON, DB, Mongo DB, REST, Mail, …). See {@link InterfaceTypes}.
      */
-    static Label typePill(String rwName) {
+    public static Label typePill(String rwName) {
         final InterfaceTypes.InterfaceType t = InterfaceTypes.of(rwName);
         final Label l = new Label(t.display());
         l.getStyleClass().add("type-pill");
@@ -1142,7 +1190,7 @@ final class FormBuilder {
      * A padded, text-only body used when there is nothing editable to show (start-up placeholder,
      * "select an element" hint). Without the padding such a lone label would stick to the top-left.
      */
-    static Node message(String text) {
+    public static Node message(String text) {
         final VBox box = new VBox();
         box.setPadding(new Insets(12, 14, 12, 14));
         final Label l = new Label(text);

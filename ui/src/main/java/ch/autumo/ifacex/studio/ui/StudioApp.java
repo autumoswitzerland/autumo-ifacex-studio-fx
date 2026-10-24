@@ -18,15 +18,20 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Properties;
 
+import ch.autumo.ifacex.studio.core.LicIfaceXApp100;
+import ch.autumo.ifacex.studio.core.StudioConstants;
+import ch.autumo.ifacex.studio.ui.controller.MainController;
+import ch.autumo.ifacex.studio.ui.controller.actions.installer.StepSettings;
+import ch.autumo.ifacex.studio.ui.model.MainModel;
+import ch.autumo.ifacex.studio.ui.view.MainView;
 import ch.autumo.ui.Constants;
 import ch.autumo.ui.fx.BaseApp;
 import ch.autumo.ui.fx.view.SplashScreen;
 import ch.autumo.ui.utils.Messages;
 import ch.autumo.ui.utils.UI;
-import javafx.application.Platform;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
 import javafx.scene.layout.Pane;
-import javafx.geometry.Rectangle2D;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.util.Duration;
@@ -44,6 +49,16 @@ import javafx.util.Duration;
  */
 public class StudioApp extends BaseApp {
 
+	public static int DEFAULT_TIMEOUT = 60;
+	
+    private int timeOut = DEFAULT_TIMEOUT;
+    private String projectRoot = null;
+    private String ifacexFolder = null;
+	private String ifacexSeed = null;
+    
+    private LicIfaceXApp100 ifacexApp = null;
+    
+    
     /** Creates the application; the framework instantiates exactly one. */
     public StudioApp() {
         // File endings the Studio accepts from the command line / double-click: the legacy
@@ -160,20 +175,39 @@ public class StudioApp extends BaseApp {
         // the whole shell is built there on the JavaFX thread and asserted, so nothing
         // about it is wired into the application itself.
         primaryStage.setScene(scene);
-
-        // The red button ends the application: on macOS it only hides the window (the process
-        // would stay alive in the dock), and the close request is not even fired there. The
-        // splash screen has switched the implicit exit off (a window must not end the
-        // application), so the application ends itself here.
-        primaryStage.showingProperty().addListener((_, _, showing) -> {
-            if (!showing) {
-                Platform.exit();
-            }
-        });
-        primaryStage.setOnCloseRequest(_ -> Platform.exit());
-
         primaryStage.show();
 
+        // Props
+        final String timeoutStr = getConfigurationParameter(StudioConstants.PROP_KEY_TIMEOUT);
+        if (timeoutStr != null) {
+            try {
+            	timeOut = Integer.parseInt(timeoutStr);
+			} catch (Exception e) {
+				LOG.warn("Couldn't load process timeout, using "+DEFAULT_TIMEOUT+" seconds.", e);
+				timeOut = DEFAULT_TIMEOUT;
+			}
+        } else {
+        	timeOut = DEFAULT_TIMEOUT;
+        }
+        
+        ifacexApp = new LicIfaceXApp100();
+        
+        projectRoot = getConfigurationParameter(StudioConstants.PROP_KEY_PROJECT_ROOT);
+        ifacexSeed = getConfigurationParameter(ch.autumo.commons.Constants.SEC_KEY_SEED);
+        if (ifacexSeed != null && ifacexSeed.length() > 0) {
+            ifacexApp.setSeed(ifacexSeed);
+        }
+        ifacexFolder = getConfigurationParameter(StudioConstants.PROP_KEY_IFACEX_FOLDER);
+        if (ifacexFolder != null && ifacexFolder.length() > 0) {
+            try {
+				ifacexApp.initializeBaseConfig(ifacexFolder);
+			} catch (Exception e) {
+				LOG.error("Couldn't initialize ifaceX test instance!", e);
+				UI.showError(this, e);
+			}
+        }
+        		
+        		
         // Optional: open a configuration file handed in on the command line. Two shapes are
         // accepted, because two launchers exist:
         //   --open <file>   the development launcher "bin/run.sh some.ifacex";
@@ -199,7 +233,7 @@ public class StudioApp extends BaseApp {
      * blocks the JavaFX thread for about a second, and the splash screen should animate in that
      * time.</p>
      */
-    private static final Duration SPLASH_DURATION = Duration.seconds(4);
+    private static final Duration SPLASH_DURATION = Duration.seconds(3);
 
     /**
      * The Studio shows a splash screen while it starts: the ifaceX logo and the scanner bar of
@@ -227,7 +261,7 @@ public class StudioApp extends BaseApp {
         final SplashScreen splash = new SplashScreen()
                 .setDuration(SPLASH_DURATION)
                 .setLogo(getClass().getResource("icons/autumo-ifacex-splash.png"));
-        if (booleanParameter(StudioConstants.PROP_KEY_PLAY_JINGLE, true)) {
+        if (booleanParameter(StudioConstants.PROP_KEY_PLAY_JINGLE, false)) {
             splash.setJingle(getClass().getResource("sound/autumo-jingle-1.0.wav"));
         }
         return splash;
@@ -344,4 +378,40 @@ public class StudioApp extends BaseApp {
         return "ifaceXStudioFX";
     }
 
+    public int getTimeOut() {
+		return timeOut;
+	}
+
+	public void setTimeOut(int timeOut) {
+		this.timeOut = timeOut;
+	}
+
+	public String getProjectRoot() {
+		return projectRoot;
+	}
+
+	public void setProjectRoot(String projectRoot) {
+		this.projectRoot = projectRoot;
+	}
+
+	public String getIfacexFolder() {
+		return ifacexFolder;
+	}
+
+	public void setIfacexFolder(String ifacexFolder) {
+		this.ifacexFolder = ifacexFolder;
+	}
+
+	public String getIfacexSeed() {
+		return ifacexSeed;
+	}
+
+	public void setIfacexSeed(String ifacexSeed) {
+		this.ifacexSeed = ifacexSeed;
+	}
+
+	public LicIfaceXApp100 getIfacexApp() {
+		return ifacexApp;
+	}
+	
 }

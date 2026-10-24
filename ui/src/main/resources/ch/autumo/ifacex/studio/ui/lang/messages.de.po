@@ -346,6 +346,24 @@ msgstr "Als .ifcx speichern"
 msgid "Save the configuration (.ifcx)"
 msgstr "Die Konfiguration speichern (.ifcx)"
 
+msgid "The configuration has unsaved changes.<br>Close anyway and lose them?"
+msgstr "Die Konfiguration hat ungespeicherte Änderungen.<br>Trotzdem schliessen und diese verlieren?"
+
+msgid "The base interface configuration was saved."
+msgstr "Die Basis-Schnittstellenkonfiguration wurde gespeichert."
+
+msgid "The interface configuration was saved."
+msgstr "Die Schnittstellenkonfiguration wurde gespeichert."
+
+msgid "No ifaceX test instance configured.<br>Open <b>General Settings</b> and specify the ifaceX instance folder first."
+msgstr "Keine ifaceX-Testinstanz konfiguriert.<br>Öffnen Sie <b>Allgemeine Einstellungen</b> und legen Sie den ifaceX-Instanz-Ordner fest."
+
+msgid "Interface Configuration"
+msgstr "Schnittstellenkonfiguration"
+
+msgid "untitled"
+msgstr "unbenannt"
+
 msgid "Saved {0}"
 msgstr "{0} gespeichert"
 
@@ -406,9 +424,6 @@ msgstr "Ziel-Entity (z.B. COMPANIES)"
 msgid "field name"
 msgstr "Feldname"
 
-msgid "ifaceX Studio FX — PoC"
-msgstr "ifaceX Studio FX — PoC"
-
 msgid "ifaceX YAML"
 msgstr "ifaceX YAML"
 
@@ -423,6 +438,51 @@ msgstr "Quell-Entity"
 
 msgid "writer (e.g. csv_out)"
 msgstr "Writer (z.B. csv_out)"
+
+msgid "Project Root Folder"
+msgstr "Projekt-Root-Verzeichnis"
+
+msgid "ifaceX Test Instance"
+msgstr "ifaceX Test-Instanz"
+
+msgid "Seed (for encoder)"
+msgstr "Seed (für Encoder)"
+
+msgid "Done"
+msgstr "Fertig"
+
+msgid "ifaceX Instance Directory"
+msgstr "ifaceX-Instanzverzeichnis"
+
+msgid "The seed must be 32 hex characters (it is {0} now)."
+msgstr "Der Seed muss 32 hexadezimale Zeichen haben (es sind jetzt {0})."
+
+msgid "No secret_key_seed found in {0}/cfg/ifacex.cfg."
+msgstr "Kein secret_key_seed in {0}/cfg/ifacex.cfg gefunden."
+
+msgid "Encoder.enc.additional.err"
+msgstr "Bevor Sie Passwörter verschlüsseln können, müssen Sie zunächst unter <b>Allgemeine Einstellungen</b> einen Seed definieren!<br><br>Hinweis: Verwenden Sie denselben ifaceX-Seed, der serverseitig konfiguriert ist! Oder wählen Sie eine Testinstanz aus. <br>Siehe 'ifacex.ifxc' (veraltet: 'ifacex.cfg') und/oder 'ifacex-server.cfg',<br>Konfigurationsschlüssel 'secret_key_seed'."
+
+msgid "<html>All variables listed here are available for read and write access and can be overwritten in any configuration of the interface processor.<br>Variable “RUN_ENV”: Define your environment.</html>"
+msgstr "<html>Alle hier aufgeführten Variablen stehen jedem Lese- und Schreibzugriff zur Verfügung und können in jeder Konfiguration<br>des Schnittstellenprozessors überschrieben werden. Variable «RUN_ENV»: Definieren Sie Ihre Umgebung.</html>"
+
+msgid "<html>Only change the configuration of these interfaces if you know exactly what you're doing (ifaceX developer).</html>"
+msgstr "<html>Ändere die Konfiguration dieser Schnittstellen nur, wenn du genau weisst, was du tust (ifaceX-Entwickler).</html>"
+
+msgid "Registration.active"
+msgstr "Diese Kopie von ifaceX wurde erfolgreich registriert."
+
+msgid "In the following dialog, select the root folder where your purchased autumo ifaceX instance is located (which contains, among other things, the OPERATION.txt file)..."
+msgstr "Wählen Sie im folgenden Dialogfeld den Stammordner aus, in dem sich Ihre erworbene autumo ifaceX-Instanz befindet (der unter anderem die Datei «OPERATION.txt» enthält)..."
+
+msgid "No autumo ifaceX instance was found at the selected location!"
+msgstr "Am ausgewählten Standort wurde keine autumo ifaceX-Instanz gefunden!"
+
+msgid "ifaceX Instance Directory"
+msgstr "ifaceX-Instanzverzeichnis"
+
+msgid "ifaceX Directory"
+msgstr "ifaceX-Verzeichnis"
 
 # ------------------------------------------------------------------------------
 # Engine parameter labels.

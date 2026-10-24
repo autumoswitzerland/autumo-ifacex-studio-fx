@@ -11,29 +11,47 @@
  * is strictly forbidden unless prior written permission is obtained
  * from autumo GmbH.
  */
-package ch.autumo.ifacex.studio.ui;
+package ch.autumo.ifacex.studio.ui.controller;
 
 
 import static ch.autumo.ifacex.studio.ui.StudioHelper.format;
 import static ch.autumo.ifacex.studio.ui.StudioHelper.t;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.ResourceBundle;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import ch.autumo.commons.utils.system.OSUtils;
+import ch.autumo.ifacex.studio.core.LicIfaceXApp100;
+import ch.autumo.ifacex.studio.core.StudioConstants;
 import ch.autumo.ifacex.studio.core.io.PropertiesConfigReader;
 import ch.autumo.ifacex.studio.core.io.YamlConfigReader;
 import ch.autumo.ifacex.studio.core.io.YamlConfigWriter;
 import ch.autumo.ifacex.studio.core.model.IpcConfig;
 import ch.autumo.ifacex.studio.core.model.RwConfig;
+import ch.autumo.ifacex.studio.ui.FormBuilder;
+import ch.autumo.ifacex.studio.ui.RawEditor;
+import ch.autumo.ifacex.studio.ui.StudioApp;
+import ch.autumo.ifacex.studio.ui.StudioHelper;
+import ch.autumo.ifacex.studio.ui.controller.actions.SettingsActions;
+import ch.autumo.ifacex.studio.ui.view.MainView;
 import ch.autumo.ui.Constants;
 import ch.autumo.ui.fx.BaseApp;
 import ch.autumo.ui.fx.control.Icons;
 import ch.autumo.ui.fx.controller.BaseController;
+import ch.autumo.ui.fx.controller.DefaultCodeEditorController;
 import ch.autumo.ui.fx.model.BaseModel;
+import ch.autumo.ui.fx.view.DefaultCodeEditorView;
 import ch.autumo.ui.utils.Helper;
 import ch.autumo.ui.utils.Messages;
 import ch.autumo.ui.utils.UI;
@@ -44,6 +62,8 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonBar;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
@@ -94,11 +114,16 @@ import javafx.stage.Window;
  */
 public class MainController extends BaseController {
 
-    static final String K_ROOT = "ROOT";
-    static final String K_GENERAL = "GENERAL";
-    static final String K_SOURCE = "SOURCE";
-    static final String K_DEST = "DEST";
-    static final String K_ENTITY = "ENTITY";
+	/**
+	 * Logger.
+	 */
+	protected static final Logger LOG = LoggerFactory.getLogger(BaseApp.class.getName());
+	
+    public static final String K_ROOT = "ROOT";
+    public static final String K_GENERAL = "GENERAL";
+    public static final String K_SOURCE = "SOURCE";
+    public static final String K_DEST = "DEST";
+    public static final String K_ENTITY = "ENTITY";
 
     /** Style class that renders a navigation entry in bold (see style/application.css). */
     private static final String NAV_EMPHASIS = "nav-emphasis";
@@ -158,9 +183,15 @@ public class MainController extends BaseController {
     @FXML
     Menu menuConfig;
     @FXML
+    MenuItem miSettings;
+    @FXML
     MenuItem miEncoder;
     @FXML
     MenuItem miJsonFormatter;
+    @FXML
+    MenuItem miBaseInterfaceConfig;
+    @FXML
+    MenuItem miInterfaceConfig;
     @FXML
     MenuItem miRemoveAppData;
     @FXML
@@ -169,6 +200,8 @@ public class MainController extends BaseController {
     MenuItem miWebsite;
     @FXML
     MenuItem miUpdate;
+    @FXML
+    MenuItem miRegistration;
     @FXML
     Menu menuHelp;
     @FXML
@@ -181,7 +214,7 @@ public class MainController extends BaseController {
     Tab tabRaw;
 
     /** Builds the metadata-driven forms; package-private for the UI tests, like the nodes above. */
-    final FormBuilder formBuilder = new FormBuilder(app, this::onModelChanged, this::rebuild);
+    final FormBuilder formBuilder = new FormBuilder((StudioApp) app, this::onModelChanged, this::rebuild);
     private IpcConfig config;
     private Path sourceFile;
     /** Toolbar buttons that only make sense once a configuration is loaded. */
@@ -305,10 +338,14 @@ public class MainController extends BaseController {
         miAbout.setText(t("About"));
         miEncoder.setText(t("Encoder"));
         miJsonFormatter.setText(t("JSON Formatter"));
+        miBaseInterfaceConfig.setText(t("Base Interface Configuration"));
+        miInterfaceConfig.setText(t("Interface Configuration"));
         miRemoveAppData.setText(t("Remove App Data"));
+        miSettings.setText(t("General Settings"));
         miDocumentation.setText(t("Open Online Documentation"));
         miWebsite.setText(t("Visit Website"));
         miUpdate.setText(t("Check for Updates"));
+        miRegistration.setText(t("menu.Reg"));
         tabForm.setText(t("Form"));
         tabRaw.setText(t("Raw"));
         renderStatus();
@@ -440,9 +477,13 @@ public class MainController extends BaseController {
         miEncoder.setGraphic(Icons.create("lock-key", 16));
         miJsonFormatter.setGraphic(Icons.create("brackets-curly", 16));
         miRemoveAppData.setGraphic(Icons.create("trash", 16));
+        miSettings.setGraphic(Icons.create("gear-six", 16));
+        miBaseInterfaceConfig.setGraphic(Icons.create("gear-six", 16));
+        miInterfaceConfig.setGraphic(Icons.create("gear-six", 16));
         miDocumentation.setGraphic(Icons.create("book-open", 16));
         miWebsite.setGraphic(Icons.create("globe-hemisphere-west", 16));
         miUpdate.setGraphic(Icons.create("download-simple", 16));
+        miRegistration.setGraphic(Icons.create("key", 16));
         miAbout.setGraphic(Icons.create("info", 16));
     }
 
@@ -462,12 +503,16 @@ public class MainController extends BaseController {
                 KeyCombination.SHIFT_DOWN));
         miClose.setAccelerator(new KeyCodeCombination(KeyCode.W, KeyCombination.SHORTCUT_DOWN));
         miEncoder.setAccelerator(new KeyCodeCombination(KeyCode.E, KeyCombination.SHORTCUT_DOWN));
+        miBaseInterfaceConfig.setAccelerator(new KeyCodeCombination(KeyCode.B, KeyCombination.SHORTCUT_DOWN));
+        miInterfaceConfig.setAccelerator(new KeyCodeCombination(KeyCode.I, KeyCombination.SHORTCUT_DOWN));
         miRemoveAppData.setAccelerator(
                 new KeyCodeCombination(KeyCode.R, KeyCombination.SHORTCUT_DOWN,
                         KeyCombination.SHIFT_DOWN));
+        miSettings.setAccelerator(new KeyCodeCombination(KeyCode.G, KeyCombination.SHORTCUT_DOWN));
         miDocumentation.setAccelerator(new KeyCodeCombination(KeyCode.F1));
         miWebsite.setAccelerator(new KeyCodeCombination(KeyCode.F2));
         miUpdate.setAccelerator(new KeyCodeCombination(KeyCode.U, KeyCombination.SHORTCUT_DOWN));
+        miRegistration.setAccelerator(new KeyCodeCombination(KeyCode.R, KeyCombination.SHORTCUT_DOWN));
     }
 
     /**
@@ -505,8 +550,20 @@ public class MainController extends BaseController {
         status(t("New configuration"));
     }
 
+    /**
+     * {@code File › Close}: clears the loaded configuration. When it holds unsaved changes the
+     * user is asked first - closing would throw those changes away.
+     */
     @FXML
     void onClose() {
+        if (!confirmDiscardChanges()) {
+            return;
+        }
+        closeConfig();
+    }
+
+    /** The actual close: drops the configuration and shows the empty start state. */
+    private void closeConfig() {
         config = null;
         sourceFile = null;
         rootItem = null;
@@ -516,6 +573,34 @@ public class MainController extends BaseController {
         showEmptyForm();
         setConfigActionsEnabled(false);
         status(t("Closed"));
+    }
+
+    /**
+     * Whether it is safe to leave the current configuration: {@code true} when nothing is loaded or
+     * the configuration was saved, {@code false} when the user cancels the confirmation dialog shown
+     * for a modified configuration.
+     *
+     * <p>Once the user confirms, the answer is remembered: the close request and the window's
+     * {@code showing} listener may both run on the same close, and the question must be asked only
+     * once.</p>
+     *
+     * @return {@code true} when the caller may proceed and discard the state
+     */
+    @Override
+    public boolean confirmDiscardChanges() {
+        if (config == null || !modified) {
+            return true;
+        }
+        if (discardConfirmed) {
+            return true;
+        }
+        final Optional<ButtonType> answer = UI.showFineConfirmationDialog(app,
+                t("The configuration has unsaved changes.<br>Close anyway and lose them?"));
+        if (answer.isPresent() && answer.get().getButtonData() == ButtonBar.ButtonData.OK_DONE) {
+            discardConfirmed = true;
+            return true;
+        }
+        return false;
     }
 
     private void showEmptyForm() {
@@ -585,7 +670,7 @@ public class MainController extends BaseController {
      *
      * @param path file to open
      */
-    void openFile(Path path) {
+    public void openFile(Path path) {
         innerOpen(path.toFile());
     }
 
@@ -866,15 +951,36 @@ public class MainController extends BaseController {
         chooser.setTitle(t("Save as .ifcx"));
         chooser.getExtensionFilters().add(
                 new FileChooser.ExtensionFilter(t("ifaceX YAML (new format)"), "*.ifcx"));
-        if (sourceFile != null) {
-            final String base = sourceFile.getFileName().toString().replaceAll("\\.[^.]+$", "");
-            chooser.setInitialFileName(base + ".ifcx");
-        }
+        chooser.setInitialFileName(suggestedFileName());
         final File out = chooser.showSaveDialog(window());
         if (out == null) {
             return;
         }
         write(out.toPath(), YamlConfigWriter.toText(config));
+    }
+
+    /**
+     * The file name the "Save As…" dialog proposes: the title defined in the form ({@code meta.title})
+     * when there is one, otherwise the name of the loaded file (or a generic default for a brand new
+     * configuration). The title is stripped down to a safe file name.
+     *
+     * @return the suggested file name, always ending in {@code .ifcx}
+     */
+    String suggestedFileName() {
+        if (config != null) {
+            final String title = config.meta().title();
+            if (title != null && !title.isBlank()) {
+                final String safe = title.trim().replaceAll("[\\\\/:*?\"<>|]", "_");
+                if (!safe.isBlank()) {
+                    return safe + ".ifcx";
+                }
+            }
+        }
+        if (sourceFile != null) {
+            final String base = sourceFile.getFileName().toString().replaceAll("\\.[^.]+$", "");
+            return base + ".ifcx";
+        }
+        return t("untitled") + ".ifcx";
     }
 
     /** Whether the path carries the new {@code .ifcx} format (case-insensitive). */
@@ -903,6 +1009,9 @@ public class MainController extends BaseController {
 
     @FXML
     private void onExit() {
+        if (!confirmDiscardChanges()) {
+            return;
+        }
         disposeEditor();
         // The application ends: on macOS hiding the window would only leave the process
         // running in the dock.
@@ -916,7 +1025,7 @@ public class MainController extends BaseController {
      * method, which can block the AWT thread forever. Switching its input methods off first
      * avoids that - see {@link RawEditor#dispose()}.</p>
      */
-    void disposeEditor() {
+    public void disposeEditor() {
         if (rawEditor != null) {
             rawEditor.dispose();
         }
@@ -942,7 +1051,7 @@ public class MainController extends BaseController {
     /**
      * {@code Configuration › Encoder}: opens the framework's encoder pane.
      *
-     * <p>The original Studio filled the pane from its own {@code STR_ENC_MODEL} list ("none",
+     * <p>The legacy Studio filled the pane from its own {@code STR_ENC_MODEL} list ("none",
      * "Base64 - SHA3-256 AES", …) and required a 32 character key from the general settings that had
      * to match the engine's secret. The framework pane is used with {@code internalEncryption=false}
      * so it reads the application's <em>unique</em> security key ({@code secret_key_seed}) from the
@@ -962,12 +1071,217 @@ public class MainController extends BaseController {
         UI.showJsonFormatter(app);
     }
 
+    /** {@code Configuration › Base Interface Configuration}: shows the ifaceX instance's
+     * {@code cfg/ifacex.yaml} (or legacy {@code cfg/ifacex.cfg}) in a code editor so it can be 
+     * viewed and edited. Requires a configured ifaceX test instance; otherwise a fine dialog informs
+     * the user and the editor does not open. */
+    @FXML
+    private void onBaseInterfaceConfig() {
+        final String ifacexFolder = app.getConfigurationParameter(StudioConstants.PROP_KEY_IFACEX_FOLDER);
+        if (ifacexFolder == null || ifacexFolder.isBlank()) {
+            UI.showFineWarningDialog(app,
+                    t("No ifaceX test instance configured.<br>Open <b>General Settings</b> and specify the ifaceX instance folder first."));
+            return;
+        }
+        
+        boolean yaml = false;
+        boolean cfg = false;
+        Path validPath = null;        
+        Path baseInterfacesYml = java.nio.file.Paths.get(ifacexFolder, "cfg", "ifacex.yaml");
+        Path baseInterfacesCfg = java.nio.file.Paths.get(ifacexFolder, "cfg", "ifacex.cfg");
+        if (Files.isReadable(baseInterfacesYml)) {
+        	yaml = true;
+        	validPath = baseInterfacesYml;
+        } else {
+            if (Files.isReadable(baseInterfacesCfg)) {
+            	cfg = true;
+            	validPath = baseInterfacesCfg;
+            }
+        }
+
+        if (!yaml && !cfg) {
+            UI.showFineWarningDialog(app,
+                    format("The interfaces configuration <b>{0}</b> or the legacy file <b>{1}</b> could not be read.",
+                    		baseInterfacesYml.toString(), baseInterfacesCfg.toString()));
+            return;
+        }
+        
+        final Stage stage = new Stage();
+        stage.setResizable(true);
+        stage.setMinHeight(480);
+        stage.setMinWidth(640);
+
+        final DefaultCodeEditorView view = new DefaultCodeEditorView(app, stage, null);
+        final DefaultCodeEditorController controller =
+                (DefaultCodeEditorController) UI.setup(app, app.getBaseResourcePath(), view, Constants.VIEW_CODE_EDITOR);
+        controller.customize(t("Base Interface Configuration"), "gear-six", null);
+
+        final Path currPath = validPath;
+        try {
+            view.setSourceFile(currPath);
+        } catch (IOException e) {
+            UI.showFineWarningDialog(app,
+                    format("Could not read {0}: {1}", currPath, e.getMessage()));
+            return;
+        }
+        
+        final Button btnSave = new Button(t("Save"));
+        btnSave.setOnAction(_ -> {
+            try {
+                Files.writeString(currPath, view.getText());
+                UI.showFineInformationDialog(app,
+                        t("The base interface configuration was saved."));
+            } catch (IOException e) {
+                UI.showFineWarningDialog(app,
+                        format("Could not save {0}: {1}", currPath, e.getMessage()));
+            }
+        });
+
+        final Button btnClose = new Button(t("Close"));
+        btnClose.setOnAction(_ -> stage.close());
+        
+        controller.setButtons(List.of(btnSave));
+        controller.setHelpText(t(
+                "<html>All variables listed here are available for read and write access and can be overwritten in any configuration of the interface processor.<br>Variable “RUN_ENV”: Define your environment.</html>"));
+        
+        stage.setTitle(t("Base Interface Configuration"));
+        for (final java.net.URL url : Helper.getApplicationIcons(app)) {
+            stage.getIcons().add(new Image(url.toExternalForm()));
+        }
+        stage.initModality(javafx.stage.Modality.NONE);
+        if (app.getPrimaryStage() != null && app.getPrimaryStage() != stage) {
+            stage.initOwner(app.getPrimaryStage());
+        }
+        stage.show();
+        stage.centerOnScreen();        
+    }
+    
+    /** {@code Configuration › Interface Configuration}: shows the ifaceX instance's
+     * {@code cfg/interfaces.cfg} in a code editor so it can be viewed and edited. Requires a
+     * configured ifaceX test instance; otherwise a fine dialog informs the user and the editor
+     * does not open. */
+    @FXML
+    private void onInterfaceConfig() {
+        final String ifacexFolder = app.getConfigurationParameter(StudioConstants.PROP_KEY_IFACEX_FOLDER);
+        if (ifacexFolder == null || ifacexFolder.isBlank()) {
+            UI.showFineWarningDialog(app,
+                    t("No ifaceX test instance configured.<br>Open <b>General Settings</b> and specify the ifaceX instance folder first."));
+            return;
+        }
+        final Path interfacesCfg = java.nio.file.Paths.get(ifacexFolder, "cfg", "interfaces.cfg");
+        if (!Files.isReadable(interfacesCfg)) {
+            UI.showFineWarningDialog(app,
+                    format("The interfaces configuration <b>{0}</b> could not be read.",
+                            interfacesCfg.toString()));
+            return;
+        }
+
+        final Stage stage = new Stage();
+        stage.setResizable(true);
+        stage.setMinHeight(480);
+        stage.setMinWidth(640);
+
+        final DefaultCodeEditorView view = new DefaultCodeEditorView(app, stage, null);
+        final DefaultCodeEditorController controller =
+                (DefaultCodeEditorController) UI.setup(app, app.getBaseResourcePath(), view, Constants.VIEW_CODE_EDITOR);
+        controller.customize(t("Interface Configuration"), "gear-six", null);
+
+        try {
+            view.setSourceFile(interfacesCfg);
+        } catch (IOException e) {
+            UI.showFineWarningDialog(app,
+                    format("Could not read {0}: {1}", interfacesCfg, e.getMessage()));
+            return;
+        }
+
+        final Button btnSave = new Button(t("Save"));
+        btnSave.setOnAction(_ -> {
+            try {
+                Files.writeString(interfacesCfg, view.getText());
+                UI.showFineInformationDialog(app,
+                        t("The interface configuration was saved."));
+            } catch (IOException e) {
+                UI.showFineWarningDialog(app,
+                        format("Could not save {0}: {1}", interfacesCfg, e.getMessage()));
+            }
+        });
+
+        final Button btnClose = new Button(t("Close"));
+        btnClose.setOnAction(_ -> stage.close());
+        
+        controller.setButtons(List.of(btnSave));
+        controller.setHelpText(t(
+                "<html>Only change the configuration of these interfaces if you know exactly what you're doing (ifaceX developer).</html>"));
+        
+        stage.setTitle(t("Interface Configuration"));
+        for (final java.net.URL url : Helper.getApplicationIcons(app)) {
+            stage.getIcons().add(new Image(url.toExternalForm()));
+        }
+        stage.initModality(javafx.stage.Modality.NONE);
+        if (app.getPrimaryStage() != null && app.getPrimaryStage() != stage) {
+            stage.initOwner(app.getPrimaryStage());
+        }
+        stage.show();
+        stage.centerOnScreen();
+    }
+
     /** {@code Configuration › Remove App Data}: the framework's pane (it asks before deleting). */
     @FXML
     private void onRemoveAppData() {
         UI.showRemovePane(app);
     }
 
+    /** {@code Configuration › General Settings}: opens the settings dialog of the Studio. */
+    @FXML
+    private void onSettings() {
+    	UI.showPane(
+    			app, 
+    			null,
+    			new SettingsActions(),
+    			Constants.VIEW_DEFAULT_INFO, 
+    			t("General Settings"),
+    			"gear-six" 
+    		);	    	
+    }
+
+    @FXML
+    private void onRegister() {
+        UI.showFineInformationDialog(
+        		app, 
+        		t("In the following dialog, select the root folder where your purchased autumo ifaceX instance is located (which contains, among other things, the OPERATION.txt file)...") 
+        	);
+    	
+        final StudioApp studioApp = (StudioApp) app;
+    	String ifacexFolder = Helper.chooseFolder(studioApp.getIfacexFolder(), stage, t("ifaceX Instance Directory"), t("ifaceX Directory"));
+    	
+    	if (ifacexFolder != null && ifacexFolder.length() != 0) {
+	    	ifacexFolder = ifacexFolder.trim();
+	    	if (!ifacexFolder.endsWith(OSUtils.FILE_SEPARATOR))
+	    		ifacexFolder = ifacexFolder + OSUtils.FILE_SEPARATOR;
+    	}
+    	if (!StudioHelper.checkIfacexFolder(studioApp, ifacexFolder, stage)) {
+    		UI.showFineWarningDialog(app, t("No autumo ifaceX instance was found at the selected location!"));
+    		return;
+    	}    	
+    	final LicIfaceXApp100 licApp = new LicIfaceXApp100();
+    	try {
+    		licApp.initializeBaseConfig(ifacexFolder);
+		} catch (Exception e) {
+            LOG.error("Couldn't read base configuration from ifacex instance.", e);
+            UI.showFineWarningDialog(app, t("No autumo ifaceX instance was found at the selected location!"));
+        	return;
+		}
+    	// further checks
+    	final String licPath = licApp.getLicensePath();
+    	final String ifFolder = ifacexFolder + StudioConstants.IFACEX_PATH_REL_INTERFACES;
+    	if (!new File(licPath).exists() || !new File(ifFolder).exists()) {
+    		UI.showFineWarningDialog(app, t("No autumo ifaceX instance was found at the selected location!"));
+        	return;
+    	}
+    	
+    	UI.showRegistrationPane(app, licApp, t("Registration.title"));
+    }
+    
     /** {@code Help › Open Online Documentation}: opens {@code url.documentation} from app.cfg. */
     @FXML
     private void onDocumentation() {
@@ -992,6 +1306,9 @@ public class MainController extends BaseController {
 
     /** Whether the shown state is the modified one — compared as a flag, not as translated text. */
     private boolean modified = false;
+
+    /** Set once the user agreed to close a modified configuration; reset when the state changes. */
+    private boolean discardConfirmed = false;
 
     /** Sets the state part of the status bar and re-renders it. */
     private void status(String text) {

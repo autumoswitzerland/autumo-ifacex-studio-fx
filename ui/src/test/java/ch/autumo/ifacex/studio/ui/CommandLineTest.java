@@ -24,6 +24,7 @@ import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
+import ch.autumo.ifacex.studio.core.StudioConstants;
 import ch.autumo.ui.utils.CommandLine;
 
 /**

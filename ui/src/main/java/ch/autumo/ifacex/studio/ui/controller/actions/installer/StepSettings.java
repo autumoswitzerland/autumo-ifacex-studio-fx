@@ -11,10 +11,12 @@
  * is strictly forbidden unless prior written permission is obtained
  * from autumo GmbH.
  */
-package ch.autumo.ifacex.studio.ui;
+package ch.autumo.ifacex.studio.ui.controller.actions.installer;
 
 import java.io.File;
 
+import ch.autumo.ifacex.studio.core.StudioConstants;
+import ch.autumo.ifacex.studio.ui.StudioHelper;
 import ch.autumo.ui.exception.ProcessException;
 import ch.autumo.ui.fx.controller.actions.installer.BaseStep;
 import ch.autumo.ui.utils.Helper;
@@ -89,7 +91,7 @@ public class StepSettings extends BaseStep {
         final CheckBox playSounds = new CheckBox(StudioHelper.t("Play sounds?"));
         playSounds.setSelected(readBooleanParameter(StudioConstants.PROP_KEY_PLAY_SOUNDS, true));
         final CheckBox playJingle = new CheckBox(StudioHelper.t("Play jingle?"));
-        playJingle.setSelected(readBooleanParameter(StudioConstants.PROP_KEY_PLAY_JINGLE, true));
+        playJingle.setSelected(readBooleanParameter(StudioConstants.PROP_KEY_PLAY_JINGLE, false));
 
         grid.add(new Label(StudioHelper.t("Configuration root folder:")), 0, 0);
         grid.add(rootField, 1, 0);

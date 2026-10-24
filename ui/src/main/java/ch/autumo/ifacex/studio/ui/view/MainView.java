@@ -11,8 +11,10 @@
  * is strictly forbidden unless prior written permission is obtained
  * from autumo GmbH.
  */
-package ch.autumo.ifacex.studio.ui;
+package ch.autumo.ifacex.studio.ui.view;
 
+import ch.autumo.ifacex.studio.ui.StudioApp;
+import ch.autumo.ifacex.studio.ui.controller.MainController;
 import ch.autumo.ui.fx.BaseApp;
 import ch.autumo.ui.fx.view.BaseBorderView;
 import javafx.stage.Stage;

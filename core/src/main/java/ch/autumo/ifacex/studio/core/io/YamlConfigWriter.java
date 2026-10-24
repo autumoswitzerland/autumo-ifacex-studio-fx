@@ -26,6 +26,7 @@ import ch.autumo.ifacex.studio.core.model.EntityConfig;
 import ch.autumo.ifacex.studio.core.model.FieldMappingRec;
 import ch.autumo.ifacex.studio.core.model.IpcConfig;
 import ch.autumo.ifacex.studio.core.model.RwConfig;
+import ch.autumo.ifacex.studio.core.model.Secret;
 
 /**
  * Writes the model to the new {@code .ifcx} (YAML) format.
@@ -56,6 +57,10 @@ public final class YamlConfigWriter {
     static final String K_SOURCES = "sources";
     static final String K_DESTINATIONS = "destinations";
     static final String K_GENERAL = "general";
+    /** The key of the encryption mode of a secret in the structured form. */
+    static final String K_ENC = "enc";
+    /** The key of the encoded value of a secret in the structured form. */
+    static final String K_ENC_VALUE = "value";
 
     static final String K_NAME = "name";
     static final String K_PARAMS = "params";
@@ -108,6 +113,8 @@ public final class YamlConfigWriter {
     public static Map<String, Object> toTree(IpcConfig cfg) {
         final Map<String, Object> root = new LinkedHashMap<>();
         root.put(K_FORMAT, FORMAT_VERSION);
+        // The global parameters come first: they concern the whole configuration.
+        root.put(K_GENERAL, values(cfg.general()));
         root.put(K_SOURCE_INTERFACE, cfg.sourceInterface());
         root.put(K_DESTINATION_INTERFACES, new ArrayList<>(cfg.destinationInterfaces()));
         root.put(K_PROCESS_SOURCE_ENTITIES, new ArrayList<>(cfg.processSourceEntities()));
@@ -124,18 +131,49 @@ public final class YamlConfigWriter {
         }
         root.put(K_DESTINATIONS, destinations);
 
-        root.put(K_GENERAL, new LinkedHashMap<>(cfg.general()));
         return root;
+    }
+
+    /**
+     * The parameters of a section as the YAML tree holds them: an encoded secret becomes the
+     * structured object of the new format ({@code {enc: 3, value: "..." }}), a plain value
+     * stays a string.
+     *
+     * @param params the parameters of the model
+     * @return the parameters for the YAML tree
+     */
+    private static Map<String, Object> values(Map<String, Object> params) {
+        final Map<String, Object> out = new LinkedHashMap<>();
+        for (final Map.Entry<String, Object> p : params.entrySet()) {
+            out.put(p.getKey(), value(p.getValue()));
+        }
+        return out;
+    }
+
+    /**
+     * The value of a parameter as the YAML tree holds it.
+     *
+     * @param value the value of the model
+     * @return the value for the YAML tree
+     */
+    private static Object value(Object value) {
+        if (value instanceof Secret secret) {
+            final YamlEmitter.InlineMap out = new YamlEmitter.InlineMap();
+            out.put(K_ENC, secret.mode());
+            out.put(K_ENC_VALUE, secret.value());
+            return out;
+        }
+        return value;
     }
 
     private static Map<String, Object> section(RwConfig rw) {
         final Map<String, Object> m = new LinkedHashMap<>();
         m.put(K_NAME, rw.name());
         if (!rw.global().isEmpty()) {
-            m.put(K_PARAMS, new LinkedHashMap<>(rw.global()));
+            m.put(K_PARAMS, values(rw.global()));
         }
         if (!rw.wildcard().isEmpty()) {
-            m.put(K_DEFAULTS, new LinkedHashMap<>(rw.wildcard()));
+            m.put(K_DEFAULTS, values(rw.wildcard()));
         }
         if (!rw.entities().isEmpty()) {
             final Map<String, Object> entities = new LinkedHashMap<>();
@@ -148,7 +186,7 @@ public final class YamlConfigWriter {
     }
 
     private static Map<String, Object> entity(EntityConfig ec) {
-        final Map<String, Object> m = new LinkedHashMap<>(ec.settings());
+        final Map<String, Object> m = values(ec.settings());
         if (!ec.fields().isEmpty()) {
             m.put(K_FIELDS, new ArrayList<>(ec.fields()));
         }

@@ -194,6 +194,13 @@ Rules:
 - An **encrypted** value is an object `{ enc: <mode>, value: <base64> }`, modes `1..4`.
 - The Studio keeps a per-field **"encrypted yes/no"** toggle (as today) and chooses the
   mode; the built-in **Encoder** menu item produces the object.
+
+  **Implemented.** The model holds a secret as a structured value (`Secret`: the mode and the
+  encoded value), the import converts the legacy notation `{mode:value}` into it and the
+  properties writer converts it back for the engine. The YAML writer writes the object inline
+  (`{enc: 3, value: "..."}`), the YAML reader reads it back. The **Encoder** has a *format*
+  option: `properties` (the legacy notation, for the engine) or `yaml` (the structured object,
+  for the new format).
 - **Embedded secrets:** the legacy format can embed a marker *inside* a larger string —
   most notably `rest_in_*_additional_headers` ("Can contain encrypted header values within
   key-value-pairs"). In the structured format such fields become **structured lists**, so

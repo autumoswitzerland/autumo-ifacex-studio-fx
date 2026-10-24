@@ -18,3 +18,12 @@ msgstr "About ifaceX Studio FX"
 
 msgid "application.name"
 msgstr "ifaceX Studio FX"
+
+msgid "Encoder.enc.additional.err"
+msgstr "Before you can encrypt passwords, you must first define a seed under <b>General Settings</b>!<br><br>Note: Use the same ifaceX seed that is configured on the server side! Or select a test instance. <br>See ‘ifacex.ifxc’ (deprecated: ‘ifacex.cfg’) and/or ‘ifacex-server.cfg’,<br>configuration key ‘secret_key_seed’."
+
+msgid "<html>All variables listed here are available for read and write access and can be overwritten in any configuration of the interface processor.<br>Variable “RUN_ENV”: Define your environment.</html>"
+msgstr "<html>All variables listed here are available for read and write access and can be overwritten in any configuration of the interface processor.<br>Variable “RUN_ENV”: Define your environment.</html>"
+
+msgid "Registration.notactive"
+msgstr "This copy of ifaceX is not registered."

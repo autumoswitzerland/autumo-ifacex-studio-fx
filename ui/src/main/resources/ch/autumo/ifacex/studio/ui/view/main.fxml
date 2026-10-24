@@ -44,11 +44,20 @@
                      wired here (Encoder, JSON Formatter, Remove App Data) — see docs/11 for the
                      two config editors that the new Studio shows in the navigation tree instead. -->
                 <Menu fx:id="menuConfig" text="Configuration">
+                    <MenuItem fx:id="miSettings" text="General Settings" onAction="#onSettings"/>
+                    <SeparatorMenuItem/>
+                    <MenuItem fx:id="miBaseInterfaceConfig" text="Base interface configuration" onAction="#onBaseInterfaceConfig"/>
+                    <MenuItem fx:id="miInterfaceConfig" text="Interface Configuration" onAction="#onInterfaceConfig"/>
+                    <SeparatorMenuItem/>
                     <MenuItem fx:id="miEncoder" text="Encoder" onAction="#onEncoder"/>
                     <MenuItem fx:id="miJsonFormatter" text="JSON Formatter" onAction="#onJsonFormatter"/>
                     <SeparatorMenuItem/>
                     <MenuItem fx:id="miRemoveAppData" text="Remove App Data"
                               onAction="#onRemoveAppData"/>
+                </Menu>
+                <Menu fx:id="menuRegister" text="Registration">
+                    <MenuItem fx:id="miRegistration" text="Register an ifaceX instance"
+                              onAction="#onRegister"/>
                 </Menu>
                 <Menu fx:id="menuHelp" text="Help">
                     <MenuItem fx:id="miDocumentation" text="Open Online Documentation"

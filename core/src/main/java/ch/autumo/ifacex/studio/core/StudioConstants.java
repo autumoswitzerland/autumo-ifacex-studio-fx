@@ -11,7 +11,9 @@
  * is strictly forbidden unless prior written permission is obtained
  * from autumo GmbH.
  */
-package ch.autumo.ifacex.studio.ui;
+package ch.autumo.ifacex.studio.core;
+
+import ch.autumo.commons.utils.system.OSUtils;
 
 /**
  * Constants of the Studio's own application configuration.
@@ -28,11 +30,21 @@ package ch.autumo.ifacex.studio.ui;
  */
 public final class StudioConstants {
 
+    /** Version */
+    public static final String VERSION = "3.0.0";
+	
     /** Base resource path of the Studio UI; must match {@link StudioApp#getBaseResourcePath()}. */
     public static final String BASE = "/ch/autumo/ifacex/studio/ui/";
 	
+    /** IPC timeout. */
+    public static final String PROP_KEY_TIMEOUT = "timeout";
+    
     /** Root folder of the configuration files, e.g. {@code /home/user/ifaceXProjects}. */
     public static final String PROP_KEY_PROJECT_ROOT = "project.root";
+
+    /** Folder of the ifaceX test instance whose {@code cfg/ifacex.cfg} provides the
+     * encryption seed ({@code secret_key_seed}). */
+    public static final String PROP_KEY_IFACEX_FOLDER = "ifaceXFolder";
 
     /** Whether the Studio plays UI sounds ({@code true}/{@code false}). */
     public static final String PROP_KEY_PLAY_SOUNDS = "play.sounds";
@@ -55,4 +67,10 @@ public final class StudioConstants {
     /** Plain YAML spelling the open dialog also accepts. */
     public static final String EXT_YML = ".yml";
 
+    public static final String IFACEX_PATH_REL_INTERFACES = "interfaces" + OSUtils.FILE_SEPARATOR;
+    public static final String IFACEX_PATH_REL_LIC = "lic" + OSUtils.FILE_SEPARATOR;
+    public static final String IFACEX_FILE_REL_00_TEMPLATE = IFACEX_PATH_REL_INTERFACES +  "00_console_out.template";
+    public static final String IFACEX_FILE_BASE_CFG = "cfg" + OSUtils.FILE_SEPARATOR + "base.ifc";
+    public static final String IFACEX_FILE_INTERFACES_CFG = "cfg" + OSUtils.FILE_SEPARATOR + "interfaces.cfg";
+    
 }

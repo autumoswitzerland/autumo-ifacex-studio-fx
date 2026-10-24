@@ -28,6 +28,7 @@ import ch.autumo.ifacex.studio.core.model.FieldMappingRec;
 import ch.autumo.ifacex.studio.core.model.IpcConfig;
 import ch.autumo.ifacex.studio.core.model.KeyModel;
 import ch.autumo.ifacex.studio.core.model.RwConfig;
+import ch.autumo.ifacex.studio.core.model.Secret;
 
 /**
  * Writes the model back to the legacy {@code .ifacex} (Java properties) format.
@@ -58,6 +59,20 @@ public final class PropertiesConfigWriter {
     }
 
     /**
+     * The value of a parameter as the engine reads it: an encoded secret in its legacy notation
+     * ({@code {mode:value}}), a plain value as it is.
+     *
+     * @param value the value of the model
+     * @return the text for the engine
+     */
+    private static String value(Object value) {
+        if (value instanceof Secret secret) {
+            return secret.toLegacy();
+        }
+        return value == null ? "" : value.toString();
+    }
+
+    /**
      * Flattens the model back to the canonical key/value map, without the meta keys.
      *
      * @param cfg configuration to flatten
@@ -68,16 +83,16 @@ public final class PropertiesConfigWriter {
         flat.put(KeyModel.SOURCE_INTERFACE, nullToEmpty(cfg.sourceInterface()));
         flat.put(KeyModel.DESTINATION_INTERFACES, String.join(",", cfg.destinationInterfaces()));
         flat.put(KeyModel.PROCESS_SOURCE_ENTITIES, String.join(",", cfg.processSourceEntities()));
-        flat.putAll(cfg.general());
+        cfg.general().forEach((p, v) -> flat.put(p, value(v)));
 
         for (final RwConfig rw : cfg.sections()) {
             final String n = rw.name();
-            rw.global().forEach((p, v) -> flat.put(n + "_" + p, v));
-            rw.wildcard().forEach((p, v) -> flat.put(n + "_" + KeyModel.WILDCARD + "_" + p, v));
+            rw.global().forEach((p, v) -> flat.put(n + "_" + p, value(v)));
+            rw.wildcard().forEach((p, v) -> flat.put(n + "_" + KeyModel.WILDCARD + "_" + p, value(v)));
             for (final Map.Entry<String, EntityConfig> en : rw.entities().entrySet()) {
                 final String entity = en.getKey();
                 final EntityConfig ec = en.getValue();
-                ec.settings().forEach((p, v) -> flat.put(n + "_" + entity + "_" + p, v));
+                ec.settings().forEach((p, v) -> flat.put(n + "_" + entity + "_" + p, value(v)));
                 if (!ec.fields().isEmpty()) {
                     flat.put(n + "_" + entity + "_fields", String.join(",", ec.fields()));
                 }

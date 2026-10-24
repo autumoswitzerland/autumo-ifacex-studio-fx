@@ -67,7 +67,7 @@ import javafx.scene.layout.Pane;
  *       component is removed - that call can block the AWT thread for ever.</li>
  * </ul>
  */
-final class RawEditor {
+public final class RawEditor {
 
     /** Resource path of the framework's RSyntaxTextArea theme. */
     private static final String THEME_RESOURCE = "/ch/autumo/ui/cfg/autumo-edit.xml";
@@ -111,7 +111,7 @@ final class RawEditor {
      * JavaFX thread is never blocked by it; the container is filled as soon as the widget is
      * there.
      */
-    RawEditor() {
+    public RawEditor() {
         this.root.getStyleClass().add("raw-editor");
         SwingUtilities.invokeLater(this::buildEditor);
     }
@@ -189,7 +189,7 @@ final class RawEditor {
      *
      * @param onEdit the listener, or {@code null} to remove it
      */
-    void setOnEdit(Runnable onEdit) {
+    public void setOnEdit(Runnable onEdit) {
         this.onEdit = onEdit;
     }
 
@@ -268,7 +268,7 @@ final class RawEditor {
     }
 
     /** The JavaFX container holding the editor; this is the node the tab shows. */
-    Pane node() {
+    public Pane node() {
         return this.root;
     }
 
@@ -281,7 +281,7 @@ final class RawEditor {
      *
      * @return the text
      */
-    String getText() {
+    public String getText() {
         return this.text;
     }
 
@@ -293,7 +293,7 @@ final class RawEditor {
      *
      * @param text the text
      */
-    void setText(String text) {
+    public void setText(String text) {
         final String value = text == null ? "" : text;
         this.text = value;
         final RSyntaxTextArea area = this.textArea;
@@ -317,7 +317,7 @@ final class RawEditor {
      * <p>The work goes to the AWT event dispatch thread and is <b>not</b> waited for: the
      * JavaFX thread must not block on the AWT thread, neither here nor anywhere else.</p>
      */
-    void dispose() {
+    public void dispose() {
         final RTextScrollPane pane = this.scrollPane;
         if (pane == null) {
             return;

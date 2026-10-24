@@ -47,6 +47,8 @@ import ch.autumo.ifacex.studio.core.io.YamlConfigReader;
 import ch.autumo.ifacex.studio.core.io.YamlConfigWriter;
 import ch.autumo.ifacex.studio.core.meta.FieldCatalog;
 import ch.autumo.ifacex.studio.core.model.IpcConfig;
+import ch.autumo.ifacex.studio.ui.controller.MainController;
+import ch.autumo.ifacex.studio.ui.view.MainView;
 import ch.autumo.ui.Constants;
 import ch.autumo.ui.fx.control.Icons;
 import ch.autumo.ui.fx.controller.DefaultInfoController;

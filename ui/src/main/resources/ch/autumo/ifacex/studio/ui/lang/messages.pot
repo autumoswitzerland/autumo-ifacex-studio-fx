@@ -331,6 +331,24 @@ msgstr ""
 msgid "Save the configuration (.ifcx)"
 msgstr ""
 
+msgid "The configuration has unsaved changes.<br>Close anyway and lose them?"
+msgstr ""
+
+msgid "The base interface configuration was saved."
+msgstr ""
+
+msgid "The interface configuration was saved."
+msgstr ""
+
+msgid "No ifaceX test instance configured.<br>Open <b>General Settings</b> and specify the ifaceX instance folder first."
+msgstr ""
+
+msgid "Interface Configuration"
+msgstr ""
+
+msgid "untitled"
+msgstr ""
+
 msgid "Saved {0}"
 msgstr ""
 
@@ -391,9 +409,6 @@ msgstr ""
 msgid "field name"
 msgstr ""
 
-msgid "ifaceX Studio FX — PoC"
-msgstr ""
-
 msgid "ifaceX YAML"
 msgstr ""
 
@@ -407,6 +422,51 @@ msgid "source entity"
 msgstr ""
 
 msgid "writer (e.g. csv_out)"
+msgstr ""
+
+msgid "Project Root Folder"
+msgstr ""
+
+msgid "ifaceX Test Instance"
+msgstr ""
+
+msgid "Seed (for encoder)"
+msgstr ""
+
+msgid "Done"
+msgstr ""
+
+msgid "ifaceX Instance Directory"
+msgstr ""
+
+msgid "The seed must be 32 hex characters (it is {0} now)."
+msgstr ""
+
+msgid "No secret_key_seed found in {0}/cfg/ifacex.cfg."
+msgstr ""
+
+msgid "Encoder.enc.additional.err"
+msgstr ""
+
+msgid "<html>All variables listed here are available for read and write access and can be overwritten in any configuration of the interface processor.<br>Variable “RUN_ENV”: Define your environment.</html>"
+msgstr ""
+
+msgid "<html>Only change the configuration of these interfaces if you know exactly what you're doing (ifaceX developer).</html>"
+msgstr ""
+
+msgid "Registration.notactive"
+msgstr ""
+
+msgid "In the following dialog, select the root folder where your purchased autumo ifaceX instance is located (which contains, among other things, the OPERATION.txt file)..."
+msgstr ""
+
+msgid "No autumo ifaceX instance was found at the selected location!"
+msgstr ""
+
+msgid "ifaceX Instance Directory"
+msgstr ""
+
+msgid "ifaceX Directory"
 msgstr ""
 
 # ------------------------------------------------------------------------------

@@ -31,6 +31,7 @@ import ch.autumo.ifacex.studio.core.model.IpcConfig;
 import ch.autumo.ifacex.studio.core.model.KeyModel;
 import ch.autumo.ifacex.studio.core.model.Meta;
 import ch.autumo.ifacex.studio.core.model.RwConfig;
+import ch.autumo.ifacex.studio.core.model.Secret;
 
 /**
  * Reads a legacy {@code .ifacex} (Java properties) configuration into the in-memory model.
@@ -115,8 +116,9 @@ public final class PropertiesConfigReader {
 
         final List<String> entities = inferEntities(flat, cfg);
 
-        final Map<String, TreeMap<Integer, FieldMappingRec>> stdFields = new LinkedHashMap<>();
-        final Map<String, TreeMap<Integer, FieldMappingRec>> insFields = new LinkedHashMap<>();
+        // The mapping fields of every scope, ordered by their index: the order of the file is
+        // kept, no matter whether a field is inserted or not.
+        final Map<String, TreeMap<Integer, FieldMappingRec>> mapFields = new LinkedHashMap<>();
 
         for (final Map.Entry<String, String> e : flat.entrySet()) {
             final String key = e.getKey();
@@ -130,7 +132,7 @@ public final class PropertiesConfigReader {
 
             final String prefix = KeyModel.rwPrefix(key);
             if (prefix == null) {
-                cfg.general().put(key, val);
+                cfg.general().put(key, value(val));
                 continue;
             }
 
@@ -140,7 +142,7 @@ public final class PropertiesConfigReader {
             final String rest = KeyModel.remainder(key, prefix);
 
             if (rest.startsWith(KeyModel.WILDCARD + "_")) {
-                rw.wildcard().put(rest.substring(2), val);
+                rw.wildcard().put(rest.substring(2), value(val));
                 continue;
             }
 
@@ -157,7 +159,7 @@ public final class PropertiesConfigReader {
             }
 
             if (entity == null) {
-                rw.global().put(rest, val);
+                rw.global().put(rest, value(val));
                 continue;
             }
 
@@ -178,22 +180,19 @@ public final class PropertiesConfigReader {
                 }
                 final String[] parts = splitFirstColon(val);
                 final FieldMappingRec rec = new FieldMappingRec(parts[0], parts[1], insert);
-                (insert ? insFields : stdFields)
-                        .computeIfAbsent(scopeKey(prefix, entity), _ -> new TreeMap<>())
-                        .put(idx, rec);
+                mapFields.computeIfAbsent(scopeKey(prefix, entity), _ -> new TreeMap<>()).put(idx, rec);
                 ec.ensureMapping();
             } else {
-                ec.settings().put(param, val);
+                ec.settings().put(param, value(val));
             }
         }
 
-        assembleMappings(cfg, stdFields, insFields);
+        assembleMappings(cfg, mapFields);
         return cfg;
     }
 
     private static void assembleMappings(IpcConfig cfg,
-            Map<String, TreeMap<Integer, FieldMappingRec>> stdFields,
-            Map<String, TreeMap<Integer, FieldMappingRec>> insFields) {
+            Map<String, TreeMap<Integer, FieldMappingRec>> mapFields) {
         for (final RwConfig rw : cfg.sections()) {
             for (final Map.Entry<String, EntityConfig> en : rw.entities().entrySet()) {
                 final EntityConfig ec = en.getValue();
@@ -202,16 +201,24 @@ public final class PropertiesConfigReader {
                 }
                 final String k = scopeKey(rw.name(), en.getKey());
                 ec.mapping().fields().clear();
-                final TreeMap<Integer, FieldMappingRec> std = stdFields.get(k);
-                if (std != null) {
-                    ec.mapping().fields().addAll(std.values());
-                }
-                final TreeMap<Integer, FieldMappingRec> ins = insFields.get(k);
-                if (ins != null) {
-                    ec.mapping().fields().addAll(ins.values());
+                final TreeMap<Integer, FieldMappingRec> fields = mapFields.get(k);
+                if (fields != null) {
+                    ec.mapping().fields().addAll(fields.values());
                 }
             }
         }
+    }
+
+    /**
+     * The value of a parameter as the model holds it: an encoded secret becomes a
+     * {@link Secret} (the structured form of the new format), a plain value stays a string.
+     *
+     * @param val the value of the legacy file
+     * @return the value of the model
+     */
+    private static Object value(String val) {
+        final Secret secret = Secret.parseLegacy(val);
+        return secret != null ? secret : val;
     }
 
     /**
