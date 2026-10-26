@@ -42,8 +42,8 @@ class ParameterCatalogTest {
         assertFalse(ParameterCatalog.entriesFor("rest_in").isEmpty());
         assertFalse(ParameterCatalog.entriesFor("db_out").isEmpty());
         assertFalse(ParameterCatalog.entriesFor("mail_out").isEmpty());
-        assertTrue(ParameterCatalog.entriesFor("code").isEmpty());
-        assertTrue(ParameterCatalog.entriesFor("exec").isEmpty());
+        assertFalse(ParameterCatalog.entriesFor("code").isEmpty());
+        assertFalse(ParameterCatalog.entriesFor("exec").isEmpty());
         assertTrue(ParameterCatalog.entriesFor("unknown_type").isEmpty());
     }
 

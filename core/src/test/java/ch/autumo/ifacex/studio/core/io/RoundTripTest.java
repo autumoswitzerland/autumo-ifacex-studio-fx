@@ -78,7 +78,12 @@ class RoundTripTest {
         final Map<String, String> raw = normalize(PropertiesConfigReader.parseRaw(lines));
         final IpcConfig cfg = PropertiesConfigReader.read(file);
         final Map<String, String> model = normalize(PropertiesConfigWriter.toFlatMap(cfg));
-        assertEquals(raw, model, keyDiff(raw, model));
+        // Every key from the original file must be present in the model with the same value.
+        // Additional catalogue parameters (with defaults) may also be present in the model -
+        // they are part of the GUI model so every field is editable, even when the loaded file
+        // does not contain them.
+        raw.forEach((k, v) -> assertEquals(v, model.get(k),
+                "key " + k + " must be preserved: " + keyDiff(raw, model)));
     }
 
     private static Map<String, String> normalize(Map<String, String> in) {

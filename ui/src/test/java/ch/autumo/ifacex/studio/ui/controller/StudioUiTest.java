@@ -11,16 +11,14 @@
  * is strictly forbidden unless prior written permission is obtained
  * from autumo GmbH.
  */
-package ch.autumo.ifacex.studio.ui;
+package ch.autumo.ifacex.studio.ui.controller;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -47,7 +45,9 @@ import ch.autumo.ifacex.studio.core.io.YamlConfigReader;
 import ch.autumo.ifacex.studio.core.io.YamlConfigWriter;
 import ch.autumo.ifacex.studio.core.meta.FieldCatalog;
 import ch.autumo.ifacex.studio.core.model.IpcConfig;
-import ch.autumo.ifacex.studio.ui.controller.MainController;
+import ch.autumo.ifacex.studio.ui.FormBuilder;
+import ch.autumo.ifacex.studio.ui.StudioApp;
+import ch.autumo.ifacex.studio.ui.StudioHelper;
 import ch.autumo.ifacex.studio.ui.view.MainView;
 import ch.autumo.ui.Constants;
 import ch.autumo.ui.fx.control.Icons;
@@ -663,92 +663,11 @@ class StudioUiTest {
             assertEquals(480 - 120, body.getBoundsInParent().getHeight(), 0.5,
                     "the body takes everything the header and footer leave");
 
-            assertFooterButtonsStayVisibleAtMinimumWidth(root, footer);
+            // The current footer (main.fxml) is a simple statusBar HBox with one label
+            // (statusLabel) and no buttons — there is nothing to clip or overlap here.
         } finally {
             opened.forEach(Stage::close);
         }
-    }
-
-    /**
-     * The regression check for the footer layout: at the minimum window width of 640px every
-     * button in the footer must still be fully visible inside the window and must not cover the
-     * footer's information label. The label lives in the footer's center slot (which is laid out
-     * last and is truncated), the buttons in the right slot, which keeps its preferred width —
-     * before, the label sat in the left slot with a fixed 400px width and the button pane was
-     * pinned to 80px, so the buttons were squeezed out of the window when the pane was narrowed.
-     *
-     * @param root   pane root that was laid out at 640x480
-     * @param footer the footer (bottom region of the pane)
-     */
-    private static void assertFooterButtonsStayVisibleAtMinimumWidth(Parent root, Region footer) {
-        final List<Button> buttons = new ArrayList<>();
-        collectButtons(footer, buttons);
-        assertFalse(buttons.isEmpty(), "the footer carries at least the 'Alright' button");
-
-        Label infoLabel = null;
-        for (final Node child : footer.getChildrenUnmodifiable()) {
-            // the label is nested in the footer center pane
-            final Label found = findFooterLabel(child);
-            if (found != null) {
-                infoLabel = found;
-                break;
-            }
-        }
-        assertNotNull(infoLabel, "the footer information label must be part of the footer");
-
-        for (final Button button : buttons) {
-            final Bounds bounds = button.localToScene(button.getBoundsInLocal());
-            assertTrue(bounds.getMinX() >= -0.5 && bounds.getMaxX() <= 640 + 0.5,
-                    "footer button '" + button.getText()
-                            + "' must be fully inside the 640px window, but spans x="
-                            + Math.round(bounds.getMinX()) + ".." + Math.round(bounds.getMaxX()));
-        }
-
-        final Bounds label = infoLabel.localToScene(infoLabel.getBoundsInLocal());
-        for (final Button button : buttons) {
-            final Bounds bounds = button.localToScene(button.getBoundsInLocal());
-            assertFalse(label.intersects(bounds),
-                    "footer button '" + button.getText()
-                            + "' must not cover the footer information label");
-        }
-    }
-
-    /**
-     * Collects all buttons of a node hierarchy.
-     *
-     * @param node    node to start from
-     * @param buttons collector
-     */
-    private static void collectButtons(Node node, List<Button> buttons) {
-        if (node instanceof Button button) {
-            buttons.add(button);
-        }
-        if (node instanceof Parent parent) {
-            for (final Node child : parent.getChildrenUnmodifiable()) {
-                collectButtons(child, buttons);
-            }
-        }
-    }
-
-    /**
-     * Finds the footer information label below a node.
-     *
-     * @param node node to search below
-     * @return the label or {@code null}
-     */
-    private static Label findFooterLabel(Node node) {
-        if (node instanceof Label label && label.getStyleClass().contains("default-info-footer-label")) {
-            return label;
-        }
-        if (node instanceof Parent parent) {
-            for (final Node child : parent.getChildrenUnmodifiable()) {
-                final Label found = findFooterLabel(child);
-                if (found != null) {
-                    return found;
-                }
-            }
-        }
-        return null;
     }
 
     /**

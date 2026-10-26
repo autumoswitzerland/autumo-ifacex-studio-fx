@@ -72,6 +72,23 @@ public final class FieldCatalog {
         text("auth_grant_type", "Auth grant type");
         bool("auth", "Auth");
 
+        // --- REST reader: context-specific credentials -------------------------------------
+        text("rest_in_user", "Client ID",
+                "...or user name when using basic or digest auth method");
+        secret("rest_in_password", "Client Secret",
+                "...or password when when using basic or digest auth method");
+        bool("rest_in_alt_data_conn", "Alternative Connection",
+                "Use an alternative data connection for this reader.");
+        bool("rest_in_root_call", "Make root request (Testing)",
+                "Whether a root call is made before the regular requests (testing only).");
+        textArea("rest_in_query", "Query");
+
+        // --- Document reader --------------------------------------------------------------
+        text("doc_in_extractor_implementation", "Extractor implementation");
+        bool("doc_in_delete_files_after_processing", "Delete files after processing");
+        integer("doc_in_fetchSize", "Fetch size");
+        integer("doc_in_contents_max_length", "Contents max length");
+
         // --- file reader/writer -----------------------------------------------------------
         path("read_from_folder", "Read from folder");
         text("read_from_writer", "Read from writer");
@@ -97,7 +114,25 @@ public final class FieldCatalog {
         text("subject", "Subject");
         textArea("body", "Body");
         text("to", "To");
+        text("mail_out_from", "From");
+        integer("mail_out_max_size", "Max size");
         bool("tls_enable", "TLS enable");
+
+        // --- code writer ------------------------------------------------------------------
+        text("code_implementation", "Code implementation");
+        integer("code_proc_pos", "Processing position");
+
+        // --- exec writer ------------------------------------------------------------------
+        text("exec_cmd", "Command");
+        text("exec_args", "Arguments");
+        path("exec_working_dir", "Working directory");
+        integer("exec_timeout", "Timeout");
+        integer("exec_proc_pos", "Processing position");
+        integer("exec_exit_code_success", "Success exit code");
+
+        bool("mongo_out_create_collection", "Create collection");
+        path("file_out_path", "Output path");
+        bool("file_out_delete_files_after_processing", "Delete files after processing");
 
         // --- files / folders --------------------------------------------------------------
         text("job_id", "Job id");
@@ -185,12 +220,20 @@ public final class FieldCatalog {
         KNOWN.put(p, new FieldDescriptor(p, label, FieldType.SECRET));
     }
 
+    private static void secret(String p, String label, String help) {
+        KNOWN.put(p, new FieldDescriptor(p, label, FieldType.SECRET, List.of(), help));
+    }
+
     private static void integer(String p, String label) {
         KNOWN.put(p, new FieldDescriptor(p, label, FieldType.INTEGER));
     }
 
     private static void bool(String p, String label) {
         KNOWN.put(p, new FieldDescriptor(p, label, FieldType.BOOLEAN, YES_NO));
+    }
+
+    private static void bool(String p, String label, String help) {
+        KNOWN.put(p, new FieldDescriptor(p, label, FieldType.BOOLEAN, YES_NO, help));
     }
 
     private static void list(String p, String label) {

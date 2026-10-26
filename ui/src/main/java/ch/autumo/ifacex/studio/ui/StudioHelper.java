@@ -16,10 +16,10 @@ package ch.autumo.ifacex.studio.ui;
 import java.io.File;
 import java.text.MessageFormat;
 
+import ch.autumo.commons.utils.system.OSUtils;
 import ch.autumo.ifacex.studio.core.StudioConstants;
 import ch.autumo.ui.fx.BaseApp;
 import ch.autumo.ui.utils.Messages;
-import javafx.stage.Stage;
 
 /**
  * Studio Helper functions.
@@ -69,12 +69,15 @@ public class StudioHelper {
      * 
      * @param app base app
      * @param folder root folder
-     * @param stage stage
      * @return true if it is a valid ifaceX, otherwise false
      */
-    public static boolean checkIfacexFolder(BaseApp app, String folder, Stage stage) {
+    public static boolean checkIfacexFolder(BaseApp app, String folder) {
     	if (folder == null)
     		return false;
+    	
+    	if (!folder.endsWith(OSUtils.FILE_SEPARATOR))
+    		folder = folder + OSUtils.FILE_SEPARATOR;
+    	
 		final String licensePath = folder + StudioConstants.IFACEX_PATH_REL_LIC;
 		final String baseCfg = folder + StudioConstants.IFACEX_FILE_BASE_CFG;    	
 		final String ifxCfg = folder + StudioConstants.IFACEX_FILE_INTERFACES_CFG; 	

@@ -94,7 +94,15 @@ public final class RwConfig {
      * @return entity configuration, never {@code null}
      */
     public EntityConfig ensureEntity(String entity) {
-        return entities.computeIfAbsent(entity, EntityConfig::new);
+        return entities.computeIfAbsent(entity, n -> {
+            final EntityConfig ec = new EntityConfig(n);
+            for (final ParameterCatalog.Entry e : ParameterCatalog.entriesFor(name)) {
+                if (e.scope() == ParameterCatalog.Scope.ENTITY) {
+                    ec.settings().putIfAbsent(e.param(), e.defaultValue());
+                }
+            }
+            return ec;
+        });
     }
 
     /**

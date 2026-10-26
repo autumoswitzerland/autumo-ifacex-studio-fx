@@ -32,7 +32,7 @@ dependencies {
 
     implementation 'org.apache.logging.log4j:log4j-api:2.26.1'
     implementation 'org.apache.logging.log4j:log4j-core:2.26.1'
-    implementation 'org.apache.logging.log4j:log4j-slf4j-impl:2.26.1'
+    implementation 'org.apache.logging.log4j:log4j-slf4j2-impl:2.26.1'
 
     // Proprietary registration implementation (register test instances with a license
     // through the input mask). Deliberately NOT exposed by autumo-ui, so the Studio

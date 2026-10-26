@@ -66,7 +66,7 @@ public final class StudioConstants {
 
     /** Plain YAML spelling the open dialog also accepts. */
     public static final String EXT_YML = ".yml";
-
+    
     public static final String IFACEX_PATH_REL_INTERFACES = "interfaces" + OSUtils.FILE_SEPARATOR;
     public static final String IFACEX_PATH_REL_LIC = "lic" + OSUtils.FILE_SEPARATOR;
     public static final String IFACEX_FILE_REL_00_TEMPLATE = IFACEX_PATH_REL_INTERFACES +  "00_console_out.template";

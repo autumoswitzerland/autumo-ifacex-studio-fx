@@ -17,14 +17,17 @@ import static ch.autumo.ifacex.studio.ui.StudioHelper.format;
 import static ch.autumo.ifacex.studio.ui.StudioHelper.t;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
+import java.util.Set;
 
 import ch.autumo.ifacex.studio.core.meta.FieldCatalog;
 import ch.autumo.ifacex.studio.core.meta.FieldDescriptor;
 import ch.autumo.ifacex.studio.core.meta.FieldType;
 import ch.autumo.ifacex.studio.core.meta.InterfaceTypes;
+import ch.autumo.ifacex.studio.core.meta.ParameterCatalog;
 import ch.autumo.ifacex.studio.core.model.EntityConfig;
 import ch.autumo.ifacex.studio.core.model.FieldMappingRec;
 import ch.autumo.ifacex.studio.core.model.IpcConfig;
@@ -44,6 +47,7 @@ import javafx.scene.Node;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.Label;
@@ -90,6 +94,28 @@ public final class FormBuilder {
 
     /** Data format used for dragging a source field into the mapping formula box. */
     private static final DataFormat FIELD_FORMAT = new DataFormat("application/x-ifacex-field");
+
+    /**
+     * Pro Reader/Writer-Präfix: Parameter, die als {@link CheckBox} (nicht als yes/no-Dropdown)
+     * gerendert werden. Die Liste ist bewusst explizit pro Interface geführt – nicht jedes
+     * {@link FieldType#BOOLEAN}-Feld wird automatisch zur Checkbox.
+     */
+    private static final Map<String, Set<String>> BOOLEAN_CHECKBOX_PARAMS = new HashMap<>();
+
+    static {
+        BOOLEAN_CHECKBOX_PARAMS.put("csv_in", Set.of("delete_files_after_processing"));
+        BOOLEAN_CHECKBOX_PARAMS.put("json_in", Set.of("field_path_access", "allow_absent_fields",
+                "delete_files_after_processing"));
+        BOOLEAN_CHECKBOX_PARAMS.put("rest_in", Set.of("field_path_access", "allow_absent_fields",
+                "alt_data_conn", "root_call"));
+        BOOLEAN_CHECKBOX_PARAMS.put("doc_in", Set.of("delete_files_after_processing"));
+        BOOLEAN_CHECKBOX_PARAMS.put("mail_out", Set.of("auth", "tls_enable",
+                "delete_files_after_processing"));
+        BOOLEAN_CHECKBOX_PARAMS.put("db_out", Set.of("ext_insert_mapping"));
+        BOOLEAN_CHECKBOX_PARAMS.put("rest_out", Set.of("single_id_filter"));
+        BOOLEAN_CHECKBOX_PARAMS.put("mongo_out", Set.of("create_collection"));
+        BOOLEAN_CHECKBOX_PARAMS.put("file_out", Set.of("delete_files_after_processing"));
+    }
 
     private final Runnable onChange;
     private final Runnable onStructureChange;
@@ -907,13 +933,44 @@ public final class FormBuilder {
         grid.setVgap(6);
         grid.setPadding(new Insets(6, 6, 6, 6));
 
+        // Reihenfolge: erst alle ParameterCatalog-Einträge dieser Sektion (Legacy-Reihenfolge),
+        // dann alle übrig gebliebenen Schlüssel in Map-Reihenfolge. Die Sektionen
+        // (Parameter / Vorgaben / Entity) werden vom caller vorgegeben und bleiben unverändert.
+        final List<Map.Entry<String, Object>> ordered = new ArrayList<>();
+        if (rw != null) {
+            final List<ParameterCatalog.Entry> catalog = ParameterCatalog.entriesFor(rw.name());
+            final HashSet<String> catalogParams = new HashSet<>();
+            for (final ParameterCatalog.Entry e : catalog) {
+                catalogParams.add(e.param());
+                if (map.containsKey(e.param())) {
+                    ordered.add(Map.entry(e.param(), map.get(e.param())));
+                }
+            }
+            for (final Map.Entry<String, Object> e : map.entrySet()) {
+                if (!catalogParams.contains(e.getKey())) {
+                    ordered.add(e);
+                }
+            }
+        } else {
+            ordered.addAll(map.entrySet());
+        }
+
         int row = 0;
-        for (final Map.Entry<String, Object> e : new TreeMap<>(map).entrySet()) {
+        for (final Map.Entry<String, Object> e : ordered) {
             final String key = e.getKey();
-            final FieldDescriptor d = FieldCatalog.descriptor(key);
+            // Prefer a context-specific descriptor (e.g. "rest_in_user" -> "Client ID")
+            // over the generic one ("user" -> "User"), falling back to the bare parameter
+            // name when no context-specific descriptor exists.
+            final String contextKey = rw != null ? rw.name() + "_" + key : key;
+            final FieldDescriptor d = FieldCatalog.knownParams().contains(contextKey)
+                    ? FieldCatalog.descriptor(contextKey)
+                    : FieldCatalog.descriptor(key);
             // The raw configuration key is the message id; the derived label is the English
             // fallback, so a translation file can translate parameters by their key.
-            final Label label = new Label(t(key, d.label()));
+            // Use the context-specific key (e.g. "rest_in_user") so that a translation
+            // for the generic key ("user" -> "Benutzer") does not override the
+            // context-specific label ("Client ID").
+            final Label label = new Label(t(contextKey, d.label()));
             // "field-label" is the shared CSS class, "param-label" marks an engine parameter
             // label (as opposed to a caption) and is queried by the UI tests.
             label.getStyleClass().addAll("field-label", "param-label");
@@ -958,15 +1015,27 @@ public final class FormBuilder {
         final String value = secret != null ? secret.value() : rawStr;
         switch (d.type()) {
             case BOOLEAN: {
-                final ComboBox<String> cb = new ComboBox<>(
+                final boolean asCheckbox = rw != null
+                        && BOOLEAN_CHECKBOX_PARAMS.getOrDefault(rw.name(), Set.of()).contains(key);
+                if (asCheckbox) {
+                    final CheckBox cb = new CheckBox();
+                    cb.setSelected("yes".equalsIgnoreCase(value) || "true".equalsIgnoreCase(value));
+                    cb.setMaxWidth(Double.MAX_VALUE);
+                    cb.selectedProperty().addListener((_, _, b) -> {
+                        map.put(key, b ? "yes" : "no");
+                        changed();
+                    });
+                    return cb;
+                }
+                final ComboBox<String> combo = new ComboBox<>(
                         FXCollections.observableArrayList("", "yes", "no"));
-                cb.setValue(value);
-                cb.setMaxWidth(Double.MAX_VALUE);
-                cb.valueProperty().addListener((_, _, b) -> {
+                combo.setValue(value);
+                combo.setMaxWidth(Double.MAX_VALUE);
+                combo.valueProperty().addListener((_, _, b) -> {
                     map.put(key, b == null ? "" : b);
                     changed();
                 });
-                return cb;
+                return combo;
             }
             case SELECT: {
                 final ComboBox<String> cb = new ComboBox<>(

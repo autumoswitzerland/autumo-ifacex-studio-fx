@@ -181,7 +181,7 @@ public final class IpcConfig {
      */
     public RwConfig ensureReader(String name) {
         final RwConfig r = readers.computeIfAbsent(name, n -> new RwConfig(n, true));
-        // Reconcile: every declared source entity must exist in the reader, so its fields are editable.
+        populateSection(r);
         for (final String entity : processSourceEntities) {
             r.ensureEntity(entity);
         }
@@ -210,7 +210,9 @@ public final class IpcConfig {
      * @return writer section, never {@code null}
      */
     public RwConfig ensureWriter(String name) {
-        return writers.computeIfAbsent(name, n -> new RwConfig(n, false));
+        final RwConfig r = writers.computeIfAbsent(name, n -> new RwConfig(n, false));
+        populateSection(r);
+        return r;
     }
 
     /**

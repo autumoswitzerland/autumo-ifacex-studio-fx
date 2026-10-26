@@ -328,11 +328,14 @@ msgstr "Quell-Entity entfernen (Felder und Mappings)"
 msgid "Remove the selected mapping"
 msgstr "Ausgewähltes Mapping entfernen"
 
+msgid "Process"
+msgstr "Prozess"
+
+msgid "Debug Mode"
+msgstr "Debug-Modus"
+
 msgid "Run"
 msgstr "Ausführen"
-
-msgid "Run the IPC — engine integration follows later"
-msgstr "IPC ausführen — Engine-Integration folgt später"
 
 msgid "Save"
 msgstr "Speichern"

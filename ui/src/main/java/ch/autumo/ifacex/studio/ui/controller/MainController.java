@@ -1,3 +1,4 @@
+
 /**
  * Copyright 2026 autumo GmbH, Michael Gasche.
  * All Rights Reserved.
@@ -39,6 +40,7 @@ import ch.autumo.ifacex.studio.core.io.YamlConfigReader;
 import ch.autumo.ifacex.studio.core.io.YamlConfigWriter;
 import ch.autumo.ifacex.studio.core.model.IpcConfig;
 import ch.autumo.ifacex.studio.core.model.RwConfig;
+import ch.autumo.ifacex.studio.ui.Console;
 import ch.autumo.ifacex.studio.ui.FormBuilder;
 import ch.autumo.ifacex.studio.ui.RawEditor;
 import ch.autumo.ifacex.studio.ui.StudioApp;
@@ -60,12 +62,11 @@ import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.ContentDisplay;
-import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
@@ -183,6 +184,8 @@ public class MainController extends BaseController {
     @FXML
     Menu menuConfig;
     @FXML
+    Menu menuProcess;
+    @FXML
     MenuItem miSettings;
     @FXML
     MenuItem miEncoder;
@@ -195,13 +198,19 @@ public class MainController extends BaseController {
     @FXML
     MenuItem miRemoveAppData;
     @FXML
+    MenuItem miRun;
+    @FXML
+    CheckMenuItem miDebugMode;
+    @FXML
+    MenuItem miRegistration;
+    @FXML
+    Menu menuRegister;
+    @FXML
     MenuItem miDocumentation;
     @FXML
     MenuItem miWebsite;
     @FXML
     MenuItem miUpdate;
-    @FXML
-    MenuItem miRegistration;
     @FXML
     Menu menuHelp;
     @FXML
@@ -212,19 +221,28 @@ public class MainController extends BaseController {
     TabPane tabPane;
     @FXML
     Tab tabRaw;
+    @FXML
+    Tab tabConsole;
 
     /** Builds the metadata-driven forms; package-private for the UI tests, like the nodes above. */
     final FormBuilder formBuilder = new FormBuilder((StudioApp) app, this::onModelChanged, this::rebuild);
-    private IpcConfig config;
-    private Path sourceFile;
+    IpcConfig config;
+    Path sourceFile;
     /** Toolbar buttons that only make sense once a configuration is loaded. */
     private Button tbSave;
     private Button tbClose;
     private Button tbConfig;
+    private Button tbRun;
+    private Button tbFolder;
     private TreeItem<FormBuilder.NavNode> rootItem;
+
+    /** Whether an external ifaceX process is currently running. */
+    private boolean processRunning = false;
 
     /** The raw YAML editor of the "Raw" tab; built in {@link #init}. Package-private for the UI tests. */
     RawEditor rawEditor;
+    /** The console for process output. */
+    Console console;
 
     private boolean navShown = false;
     
@@ -246,6 +264,7 @@ public class MainController extends BaseController {
         buildAccelerators();
         buildRecentMenu();
         buildRawEditor();
+        buildConsole();
         // Start with the About page in the navigation pane; the tree appears once a file is loaded.
         showAboutInNav();
         showEmptyForm();
@@ -328,6 +347,8 @@ public class MainController extends BaseController {
         menuHelp.setText(t("Help"));
         menuLanguage.setText(t("Language"));
         menuConfig.setText(t("Configuration"));
+        menuProcess.setText(t("Process"));
+        menuRegister.setText(t("Registration"));
         menuRecent.setText(t("Open Recent"));
         miNew.setText(t("New"));
         miOpen.setText(t("Open…"));
@@ -337,17 +358,22 @@ public class MainController extends BaseController {
         miExit.setText(t("Exit"));
         miAbout.setText(t("About"));
         miEncoder.setText(t("Encoder"));
+        miSettings.setText(t("General Settings"));
         miJsonFormatter.setText(t("JSON Formatter"));
         miBaseInterfaceConfig.setText(t("Base Interface Configuration"));
         miInterfaceConfig.setText(t("Interface Configuration"));
         miRemoveAppData.setText(t("Remove App Data"));
-        miSettings.setText(t("General Settings"));
+        miRun.setText(t("Run"));
+        miDebugMode.setText(t("Debug Mode"));
         miDocumentation.setText(t("Open Online Documentation"));
         miWebsite.setText(t("Visit Website"));
         miUpdate.setText(t("Check for Updates"));
         miRegistration.setText(t("menu.Reg"));
         tabForm.setText(t("Form"));
         tabRaw.setText(t("Raw"));
+        if (tabConsole != null) {
+            tabConsole.setText(t("Console"));
+        }
         renderStatus();
         renderTitle();
     }
@@ -413,10 +439,10 @@ public class MainController extends BaseController {
 
         tbConfig = toolButton("gear-six", t("Configuration"),
                 t("Edit file metadata and job wiring (selects the root node)"), this::selectRoot);
-        final Button tbRun = toolButton("play", t("Run"),
-                t("Run the IPC — engine integration follows later"), null);
-        final Button tbFolder = toolButton("arrow-u-up-right", t("External Edit"),
-                t("Open in an external editor — follows later"), null);
+        tbRun = toolButton("play", t("Run"),
+                t("Run the IPC"), this::onRun);
+        tbFolder = toolButton("arrow-u-up-right", t("External Edit"),
+                t("Open in an external editor"), () -> openExternalEditor());
 
         leftToolBar.getItems().addAll(
                 tbNew, tbOpen, tbSave, tbClose,
@@ -476,10 +502,12 @@ public class MainController extends BaseController {
         miExit.setGraphic(Icons.create("sign-out", 16));
         miEncoder.setGraphic(Icons.create("lock-key", 16));
         miJsonFormatter.setGraphic(Icons.create("brackets-curly", 16));
-        miRemoveAppData.setGraphic(Icons.create("trash", 16));
         miSettings.setGraphic(Icons.create("gear-six", 16));
         miBaseInterfaceConfig.setGraphic(Icons.create("gear-six", 16));
         miInterfaceConfig.setGraphic(Icons.create("gear-six", 16));
+        miRemoveAppData.setGraphic(Icons.create("trash", 16));
+        miRun.setGraphic(Icons.create("person-simple-run", 16));
+        miDebugMode.setGraphic(Icons.create("bug-beetle", 16));
         miDocumentation.setGraphic(Icons.create("book-open", 16));
         miWebsite.setGraphic(Icons.create("globe-hemisphere-west", 16));
         miUpdate.setGraphic(Icons.create("download-simple", 16));
@@ -503,16 +531,16 @@ public class MainController extends BaseController {
                 KeyCombination.SHIFT_DOWN));
         miClose.setAccelerator(new KeyCodeCombination(KeyCode.W, KeyCombination.SHORTCUT_DOWN));
         miEncoder.setAccelerator(new KeyCodeCombination(KeyCode.E, KeyCombination.SHORTCUT_DOWN));
+        miSettings.setAccelerator(new KeyCodeCombination(KeyCode.G, KeyCombination.SHORTCUT_DOWN));
         miBaseInterfaceConfig.setAccelerator(new KeyCodeCombination(KeyCode.B, KeyCombination.SHORTCUT_DOWN));
         miInterfaceConfig.setAccelerator(new KeyCodeCombination(KeyCode.I, KeyCombination.SHORTCUT_DOWN));
-        miRemoveAppData.setAccelerator(
-                new KeyCodeCombination(KeyCode.R, KeyCombination.SHORTCUT_DOWN,
-                        KeyCombination.SHIFT_DOWN));
-        miSettings.setAccelerator(new KeyCodeCombination(KeyCode.G, KeyCombination.SHORTCUT_DOWN));
+        miRemoveAppData.setAccelerator(new KeyCodeCombination(KeyCode.R, KeyCombination.SHORTCUT_DOWN, KeyCombination.SHIFT_DOWN));
+        miRun.setAccelerator(new KeyCodeCombination(KeyCode.X, KeyCombination.SHORTCUT_DOWN, KeyCombination.SHIFT_DOWN));
+        miDebugMode.setAccelerator(new KeyCodeCombination(KeyCode.D, KeyCombination.SHORTCUT_DOWN));
+        miRegistration.setAccelerator(new KeyCodeCombination(KeyCode.R, KeyCombination.SHORTCUT_DOWN));
         miDocumentation.setAccelerator(new KeyCodeCombination(KeyCode.F1));
         miWebsite.setAccelerator(new KeyCodeCombination(KeyCode.F2));
         miUpdate.setAccelerator(new KeyCodeCombination(KeyCode.U, KeyCombination.SHORTCUT_DOWN));
-        miRegistration.setAccelerator(new KeyCodeCombination(KeyCode.R, KeyCombination.SHORTCUT_DOWN));
     }
 
     /**
@@ -534,11 +562,38 @@ public class MainController extends BaseController {
         tbSave.setDisable(!enabled);
         tbClose.setDisable(!enabled);
         tbConfig.setDisable(!enabled);
+        // Run / External Edit are additionally controlled by setRunButtonsEnabled()
+        updateRunButtons();
+    }
+
+    /** Enables or disables the Run toolbar button and Process › Run menu item. */
+    private void updateRunButtons() {
+        boolean enabled = !processRunning;
+        tbRun.setDisable(!enabled);
+        tbFolder.setDisable(!enabled);
+        tbConfig.setDisable(!enabled);
+        miRun.setDisable(!enabled);
+        navTree.setDisable(!enabled);
+    }
+
+    /**
+     * Called by {@link ProcessController} when the external process has finished – in every case
+     * (normal end, error, or watchdog timeout). Re-enables the Run buttons.
+     *
+     * @param exitCode the exit code of the external process ({@code 0} means success)
+     */
+    public void processFinished(int exitCode) {
+        processRunning = false;
+        updateRunButtons();
+        // The error dialog is shown by ProcessController when exitCode != 0 or error patterns found.
     }
 
     private void selectRoot() {
         if (rootItem != null) {
             navTree.getSelectionModel().select(rootItem);
+        }
+        if (tabPane != null && tabForm != null) {
+            tabPane.getSelectionModel().select(tabForm);
         }
     }
 
@@ -714,6 +769,14 @@ public class MainController extends BaseController {
         final FormBuilder.NavNode prev = selected == null ? null : selected.getValue();
         formBuilder.setConfig(config);
 
+        // --- Keep only the readers/writers declared in the job wiring ---
+        // A section only belongs in the .ifcx file when it is referenced by
+        // source_interface / destination_interfaces. Sections in the model that
+        // are not referenced must not show up in the tree and must not be saved.
+        final String sourceInterface = config.sourceInterface();
+        config.readers().keySet().removeIf(r -> !r.equals(sourceInterface));
+        config.writers().keySet().removeIf(w -> !config.destinationInterfaces().contains(w));
+
         final TreeItem<FormBuilder.NavNode> root = new TreeItem<>(
                 new FormBuilder.NavNode(K_ROOT, label(), config, null));
         root.setExpanded(true);
@@ -811,6 +874,9 @@ public class MainController extends BaseController {
         if (item == null) {
             return;
         }
+        if (tabPane != null && tabForm != null) {
+            tabPane.getSelectionModel().select(tabForm);
+        }
         formScroll.setContent(formBuilder.build(item.getValue()));
         formScroll.setBackground(null);
     }
@@ -841,6 +907,13 @@ public class MainController extends BaseController {
                 refreshRaw();
             }
         });
+    }
+
+    private void buildConsole() {
+        console = new Console();
+        if (tabConsole != null) {
+            tabConsole.setContent(console.node());
+        }
     }
 
     /** Writes the model into the raw editor (no re-parse of that text). */
@@ -1032,6 +1105,34 @@ public class MainController extends BaseController {
     public void disposeEditor() {
         if (rawEditor != null) {
             rawEditor.dispose();
+        }
+        if (console != null) {
+            console.dispose();
+        }
+    }
+
+    /**
+     * Opens the currently loaded configuration file in the platform's default external editor.
+     * Called from the "External Edit" toolbar button. Disabled when no configuration is loaded.
+     */
+    private void openExternalEditor() {
+        if (sourceFile == null) {
+            return;
+        }
+        final java.awt.Desktop desktop = java.awt.Desktop.getDesktop();
+        if (!desktop.isSupported(java.awt.Desktop.Action.OPEN)) {
+            UI.showFineWarningDialog(app,
+                    t("Opening an external editor is not supported on this platform.<br>"
+                            + "File: <b>{0}</b>", sourceFile.toAbsolutePath().toString()));
+            return;
+        }
+        try {
+            desktop.open(sourceFile.toFile());
+        } catch (IOException e) {
+            UI.showFineWarningDialog(app,
+                    format("Could not open {0} in an external editor.<br>"
+                                    + "File: <b>{1}</b><br>Please open it manually.",
+                            sourceFile.getFileName(), sourceFile.toAbsolutePath().toString()));
         }
     }
 
@@ -1263,7 +1364,7 @@ public class MainController extends BaseController {
 	    	if (!ifacexFolder.endsWith(OSUtils.FILE_SEPARATOR))
 	    		ifacexFolder = ifacexFolder + OSUtils.FILE_SEPARATOR;
     	}
-    	if (!StudioHelper.checkIfacexFolder(studioApp, ifacexFolder, stage)) {
+    	if (!StudioHelper.checkIfacexFolder(studioApp, ifacexFolder)) {
     		UI.showFineWarningDialog(app, t("No autumo ifaceX instance was found at the selected location!"));
     		return;
     	}    	
@@ -1284,6 +1385,69 @@ public class MainController extends BaseController {
     	}
     	
     	UI.showRegistrationPane(app, licApp, t("Registration.title"));
+    }
+    
+    @FXML
+    private void onRun() {
+        if (config == null) {
+            status(t("Nothing to run."));
+            return;
+        }
+        // Ensure current file is saved
+        if (modified || sourceFile == null || !isIfcx(sourceFile)) {
+            if (tabRaw.isSelected()) {
+                if (!applyRawText()) {
+                    return;
+                }
+            }
+            final Path target = saveTarget();
+            if (target == null) {
+                saveAs();
+                if (modified || sourceFile == null) {
+                    return;
+                }
+            } else {
+                write(target, YamlConfigWriter.toText(config));
+                if (modified) {
+                    return;
+                }
+            }
+        } else {
+            if (tabRaw.isSelected()) {
+                if (!applyRawText()) {
+                    return;
+                }
+            }
+            save();
+            if (modified) {
+                return;
+            }
+        }
+
+        final StudioApp studioApp = (StudioApp) app;
+        final String ifacexFolder = studioApp.getIfacexFolder();
+        if (!StudioHelper.checkIfacexFolder(studioApp, ifacexFolder)) {
+            UI.showFineWarningDialog(app, t("No autumo ifaceX instance was found at the selected location!"));
+            return;
+        }
+
+        if (console != null) {
+            console.setText("");
+        }
+        if (tabConsole != null) {
+            tabPane.getSelectionModel().select(tabConsole);
+        }
+
+        final boolean debugMode = miDebugMode != null && miDebugMode.isSelected();
+        processRunning = true;
+        updateRunButtons();
+
+        final ProcessController processController = new ProcessController(this, debugMode);
+        processController.execute(false);
+    }
+
+    @FXML
+    private void handleDebugModeToggle() {
     }
     
     /** {@code Help › Open Online Documentation}: opens {@code url.documentation} from app.cfg. */
@@ -1365,18 +1529,32 @@ public class MainController extends BaseController {
 
     private void error(String message, Exception e) {
         status(message);
-        final Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setTitle(t("Error"));
-        alert.setHeaderText(message);
-        alert.setContentText(String.valueOf(e.getMessage()));
-        alert.initOwner(window());
-        theme(alert);
-        alert.showAndWait();
+    	UI.showErrorAndWait(app, e, message);
     }
 
-    /** Apply the autumo-ui dark theme to a dialog so it matches the main window. */
-    private void theme(Dialog<?> dialog) {
-        dialog.getDialogPane().getStylesheets().add(Helper.getBaseStyle());
+    public Console getConsole() {
+        return console;
+    }
+
+    public void appendConsole(String str) {
+        if (console == null) {
+            return;
+        }
+        console.appendLine(str);
+    }
+
+    public void clearConsole() {
+        if (console == null) {
+            return;
+        }
+        console.clear();
+    }
+
+    public void highlightConsole() {
+        if (console == null) {
+            return;
+        }
+        console.highlightConsole();
     }
 
     private Window window() {

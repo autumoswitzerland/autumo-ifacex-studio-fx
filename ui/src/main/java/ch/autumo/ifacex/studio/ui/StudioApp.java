@@ -18,6 +18,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Properties;
 
+import ch.autumo.commons.utils.system.OSUtils;
 import ch.autumo.ifacex.studio.core.LicIfaceXApp100;
 import ch.autumo.ifacex.studio.core.StudioConstants;
 import ch.autumo.ifacex.studio.ui.controller.MainController;
@@ -27,7 +28,6 @@ import ch.autumo.ifacex.studio.ui.view.MainView;
 import ch.autumo.ui.Constants;
 import ch.autumo.ui.fx.BaseApp;
 import ch.autumo.ui.fx.view.SplashScreen;
-import ch.autumo.ui.utils.Messages;
 import ch.autumo.ui.utils.UI;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
@@ -111,28 +111,10 @@ public class StudioApp extends BaseApp {
      * @return the root pane of the application view
      */
     @Override
-    protected Pane preInitialize(Stage primaryStage, Properties configuration) {
+    public Pane preInitialize(Stage primaryStage, Properties configuration) {
 
     	instance = this;
 
-        // Precedence: -Dapp.lang=de > "language=de" in cfg/app.cfg (autumo-ui convention,
-        // Constants.PROP_KEY_LANGUAGE) > the "lang" alias > the desktop language of the JVM
-        // (user.language, so a German desktop starts in German) > English for everything else.
-        final String lang = resolveLanguage(configuration);
-
-        // Keep the autumo-ui framework in sync first (it owns the window title, About/license HTML
-        // panes and framework dialogs), then set our own PO catalogue on top of it.
-        final int translations = Messages.setLanguage(lang, StudioConstants.BASE);
-        if (translations > 0) {
-            System.out.println("[dev] language=" + Messages.getLanguage()
-                    + " (" + translations + " translations)");
-        }
-        // Fonts (Inter) are loaded by the autumo-ui framework (BaseApp.start), which is the
-        // standard font of the framework; the Studio only consumes the family names in CSS.
-        // Create the main view and hand it to the autumo-ui loader: UI.setup() remembers our
-        // base resource path, loads main.fxml into the view and binds this controller. It is
-        // also what makes the framework's info panes (UI.showAbout, …) work, and it walks our
-        // own package for main.fxml / html/*.html.
         final MainView view = new MainView(this, primaryStage, Constants.STYLESHEET);
         final MainModel model = new MainModel(view);
         view.setModel(model);
@@ -395,10 +377,14 @@ public class StudioApp extends BaseApp {
 	}
 
 	public String getIfacexFolder() {
+    	if (!ifacexFolder.endsWith(OSUtils.FILE_SEPARATOR))
+    		ifacexFolder = ifacexFolder + OSUtils.FILE_SEPARATOR;
 		return ifacexFolder;
 	}
 
 	public void setIfacexFolder(String ifacexFolder) {
+    	if (!ifacexFolder.endsWith(OSUtils.FILE_SEPARATOR))
+    		ifacexFolder = ifacexFolder + OSUtils.FILE_SEPARATOR;
 		this.ifacexFolder = ifacexFolder;
 	}
 

@@ -4,6 +4,7 @@
 <?import javafx.scene.control.Menu?>
 <?import javafx.scene.control.MenuBar?>
 <?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.CheckMenuItem?>
 <?import javafx.scene.control.RadioMenuItem?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.SeparatorMenuItem?>
@@ -52,8 +53,12 @@
                     <MenuItem fx:id="miEncoder" text="Encoder" onAction="#onEncoder"/>
                     <MenuItem fx:id="miJsonFormatter" text="JSON Formatter" onAction="#onJsonFormatter"/>
                     <SeparatorMenuItem/>
-                    <MenuItem fx:id="miRemoveAppData" text="Remove App Data"
-                              onAction="#onRemoveAppData"/>
+                    <MenuItem fx:id="miRemoveAppData" text="Remove App Data" onAction="#onRemoveAppData"/>
+                </Menu>
+                <Menu fx:id="menuProcess" text="Process">
+                    <MenuItem fx:id="miRun" text="Run" onAction="#onRun"/>
+                    <SeparatorMenuItem/>
+                    <CheckMenuItem fx:id="miDebugMode" text="Debug mode" selected="true" onAction="#handleDebugModeToggle"/>
                 </Menu>
                 <Menu fx:id="menuRegister" text="Registration">
                     <MenuItem fx:id="miRegistration" text="Register an ifaceX instance"
@@ -97,6 +102,7 @@
                     <ScrollPane fx:id="formScroll" fitToWidth="true"/>
                 </Tab>
                 <Tab fx:id="tabRaw" text="Raw"/>
+                <Tab fx:id="tabConsole" text="Console"/>
             </TabPane>
         </SplitPane>
     </center>

@@ -32,7 +32,8 @@ import java.util.Map;
  * full parameter set of every declared interface and the GUI can show every parameter, not only
  * those that happen to be present in a loaded file.</p>
  *
- * <p>The special writers {@code code} and {@code exec} carry no parameters.</p>
+ * <p>The entity source fields ({@code <rw>_<entity>_fields}) are managed separately via the
+ * source-field list and are <em>not</em> part of this catalogue.</p>
  */
 public final class ParameterCatalog {
 
@@ -82,8 +83,6 @@ public final class ParameterCatalog {
             return List.of();
         }
         final List<Entry> all = new ArrayList<>();
-        // Readers (_in) and writers (_out) have disjoint parameter sets beyond the shared
-        // connection-style keys; the catalogue lists them per type from docs/11 §7.
         if (rwName.endsWith("_in")) {
             switch (type) {
                 case "csv" -> all.addAll(CSV_READER);
@@ -91,6 +90,7 @@ public final class ParameterCatalog {
                 case "db" -> all.addAll(DB_READER);
                 case "mongo" -> all.addAll(MONGO_READER);
                 case "rest" -> all.addAll(REST_READER);
+                case "doc" -> all.addAll(DOC_READER);
                 default -> {
                 }
             }
@@ -102,19 +102,28 @@ public final class ParameterCatalog {
                 case "db" -> all.addAll(DB_WRITER);
                 case "mongo" -> all.addAll(MONGO_WRITER);
                 case "rest" -> all.addAll(REST_WRITER);
+                case "console" -> all.addAll(CONSOLE_WRITER);
+                case "first" -> all.addAll(FIRST_WRITER);
+                case "file" -> all.addAll(FILE_WRITER);
                 default -> {
                 }
             }
         }
-        // code / exec carry no parameters.
+        // code / exec are writers without the _out suffix; they carry their own parameters.
+        if ("code".equals(type)) {
+            all.addAll(CODE_WRITER);
+        } else if ("exec".equals(type)) {
+            all.addAll(EXEC_WRITER);
+        }
         return all;
     }
+
+    // ---------------------------------------------------------------- CSV reader
     private static final List<Entry> CSV_READER = List.of(
             entry("header_size", Scope.GLOBAL, FieldType.INTEGER, ""),
             entry("delete_files_after_processing", Scope.GLOBAL, FieldType.BOOLEAN, "no"),
             entry("read_from_writer", Scope.GLOBAL, FieldType.TEXT, ""),
-            entry("read_from_folder", Scope.GLOBAL, FieldType.PATH, ""),
-            entry("fields", Scope.ENTITY, FieldType.LIST, ""));
+            entry("read_from_folder", Scope.GLOBAL, FieldType.PATH, ""));
 
     // ---------------------------------------------------------------- JSON reader
     private static final List<Entry> JSON_READER = List.of(
@@ -125,8 +134,7 @@ public final class ParameterCatalog {
             entry("absent_field_placeholder", Scope.WILDCARD, FieldType.TEXT, ""),
             entry("delete_files_after_processing", Scope.GLOBAL, FieldType.BOOLEAN, "no"),
             entry("read_from_writer", Scope.GLOBAL, FieldType.TEXT, ""),
-            entry("read_from_folder", Scope.GLOBAL, FieldType.PATH, ""),
-            entry("fields", Scope.ENTITY, FieldType.LIST, ""));
+            entry("read_from_folder", Scope.GLOBAL, FieldType.PATH, ""));
 
     // ---------------------------------------------------------------- DB reader
     private static final List<Entry> DB_READER = List.of(
@@ -134,7 +142,6 @@ public final class ParameterCatalog {
             entry("user", Scope.GLOBAL, FieldType.TEXT, ""),
             entry("password", Scope.GLOBAL, FieldType.SECRET, ""),
             entry("fetchSize", Scope.WILDCARD, FieldType.INTEGER, ""),
-            entry("fields", Scope.ENTITY, FieldType.LIST, ""),
             entry("order_field", Scope.ENTITY, FieldType.TEXT, ""));
 
     // ---------------------------------------------------------------- Mongo reader
@@ -146,7 +153,6 @@ public final class ParameterCatalog {
             entry("user", Scope.GLOBAL, FieldType.TEXT, ""),
             entry("password", Scope.GLOBAL, FieldType.SECRET, ""),
             entry("fetchSize", Scope.WILDCARD, FieldType.INTEGER, ""),
-            entry("fields", Scope.ENTITY, FieldType.LIST, ""),
             entry("order_field", Scope.ENTITY, FieldType.TEXT, ""));
 
     // ---------------------------------------------------------------- REST reader
@@ -163,10 +169,12 @@ public final class ParameterCatalog {
             entry("auth_host", Scope.GLOBAL, FieldType.TEXT, ""),
             entry("auth_grant_type", Scope.GLOBAL, FieldType.TEXT, ""),
             entry("auth_body", Scope.GLOBAL, FieldType.TEXT_AREA, ""),
-            entry("alt_data_conn", Scope.GLOBAL, FieldType.TEXT, ""),
+            entry("alt_data_conn", Scope.GLOBAL, FieldType.BOOLEAN, "no"),
+            entry("root_call", Scope.GLOBAL, FieldType.BOOLEAN, "no"),
             entry("entities_url", Scope.WILDCARD, FieldType.TEXT, ""),
             entry("data_path", Scope.WILDCARD, FieldType.TEXT, ""),
             entry("sub_path", Scope.WILDCARD, FieldType.TEXT, ""),
+            entry("query", Scope.WILDCARD, FieldType.TEXT_AREA, ""),
             entry("field_path_access", Scope.WILDCARD, FieldType.BOOLEAN, "no"),
             entry("allow_absent_fields", Scope.WILDCARD, FieldType.BOOLEAN, "no"),
             entry("absent_field_placeholder", Scope.WILDCARD, FieldType.TEXT, ""),
@@ -180,19 +188,24 @@ public final class ParameterCatalog {
             entry("pagination_items_per_page", Scope.WILDCARD, FieldType.INTEGER, ""),
             entry("pagination_items_total", Scope.WILDCARD, FieldType.INTEGER, ""),
             entry("pagination_last_page", Scope.WILDCARD, FieldType.INTEGER, ""),
-            entry("pagination_after_id", Scope.WILDCARD, FieldType.TEXT, ""),
-            entry("fields", Scope.ENTITY, FieldType.LIST, ""));
-    // (global: rest_timeout, rest_setup_timeout)
+            entry("pagination_after_id", Scope.WILDCARD, FieldType.TEXT, ""));
+
+    // ---------------------------------------------------------------- Document reader
+    private static final List<Entry> DOC_READER = List.of(
+            entry("extractor_implementation", Scope.GLOBAL, FieldType.TEXT, ""),
+            entry("delete_files_after_processing", Scope.GLOBAL, FieldType.BOOLEAN, "no"),
+            entry("fetchSize", Scope.WILDCARD, FieldType.INTEGER, ""),
+            entry("contents_max_length", Scope.GLOBAL, FieldType.INTEGER, ""));
 
     // ---------------------------------------------------------------- CSV writer
     private static final List<Entry> CSV_WRITER = List.of(
-            entry("mapping_entity", Scope.ENTITY, FieldType.TEXT, ""),
-            entry("fields", Scope.ENTITY, FieldType.LIST, ""));
+            entry("data_mapper_class", Scope.ENTITY, FieldType.TEXT, ""),
+            entry("mapping_entity", Scope.ENTITY, FieldType.TEXT, ""));
 
     // ---------------------------------------------------------------- JSON writer
     private static final List<Entry> JSON_WRITER = List.of(
-            entry("mapping_entity", Scope.ENTITY, FieldType.TEXT, ""),
-            entry("fields", Scope.ENTITY, FieldType.LIST, ""));
+            entry("data_mapper_class", Scope.ENTITY, FieldType.TEXT, ""),
+            entry("mapping_entity", Scope.ENTITY, FieldType.TEXT, ""));
 
     // ---------------------------------------------------------------- Mail writer
     private static final List<Entry> MAIL_WRITER = List.of(
@@ -208,8 +221,8 @@ public final class ParameterCatalog {
             entry("max_size", Scope.GLOBAL, FieldType.INTEGER, ""),
             entry("tls_enable", Scope.GLOBAL, FieldType.BOOLEAN, "no"),
             entry("delete_files_after_processing", Scope.GLOBAL, FieldType.BOOLEAN, "no"),
-            entry("mapping_entity", Scope.ENTITY, FieldType.TEXT, ""),
-            entry("fields", Scope.ENTITY, FieldType.LIST, ""));
+            entry("data_mapper_class", Scope.ENTITY, FieldType.TEXT, ""),
+            entry("mapping_entity", Scope.ENTITY, FieldType.TEXT, ""));
 
     // ---------------------------------------------------------------- DB writer
     private static final List<Entry> DB_WRITER = List.of(
@@ -217,10 +230,10 @@ public final class ParameterCatalog {
             entry("user", Scope.GLOBAL, FieldType.TEXT, ""),
             entry("password", Scope.GLOBAL, FieldType.SECRET, ""),
             entry("ext_insert_mapping", Scope.GLOBAL, FieldType.BOOLEAN, "no"),
+            entry("data_mapper_class", Scope.ENTITY, FieldType.TEXT, ""),
             entry("mapping_entity", Scope.ENTITY, FieldType.TEXT, ""),
             entry("dest_unique_id_field", Scope.ENTITY, FieldType.TEXT, ""),
-            entry("dest_filter_fields", Scope.ENTITY, FieldType.TEXT, ""),
-            entry("fields", Scope.ENTITY, FieldType.LIST, ""));
+            entry("dest_filter_fields", Scope.ENTITY, FieldType.TEXT, ""));
 
     // ---------------------------------------------------------------- Mongo writer
     private static final List<Entry> MONGO_WRITER = List.of(
@@ -230,10 +243,11 @@ public final class ParameterCatalog {
             entry("params", Scope.GLOBAL, FieldType.TEXT, ""),
             entry("user", Scope.GLOBAL, FieldType.TEXT, ""),
             entry("password", Scope.GLOBAL, FieldType.SECRET, ""),
+            entry("create_collection", Scope.WILDCARD, FieldType.BOOLEAN, "no"),
+            entry("data_mapper_class", Scope.ENTITY, FieldType.TEXT, ""),
             entry("mapping_entity", Scope.ENTITY, FieldType.TEXT, ""),
             entry("dest_unique_id_field", Scope.ENTITY, FieldType.TEXT, ""),
-            entry("dest_filter_fields", Scope.ENTITY, FieldType.TEXT, ""),
-            entry("fields", Scope.ENTITY, FieldType.LIST, ""));
+            entry("dest_filter_fields", Scope.ENTITY, FieldType.TEXT, ""));
 
     // ---------------------------------------------------------------- REST writer
     private static final List<Entry> REST_WRITER = List.of(
@@ -253,10 +267,33 @@ public final class ParameterCatalog {
             entry("error_code", Scope.WILDCARD, FieldType.TEXT, ""),
             entry("error_code_value", Scope.WILDCARD, FieldType.TEXT, ""),
             entry("single_id_filter", Scope.WILDCARD, FieldType.BOOLEAN, "no"),
-            entry("mapping_entity", Scope.ENTITY, FieldType.TEXT, ""),
             entry("dest_id_path", Scope.ENTITY, FieldType.TEXT, ""),
-            entry("dest_filter_fields", Scope.ENTITY, FieldType.TEXT, ""),
-            entry("fields", Scope.ENTITY, FieldType.LIST, ""));
+            entry("dest_filter_fields", Scope.ENTITY, FieldType.TEXT, ""));
+
+    // ---------------------------------------------------------------- Console writer
+    private static final List<Entry> CONSOLE_WRITER = List.of();
+
+    // ---------------------------------------------------------------- First batch writer
+    private static final List<Entry> FIRST_WRITER = List.of();
+
+    // ---------------------------------------------------------------- File writer
+    private static final List<Entry> FILE_WRITER = List.of(
+            entry("path", Scope.GLOBAL, FieldType.PATH, ""),
+            entry("delete_files_after_processing", Scope.GLOBAL, FieldType.BOOLEAN, "no"));
+
+    // ---------------------------------------------------------------- Code writer
+    private static final List<Entry> CODE_WRITER = List.of(
+            entry("implementation", Scope.GLOBAL, FieldType.TEXT, ""),
+            entry("proc_pos", Scope.GLOBAL, FieldType.INTEGER, "0"));
+
+    // ---------------------------------------------------------------- Exec writer
+    private static final List<Entry> EXEC_WRITER = List.of(
+            entry("cmd", Scope.GLOBAL, FieldType.TEXT, ""),
+            entry("args", Scope.GLOBAL, FieldType.TEXT, ""),
+            entry("working_dir", Scope.GLOBAL, FieldType.PATH, ""),
+            entry("timeout", Scope.GLOBAL, FieldType.INTEGER, "60"),
+            entry("proc_pos", Scope.GLOBAL, FieldType.INTEGER, "0"),
+            entry("exit_code_success", Scope.GLOBAL, FieldType.INTEGER, "0"));
 
     private static Entry entry(String param, Scope scope, FieldType type, String defaultValue) {
         return new Entry(param, scope, type, defaultValue);
@@ -271,8 +308,9 @@ public final class ParameterCatalog {
     static Map<String, List<Entry>> allByType() {
         final Map<String, List<Entry>> out = new LinkedHashMap<>();
         for (final String rw : List.of(
-                "csv_in", "json_in", "db_in", "mongo_in", "rest_in",
-                "csv_out", "json_out", "mail_out", "db_out", "mongo_out", "rest_out")) {
+                "csv_in", "json_in", "db_in", "mongo_in", "rest_in", "doc_in",
+                "csv_out", "json_out", "mail_out", "db_out", "mongo_out", "rest_out",
+                "console_out", "first_out", "file_out", "code", "exec")) {
             out.put(rw, entriesFor(rw));
         }
         return out;

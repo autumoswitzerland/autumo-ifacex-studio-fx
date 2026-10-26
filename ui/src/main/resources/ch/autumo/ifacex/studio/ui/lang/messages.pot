@@ -313,11 +313,14 @@ msgstr ""
 msgid "Remove the selected mapping"
 msgstr ""
 
-msgid "Run"
+msgid "Process"
 msgstr ""
 
-msgid "Run the IPC — engine integration follows later"
+msgid "Debug Mode"
 msgstr ""
+
+msgid "Run"
+msgstr "Ausführen"
 
 msgid "Save"
 msgstr ""

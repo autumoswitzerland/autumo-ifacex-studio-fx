@@ -200,7 +200,7 @@ public final class RawEditor {
      * and by the UI tests. The listener always runs on the JavaFX thread: the window title and
      * the status bar belong to it.</p>
      */
-    void fireEdit() {
+    public void fireEdit() {
         final Runnable listener = this.onEdit;
         if (listener == null) {
             return;
