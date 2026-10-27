@@ -120,9 +120,9 @@ public final class ParameterCatalog {
 
     // ---------------------------------------------------------------- CSV reader
     private static final List<Entry> CSV_READER = List.of(
-            entry("header_size", Scope.GLOBAL, FieldType.INTEGER, ""),
+            entry("header_size", Scope.GLOBAL, FieldType.INTEGER, "1"),
             entry("delete_files_after_processing", Scope.GLOBAL, FieldType.BOOLEAN, "no"),
-            entry("read_from_writer", Scope.GLOBAL, FieldType.TEXT, ""),
+            entry("read_from_writer", Scope.GLOBAL, FieldType.TEXT, "csv_out"),
             entry("read_from_folder", Scope.GLOBAL, FieldType.PATH, ""));
 
     // ---------------------------------------------------------------- JSON reader
@@ -133,7 +133,7 @@ public final class ParameterCatalog {
             entry("allow_absent_fields", Scope.WILDCARD, FieldType.BOOLEAN, "no"),
             entry("absent_field_placeholder", Scope.WILDCARD, FieldType.TEXT, ""),
             entry("delete_files_after_processing", Scope.GLOBAL, FieldType.BOOLEAN, "no"),
-            entry("read_from_writer", Scope.GLOBAL, FieldType.TEXT, ""),
+            entry("read_from_writer", Scope.GLOBAL, FieldType.TEXT, "json_out"),
             entry("read_from_folder", Scope.GLOBAL, FieldType.PATH, ""));
 
     // ---------------------------------------------------------------- DB reader
@@ -171,7 +171,7 @@ public final class ParameterCatalog {
             entry("auth_body", Scope.GLOBAL, FieldType.TEXT_AREA, ""),
             entry("alt_data_conn", Scope.GLOBAL, FieldType.BOOLEAN, "no"),
             entry("root_call", Scope.GLOBAL, FieldType.BOOLEAN, "no"),
-            entry("entities_url", Scope.WILDCARD, FieldType.TEXT, ""),
+            entry("entities_url", Scope.WILDCARD, FieldType.TEXT, "/"),
             entry("data_path", Scope.WILDCARD, FieldType.TEXT, ""),
             entry("sub_path", Scope.WILDCARD, FieldType.TEXT, ""),
             entry("query", Scope.WILDCARD, FieldType.TEXT_AREA, ""),
@@ -263,7 +263,7 @@ public final class ParameterCatalog {
             entry("auth_host", Scope.GLOBAL, FieldType.TEXT, ""),
             entry("auth_grant_type", Scope.GLOBAL, FieldType.TEXT, ""),
             entry("auth_body", Scope.GLOBAL, FieldType.TEXT_AREA, ""),
-            entry("entities_url", Scope.WILDCARD, FieldType.TEXT, ""),
+            entry("entities_url", Scope.WILDCARD, FieldType.TEXT, "/"),
             entry("error_code", Scope.WILDCARD, FieldType.TEXT, ""),
             entry("error_code_value", Scope.WILDCARD, FieldType.TEXT, ""),
             entry("single_id_filter", Scope.WILDCARD, FieldType.BOOLEAN, "no"),

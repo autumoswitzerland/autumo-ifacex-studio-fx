@@ -58,7 +58,7 @@ class ParameterCatalogTest {
         assertNotNull(byParam.get("entities_url"));
         assertEquals(Scope.WILDCARD, byParam.get("entities_url").scope());
         assertEquals(Scope.GLOBAL, byParam.get("host").scope());
-        assertEquals(Scope.ENTITY, byParam.get("fields").scope());
+        assertEquals("/", byParam.get("entities_url").defaultValue());
     }
 
     @Test

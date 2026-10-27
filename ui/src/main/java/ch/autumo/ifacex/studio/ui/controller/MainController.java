@@ -67,6 +67,7 @@ import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.ContentDisplay;
+import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
@@ -405,7 +406,7 @@ public class MainController extends BaseController {
                 setGraphic(item.payload() instanceof RwConfig rw
                         ? FormBuilder.typePill(rw.name()) : null);
                 // The global values and the section headers stand out, as asked for.
-                final boolean bold = K_GENERAL.equals(item.kind())
+                final boolean bold = K_ROOT.equals(item.kind())
                         || K_SOURCE.equals(item.kind())
                         || K_DEST.equals(item.kind());
                 if (bold) {
@@ -414,6 +415,16 @@ public class MainController extends BaseController {
                     }
                 } else {
                     getStyleClass().remove(NAV_EMPHASIS);
+                }
+                // Context menu on rest_in reader nodes: "Root Call".
+                if (item.payload() instanceof RwConfig rw && "rest_in".equals(rw.name())) {
+                    final ContextMenu cm = new ContextMenu();
+                    final MenuItem miRoot = new MenuItem(t("Root Call"));
+                    miRoot.setOnAction(_ -> run(true));
+                    cm.getItems().add(miRoot);
+                    setContextMenu(cm);
+                } else {
+                    setContextMenu(null);
                 }
             }
         };
@@ -707,7 +718,7 @@ public class MainController extends BaseController {
     @FXML
     private void onOpen() {
         final FileChooser chooser = new FileChooser();
-        String folder = ((StudioApp) app).getProjectRoot();
+        String folder = app.getConfigurationParameter(StudioConstants.PROP_KEY_PROJECT_ROOT);
         if (folder != null && folder.length() > 0) {
             chooser.setInitialDirectory(new File(folder));
         }
@@ -923,7 +934,6 @@ public class MainController extends BaseController {
         }
         setRawText(YamlConfigWriter.toText(config));
     }
-
     /** Sets the raw editor text. */
     private void setRawText(String text) {
         if (rawEditor == null) {
@@ -1177,12 +1187,12 @@ public class MainController extends BaseController {
     }
 
     /** {@code Configuration › Base Interface Configuration}: shows the ifaceX instance's
-     * {@code cfg/ifacex.yaml} (or legacy {@code cfg/ifacex.cfg}) in a code editor so it can be 
+     * {@code cfg/ifacex.ifcx} (or legacy {@code cfg/ifacex.cfg}) in a code editor so it can be 
      * viewed and edited. Requires a configured ifaceX test instance; otherwise a fine dialog informs
      * the user and the editor does not open. */
     @FXML
     private void onBaseInterfaceConfig() {
-        final String ifacexFolder = app.getConfigurationParameter(StudioConstants.PROP_KEY_IFACEX_FOLDER);
+        final String ifacexFolder = StudioHelper.getIfacexFolder(app);
         if (ifacexFolder == null || ifacexFolder.isBlank()) {
             UI.showFineWarningDialog(app,
                     t("No ifaceX test instance configured.<br>Open <b>General Settings</b> and specify the ifaceX instance folder first."));
@@ -1192,7 +1202,7 @@ public class MainController extends BaseController {
         boolean yaml = false;
         boolean cfg = false;
         Path validPath = null;        
-        Path baseInterfacesYml = java.nio.file.Paths.get(ifacexFolder, "cfg", "ifacex.yaml");
+        Path baseInterfacesYml = java.nio.file.Paths.get(ifacexFolder, "cfg", "ifacex.ifcx");
         Path baseInterfacesCfg = java.nio.file.Paths.get(ifacexFolder, "cfg", "ifacex.cfg");
         if (Files.isReadable(baseInterfacesYml)) {
         	yaml = true;
@@ -1258,7 +1268,7 @@ public class MainController extends BaseController {
             stage.initOwner(app.getPrimaryStage());
         }
         stage.show();
-        stage.centerOnScreen();        
+        stage.centerOnScreen();
     }
     
     /** {@code Configuration › Interface Configuration}: shows the ifaceX instance's
@@ -1267,7 +1277,7 @@ public class MainController extends BaseController {
      * does not open. */
     @FXML
     private void onInterfaceConfig() {
-        final String ifacexFolder = app.getConfigurationParameter(StudioConstants.PROP_KEY_IFACEX_FOLDER);
+        final String ifacexFolder = StudioHelper.getIfacexFolder(app);
         if (ifacexFolder == null || ifacexFolder.isBlank()) {
             UI.showFineWarningDialog(app,
                     t("No ifaceX test instance configured.<br>Open <b>General Settings</b> and specify the ifaceX instance folder first."));
@@ -1357,7 +1367,9 @@ public class MainController extends BaseController {
         	);
     	
         final StudioApp studioApp = (StudioApp) app;
-    	String ifacexFolder = Helper.chooseFolder(studioApp.getIfacexFolder(), stage, t("ifaceX Instance Directory"), t("ifaceX Directory"));
+        
+        String folder = StudioHelper.getIfacexFolder(app);
+    	String ifacexFolder = Helper.chooseFolder(folder, stage, t("ifaceX Instance Directory"), t("ifaceX Directory"));
     	
     	if (ifacexFolder != null && ifacexFolder.length() != 0) {
 	    	ifacexFolder = ifacexFolder.trim();
@@ -1389,6 +1401,10 @@ public class MainController extends BaseController {
     
     @FXML
     private void onRun() {
+        run(false);
+    }
+
+    private void run(boolean rootCall) {
         if (config == null) {
             status(t("Nothing to run."));
             return;
@@ -1425,7 +1441,7 @@ public class MainController extends BaseController {
         }
 
         final StudioApp studioApp = (StudioApp) app;
-        final String ifacexFolder = studioApp.getIfacexFolder();
+        final String ifacexFolder = StudioHelper.getIfacexFolder(app);
         if (!StudioHelper.checkIfacexFolder(studioApp, ifacexFolder)) {
             UI.showFineWarningDialog(app, t("No autumo ifaceX instance was found at the selected location!"));
             return;
@@ -1443,7 +1459,7 @@ public class MainController extends BaseController {
         updateRunButtons();
 
         final ProcessController processController = new ProcessController(this, debugMode);
-        processController.execute(false);
+        processController.execute(rootCall);
     }
 
     @FXML
@@ -1548,13 +1564,6 @@ public class MainController extends BaseController {
             return;
         }
         console.clear();
-    }
-
-    public void highlightConsole() {
-        if (console == null) {
-            return;
-        }
-        console.highlightConsole();
     }
 
     private Window window() {

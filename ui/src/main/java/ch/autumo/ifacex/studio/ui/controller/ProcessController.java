@@ -27,8 +27,11 @@ import org.slf4j.LoggerFactory;
 import ch.autumo.commons.utils.system.OSUtils;
 import ch.autumo.ifacex.studio.ui.StudioApp;
 import ch.autumo.ifacex.studio.ui.StudioHelper;
+import ch.autumo.ui.fx.controller.DefaultCodeEditorController;
+import ch.autumo.ui.fx.view.JsonFormatterView;
 import ch.autumo.ui.utils.UI;
 import javafx.application.Platform;
+import javafx.scene.Cursor;
 
 
 /**
@@ -37,6 +40,11 @@ import javafx.application.Platform;
 public class ProcessController {
 
 	private static final Logger LOG = LoggerFactory.getLogger(ProcessController.class.getName());
+
+	private final String ROOT_CALL_START_MARKER = "-------- Root call test: --------";
+	private final String ROOT_CALL_END_MARKER   = "-------- End root call ----------";
+	private final int ROOT_CALL_MAX_CHARS       = 20000;
+	
 
 	private MainController mainController = null;
 	private boolean debugMode = true;
@@ -74,7 +82,7 @@ public class ProcessController {
 		final Runnable runner = new Runnable() {
 			@Override
 			public void run() {
-				String path = studioApp.getIfacexFolder();
+				String path = StudioHelper.getIfacexFolder(studioApp);
 				if (path == null || path.length() == 0) {
 					Platform.runLater(() -> UI.showFineWarningDialog(studioApp,
 							"<html>You need to specify a ifaceX instance in the general settings<br>before you can run a configuration!</html>"));
@@ -86,6 +94,8 @@ public class ProcessController {
 					return;
 				}
 
+				studioApp.getScene().setCursor(Cursor.WAIT);
+				
 				if (OSUtils.isWindows()) {
 					path += "bin\\run.bat";
 				} else {
@@ -110,8 +120,8 @@ public class ProcessController {
 					addTestSwitch("DEBUG");
 				}
 
-				String workDir = studioApp.getIfacexFolder();
-				if (workDir != null && !workDir.endsWith(File.separator) && !workDir.endsWith("/")) {
+				String workDir = StudioHelper.getIfacexFolder(studioApp);
+				if (workDir != null && !workDir.endsWith(File.separator)) {
 					workDir += File.separator;
 				}
 				workDir = workDir + "bin";
@@ -186,12 +196,10 @@ public class ProcessController {
 											+ "Check the console output for details.</html>");
 						});
 					}
-					Platform.runLater(() -> {
-						if (mainController != null) {
-							mainController.highlightConsole();
-						}
-					});
 				} catch (Exception e) {
+					
+					studioApp.getScene().setCursor(Cursor.DEFAULT);
+					
 					LOG.error("Couldn't execute external test instance!", e);
 					Platform.runLater(() -> {
 						UI.showFineErrorDialog(studioApp,
@@ -200,6 +208,9 @@ public class ProcessController {
 										+ "Check test instance path.</html>");
 					});
 				} finally {
+					
+					studioApp.getScene().setCursor(Cursor.DEFAULT);
+					
 					try {
 						if (reader != null) {
 							reader.close();
@@ -215,6 +226,11 @@ public class ProcessController {
 					if (mainController != null) {
 						mainController.processFinished(finalExitCode);
 					}
+					// JSON fromatter
+			        if (rootCall) {
+			        	ProcessController.this.formatResult(studioApp);
+			        }
+					
 				});
 
 				appendConsoleLine("");
@@ -223,6 +239,29 @@ public class ProcessController {
 		new Thread(runner).start();
 	}
 
+	private void formatResult(StudioApp studioApp) {
+		final int smlen = ROOT_CALL_START_MARKER.length();
+		final String output = mainController.getConsole().getText();
+		if (output != null) {
+			final int start = output.indexOf(ROOT_CALL_START_MARKER) + smlen + 1;
+			if (start < -1)
+				return;
+			final int end = output.indexOf(ROOT_CALL_END_MARKER) - 1;
+			if (end < -1)
+				return;
+			
+			String json = output.substring(start, end);
+			json = json.trim();
+			int len = json.length();
+			if (len > ROOT_CALL_MAX_CHARS) {
+				json = json.substring(0, ROOT_CALL_MAX_CHARS);
+			}
+			final DefaultCodeEditorController ctrl = UI.showJsonFormatter(studioApp);
+			final JsonFormatterView view = (JsonFormatterView) ctrl.getView();
+			view.setText(json);
+		}
+	}
+	
 	private void appendConsoleLine(String line) {
 		final String l = line == null ? "" : line;
 		Platform.runLater(() -> {

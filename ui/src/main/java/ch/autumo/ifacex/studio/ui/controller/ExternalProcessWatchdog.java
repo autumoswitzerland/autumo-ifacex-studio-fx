@@ -13,6 +13,10 @@
  */
 package ch.autumo.ifacex.studio.ui.controller;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import ch.autumo.ifacex.studio.core.StudioConstants;
 import ch.autumo.ifacex.studio.ui.StudioApp;
 
 
@@ -20,6 +24,13 @@ import ch.autumo.ifacex.studio.ui.StudioApp;
  * Process watchdog, if call hangs.
  */
 public final class ExternalProcessWatchdog implements Runnable {
+	
+	/**
+	 * Logger.
+	 */
+	protected static final Logger LOG = LoggerFactory.getLogger(ExternalProcessWatchdog.class.getName());
+	
+	public static int DEFAULT_TIMEOUT = 60;
 	
 	private boolean isReseted = false;
 	private boolean isStopped = false;
@@ -46,7 +57,20 @@ public final class ExternalProcessWatchdog implements Runnable {
 	
 	@Override
 	public void run() {
-		final int timeout = studioApp.getTimeOut() * 1000; // milliseconds here!
+		int timeoutSecs = DEFAULT_TIMEOUT;
+        final String timeoutStr = studioApp.getConfigurationParameter(StudioConstants.PROP_KEY_TIMEOUT);
+        if (timeoutStr != null) {
+            try {
+            	timeoutSecs = Integer.parseInt(timeoutStr);
+			} catch (Exception e) {
+				LOG.warn("Couldn't load process timeout, using "+DEFAULT_TIMEOUT+" seconds.", e);
+				timeoutSecs = DEFAULT_TIMEOUT;
+			}
+        } else {
+        	timeoutSecs = DEFAULT_TIMEOUT;
+        }		
+		final int timeout = timeoutSecs * 1000; // milliseconds here!
+		
 		try {
 			synchronized (lock) {
 				while (true) {

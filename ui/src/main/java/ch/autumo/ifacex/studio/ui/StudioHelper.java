@@ -90,5 +90,18 @@ public class StudioHelper {
     	}
     	return true;
     }
+
+    /**
+     * Get proper formatted ifaceX folder.
+     * 
+     * @return ifaceX folder
+     */
+    public static String getIfacexFolder(BaseApp app) {
+    	String folder = app.getConfigurationParameter(StudioConstants.PROP_KEY_IFACEX_FOLDER);
+		if (folder != null && !folder.endsWith(File.separator)) {
+			folder += File.separator;
+		}
+		return folder;
+    }
     
 }

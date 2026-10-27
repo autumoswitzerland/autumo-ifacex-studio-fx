@@ -26,9 +26,9 @@ import javax.swing.event.DocumentListener;
 
 import org.fife.ui.rsyntaxtextarea.RSyntaxDocument;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
+import org.fife.ui.rsyntaxtextarea.Style;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rsyntaxtextarea.SyntaxScheme;
-import org.fife.ui.rsyntaxtextarea.Style;
 import org.fife.ui.rsyntaxtextarea.Theme;
 import org.fife.ui.rsyntaxtextarea.TokenTypes;
 import org.fife.ui.rtextarea.RTextScrollPane;
@@ -305,28 +305,6 @@ public final class Console {
         scheme.setStyles(styles);
         area.setSyntaxScheme(scheme);
         ((RSyntaxDocument) area.getDocument()).setSyntaxStyle(new ConsoleTokenMaker());
-    }
-
-    /**
-     * Highlights ifaceX log patterns in the current console text.
-     *
-     * <p>The patterns carried over from the legacy Studio
-     * ({@code ch.autumo.ifacex.studio.view.MainFrame#highlightConsole()}) are highlighted
-     * automatically by the {@link ConsoleTokenMaker} installed on the editor
-     * ({@link #applyConsoleSyntaxHighlighting(RSyntaxTextArea)}):
-     * {@link #DEBUG_PATTERN} ({@code "DEBUG"}), {@link #READER_PATTERN} ({@code "READER"}),
-     * {@link #WRITER_PATTERN} ({@code "WRITER"}), {@link #WARN_PATTERN} ({@code "Warning"}),
-     * {@link #ERROR_PATTERN} ({@code "Error"}) and {@link #EXCEPTION_PATTERN} ({@code "Exception"}),
-     * plus the ifaceX log level keywords INFO/WARN/ERROR/FATAL, succeeded, Caused by and
-     * ifaceX processing END.</p>
-     *
-     * <p>Kept as a no-op so callers (e.g. {@link ch.autumo.ifacex.studio.ui.controller.MainController})
-     * can keep invoking it after process output finishes; the actual highlighting is performed by
-     * the custom TokenMaker as text is written to the widget.</p>
-     */
-    public void highlightConsole() {
-        // Highlighting is performed by the ConsoleTokenMaker installed on the RSyntaxTextArea
-        // whenever text is set (see #applyConsoleSyntaxHighlighting). Nothing to do here.
     }
 
     /** The JavaFX container holding the editor; this is the node the tab shows. */

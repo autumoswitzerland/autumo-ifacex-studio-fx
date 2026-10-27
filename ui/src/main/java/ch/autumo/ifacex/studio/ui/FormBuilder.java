@@ -743,7 +743,8 @@ public final class FormBuilder {
      * <em>+</em> and the remove / move up / move down tools. {@code onEdit} is run after every
      * mutation that is not already reported by a backing list listener.
      */
-    private Node stringListEditor(Label caption, String prompt, ObservableList<String> items,
+    @SuppressWarnings("unchecked")
+	private Node stringListEditor(Label caption, String prompt, ObservableList<String> items,
             Runnable onEdit, List<String> suggestions) {
         final ListView<String> list = new ListView<>(items);
         list.setEditable(true);
@@ -798,7 +799,6 @@ public final class FormBuilder {
             input = tf;
             readInput = tf::getText;
         }
-        @SuppressWarnings("unchecked")
 		final Runnable addItem = () -> {
             final String v = readInput.get() == null ? "" : readInput.get().trim();
             if (!v.isEmpty() && !"<other>".equals(v) && !items.contains(v)) {
@@ -818,6 +818,13 @@ public final class FormBuilder {
             ((TextField) input).setOnAction(_ -> addItem.run());
         } else {
             ((ComboBox<?>) input).getEditor().setOnAction(_ -> addItem.run());
+            // Auto-add when a known interface is picked from the drop-down, so the
+            // tree/forms update immediately without an extra click on "+".
+            ((ComboBox<String>) input).valueProperty().addListener((_, _, b) -> {
+                if (b != null && !b.isBlank() && !"<other>".equals(b)) {
+                    addItem.run();
+                }
+            });
         }
 
         final Button add = toolButton("+", t("Add"), addItem);
@@ -919,11 +926,83 @@ public final class FormBuilder {
         final VBox box = new VBox(6);
         box.setPadding(new Insets(8));
         box.getChildren().add(title(t("Overwritten Values")));
-        if (general.isEmpty()) {
-            box.getChildren().add(hint(t("(none)")));
-        } else {
-            box.getChildren().add(mapGrid(general, null));
-        }
+
+        // Inline editor: one row per key/value pair, each with a remove button.
+        // Values are synced into the model on every keystroke, so they always reach
+        // the raw format (no commit-on-Enter needed).
+        final VBox rowsBox = new VBox(4);
+        final List<OVRow> rowModels = new ArrayList<>();
+
+        final Runnable sync = () -> {
+            general.clear();
+            for (final OVRow r : rowModels) {
+                final String k = r.key.getText() == null ? "" : r.key.getText().trim();
+                if (!k.isEmpty()) {
+                    general.put(k, r.value.getText() == null ? "" : r.value.getText());
+                }
+            }
+            changed();
+        };
+
+        final Runnable rebuildRows = () -> {
+            rowsBox.getChildren().clear();
+            rowModels.clear();
+            for (final Map.Entry<String, Object> e : new ArrayList<>(general.entrySet())) {
+                final String ik = e.getKey() == null ? "" : e.getKey();
+                final String iv = e.getValue() == null ? "" : e.getValue().toString();
+                final OVRow r = new OVRow(ik, iv);
+                rowModels.add(r);
+                final TextField kf = new TextField(ik);
+                kf.setPromptText(t("Key"));
+                kf.setPrefWidth(220);
+                final TextField vf = new TextField(iv);
+                vf.setPromptText(t("Value"));
+                vf.setPrefWidth(320);
+                final Button rm = toolButton("\u2212", t("Remove"), () -> {
+                    rowsBox.getChildren().remove(r.row);
+                    rowModels.remove(r);
+                    sync.run();
+                });
+                r.key = kf;
+                r.value = vf;
+                r.row = new HBox(6, kf, vf, rm);
+                rowsBox.getChildren().add(r.row);
+                kf.textProperty().addListener((_, _, _) -> sync.run());
+                vf.textProperty().addListener((_, _, _) -> sync.run());
+            }
+            if (general.isEmpty() && rowModels.isEmpty()) {
+                rowsBox.getChildren().add(hint(t("(none)")));
+            }
+        };
+
+        rebuildRows.run();
+
+        final Button addBtn = toolButton("+", t("Add overwritten value"), () -> {
+            // remove a possible "(none)" hint
+            rowsBox.getChildren().removeIf(n -> n instanceof Label);
+            final OVRow r = new OVRow("new_key", "");
+            rowModels.add(r);
+            final TextField kf = new TextField("new_key");
+            kf.setPromptText(t("Key"));
+            kf.setPrefWidth(220);
+            final TextField vf = new TextField("");
+            vf.setPromptText(t("Value"));
+            vf.setPrefWidth(320);
+            final Button rm = toolButton("\u2212", t("Remove"), () -> {
+                rowsBox.getChildren().remove(r.row);
+                rowModels.remove(r);
+                sync.run();
+            });
+            r.key = kf;
+            r.value = vf;
+            r.row = new HBox(6, kf, vf, rm);
+            rowsBox.getChildren().add(r.row);
+            kf.textProperty().addListener((_, _, _) -> sync.run());
+            vf.textProperty().addListener((_, _, _) -> sync.run());
+            sync.run();
+        });
+
+        box.getChildren().addAll(rowsBox, new HBox(6, addBtn));
         return box;
     }
 
@@ -1274,5 +1353,16 @@ public final class FormBuilder {
         l.getStyleClass().add("field-label");
         final VBox box = new VBox(2, l, control);
         return box;
+    }
+
+    /** Row model for the inline overwritten-values editor. */
+    public static final class OVRow {
+        public TextField key;
+        public TextField value;
+        public javafx.scene.layout.HBox row;
+
+        public OVRow(String k, String v) {
+            // fields assigned by caller
+        }
     }
 }

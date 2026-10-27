@@ -18,7 +18,6 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Properties;
 
-import ch.autumo.commons.utils.system.OSUtils;
 import ch.autumo.ifacex.studio.core.LicIfaceXApp100;
 import ch.autumo.ifacex.studio.core.StudioConstants;
 import ch.autumo.ifacex.studio.ui.controller.MainController;
@@ -49,14 +48,19 @@ import javafx.util.Duration;
  */
 public class StudioApp extends BaseApp {
 
-	public static int DEFAULT_TIMEOUT = 60;
-	
-    private int timeOut = DEFAULT_TIMEOUT;
-    private String projectRoot = null;
-    private String ifacexFolder = null;
-	private String ifacexSeed = null;
+	private Stage stage = null;
+	private Scene scene = null;
     
     private LicIfaceXApp100 ifacexApp = null;
+    
+    /**
+     * How long the splash screen of the Studio stays up.
+     *
+     * <p>The About page of the navigation pane is loaded afterwards: the engine of its WebView
+     * blocks the JavaFX thread for about a second, and the splash screen should animate in that
+     * time.</p>
+     */
+    private static final Duration SPLASH_DURATION = Duration.seconds(3);
     
     
     /** Creates the application; the framework instantiates exactly one. */
@@ -136,12 +140,16 @@ public class StudioApp extends BaseApp {
      */
     @Override
     protected void initialize(Stage primaryStage, Properties configuration) {
+    	
+    	stage = primaryStage;
+    	
         final List<String> args = getParameters().getRaw();
 
         // The scene already exists: BaseBorderView (via MainView) created it on the stage and
         // installed the autumo-ui base style first and the application's own style sheet
         // (style/application.css, DevGuide §4.5) on top of it.
-        final Scene scene = primaryStage.getScene();
+        scene = primaryStage.getScene();
+        
         // Size the window to ~1600x1000, but never larger than the available
         // screen: on smaller displays fall back to the previous size (1100x720).
         final Screen screen = Screen.getPrimary();
@@ -160,26 +168,13 @@ public class StudioApp extends BaseApp {
         primaryStage.show();
 
         // Props
-        final String timeoutStr = getConfigurationParameter(StudioConstants.PROP_KEY_TIMEOUT);
-        if (timeoutStr != null) {
-            try {
-            	timeOut = Integer.parseInt(timeoutStr);
-			} catch (Exception e) {
-				LOG.warn("Couldn't load process timeout, using "+DEFAULT_TIMEOUT+" seconds.", e);
-				timeOut = DEFAULT_TIMEOUT;
-			}
-        } else {
-        	timeOut = DEFAULT_TIMEOUT;
-        }
-        
         ifacexApp = new LicIfaceXApp100();
         
-        projectRoot = getConfigurationParameter(StudioConstants.PROP_KEY_PROJECT_ROOT);
-        ifacexSeed = getConfigurationParameter(ch.autumo.commons.Constants.SEC_KEY_SEED);
+        String ifacexSeed = getConfigurationParameter(ch.autumo.commons.Constants.SEC_KEY_SEED);
         if (ifacexSeed != null && ifacexSeed.length() > 0) {
             ifacexApp.setSeed(ifacexSeed);
         }
-        ifacexFolder = getConfigurationParameter(StudioConstants.PROP_KEY_IFACEX_FOLDER);
+        String ifacexFolder = StudioHelper.getIfacexFolder(this);
         if (ifacexFolder != null && ifacexFolder.length() > 0) {
             try {
 				ifacexApp.initializeBaseConfig(ifacexFolder);
@@ -207,15 +202,6 @@ public class StudioApp extends BaseApp {
             }
         }
     }
-
-    /**
-     * How long the splash screen of the Studio stays up.
-     *
-     * <p>The About page of the navigation pane is loaded afterwards: the engine of its WebView
-     * blocks the JavaFX thread for about a second, and the splash screen should animate in that
-     * time.</p>
-     */
-    private static final Duration SPLASH_DURATION = Duration.seconds(3);
 
     /**
      * The Studio shows a splash screen while it starts: the ifaceX logo and the scanner bar of
@@ -290,6 +276,24 @@ public class StudioApp extends BaseApp {
     }
 
     /**
+     * Get stage.
+     * 
+     * @return stage
+     */
+    public Stage getStage() {
+    	return this.stage;
+    }
+    
+    /**
+     * Get scene.
+     * 
+     * @return scene
+     */
+    public Scene getScene() {
+    	return this.scene;
+    }
+    
+    /**
      * The Studio's application base resource path; the framework loads {@code main.fxml},
      * {@code html/*.html}, the PO catalogue and the images from here.
      *
@@ -359,42 +363,6 @@ public class StudioApp extends BaseApp {
     public String getInternalAppName() {
         return "ifaceXStudioFX";
     }
-
-    public int getTimeOut() {
-		return timeOut;
-	}
-
-	public void setTimeOut(int timeOut) {
-		this.timeOut = timeOut;
-	}
-
-	public String getProjectRoot() {
-		return projectRoot;
-	}
-
-	public void setProjectRoot(String projectRoot) {
-		this.projectRoot = projectRoot;
-	}
-
-	public String getIfacexFolder() {
-    	if (!ifacexFolder.endsWith(OSUtils.FILE_SEPARATOR))
-    		ifacexFolder = ifacexFolder + OSUtils.FILE_SEPARATOR;
-		return ifacexFolder;
-	}
-
-	public void setIfacexFolder(String ifacexFolder) {
-    	if (!ifacexFolder.endsWith(OSUtils.FILE_SEPARATOR))
-    		ifacexFolder = ifacexFolder + OSUtils.FILE_SEPARATOR;
-		this.ifacexFolder = ifacexFolder;
-	}
-
-	public String getIfacexSeed() {
-		return ifacexSeed;
-	}
-
-	public void setIfacexSeed(String ifacexSeed) {
-		this.ifacexSeed = ifacexSeed;
-	}
 
 	public LicIfaceXApp100 getIfacexApp() {
 		return ifacexApp;
