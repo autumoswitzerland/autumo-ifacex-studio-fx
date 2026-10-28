@@ -78,7 +78,7 @@ public final class Console {
      * what the user typed; {@link #setText(String)} sets it directly. It is the only text the
      * JavaFX thread ever reads, so it never has to touch the Swing component.
      */
-    private volatile String text = "";
+    private final StringBuilder textBuffer = new StringBuilder();
 
     /**
      * Set while the editor widget is filled with the text of the JavaFX side copy: the document
@@ -87,6 +87,9 @@ public final class Console {
      */
     private final java.util.concurrent.atomic.AtomicBoolean applying =
             new java.util.concurrent.atomic.AtomicBoolean();
+
+    /** Notified when files are dropped onto the console. */
+    private volatile java.util.function.Predicate<java.util.List<java.io.File>> onFilesDropped;
 
     /** Notified when the user changed the text in the editor. */
     private volatile Runnable onEdit;
@@ -101,12 +104,28 @@ public final class Console {
     private volatile RTextScrollPane scrollPane;
 
     /**
+     * Output that arrived but has not been appended to the Swing document yet. Appending line by
+     * line would repaint the document thousands of times during a run; the buffer is flushed as
+     * one block instead (see {@link #FLUSH_DELAY_MS}).
+     */
+    private final StringBuilder pending = new StringBuilder();
+
+    /** Timer that flushes {@link #pending}; created lazily on the AWT event dispatch thread. */
+    private javax.swing.Timer flushTimer;
+
+    /** Delay in milliseconds after which buffered output is appended to the document. */
+    private static final int FLUSH_DELAY_MS = 60;
+
+    /**
      * Creates the editor. The Swing widget is built on the AWT event dispatch thread, so the
      * JavaFX thread is never blocked by it; the container is filled as soon as the widget is
      * there.
      */
     public Console() {
         this.root.getStyleClass().add("console");
+        // The text cursor (I-beam) over the output: the console cannot be typed into, but it
+        // can be selected. The Swing component's own cursor is not shown by JavaFX.
+        this.root.setCursor(javafx.scene.Cursor.TEXT);
         SwingUtilities.invokeLater(this::buildEditor);
     }
 
@@ -134,12 +153,24 @@ public final class Console {
                 if (Console.this.applying.get()) {
                     return;
                 }
-                Console.this.text = area.getText();
+                synchronized (Console.this.textBuffer) {
+                    Console.this.textBuffer.setLength(0);
+                    Console.this.textBuffer.append(area.getText());
+                }
                 Console.this.fireEdit();
             }
         });
         final RTextScrollPane pane = createScrollPane(area);
         applyTheme(area);
+        // The Swing popup follows the look & feel (bright): paint it like the editor.
+        ch.autumo.ui.fx.view.EditorPopup.applyDarkTheme(area);
+        // A file dropped onto the console opens it (the drop is a Swing event). Both the output
+        // view and its scroll pane take the drop, so the gutter accepts one as well.
+        FileDropTarget.install(area, files -> onFilesDropped != null && onFilesDropped.test(files));
+        FileDropTarget.install(pane, files -> onFilesDropped != null && onFilesDropped.test(files));
+        // Copy and select all of the output (paste/cut/undo stay inactive: the console is
+        // read-only). Inside a SwingNode a Cmd/Ctrl combination does not reach Swing.
+        ch.autumo.ui.fx.view.EditorShortcuts.install(this.root, area);
         // Highlight ifaceX log patterns with the legacy colours via a custom TokenMaker.
         applyConsoleSyntaxHighlighting(area);
         this.textArea = area;
@@ -151,31 +182,87 @@ public final class Console {
             this.root.setCenter(node);
         });
         // The text that was set before the widget existed.
-        writeToWidget(area);
+        writeToWidget(area, getText());
     }
 
     /**
-     * Fills the editor widget with the text of the JavaFX side copy.
+     * Replaces the whole content of the editor widget.
      *
-     * <p>Always the <em>latest</em> text is written, so a text that arrives while an older one
-     * is still on its way to the widget wins: the widget and the copy always converge.</p>
+     * <p>The text is the one that was captured when the write was queued, never the current
+     * JavaFX side copy: output lines that arrive while the write is on its way to the AWT
+     * thread are buffered in {@link #pending} and appended after it. Reading the live copy
+     * here would write those lines twice - once as part of the full text, once from the
+     * buffer.</p>
+     *
+     * <p>Running on the AWT event dispatch thread.</p>
      *
      * @param area the editor widget
+     * @param text the complete new content
      */
-    private void writeToWidget(RSyntaxTextArea area) {
-        final String latest = this.text;
-        if (latest.equals(area.getText())) {
-            return;
+    private void writeToWidget(RSyntaxTextArea area, String text) {
+        synchronized (this.pending) {
+            // Superseded appends must not be applied on top of the new content.
+            this.pending.setLength(0);
         }
         this.applying.set(true);
         try {
-            area.setText(latest);
-            // setText() puts the caret behind the last character, and the view scrolls there:
-            // the editor would always show the end of the document. It starts at the top.
-            area.setCaretPosition(0);
+            if (!text.equals(area.getText())) {
+                area.setText(text);
+            }
+            // A console shows the newest output; keep the caret at the end.
+            area.setCaretPosition(area.getDocument().getLength());
         } finally {
             this.applying.set(false);
         }
+        repaint(area);
+    }
+
+    /**
+     * Repaints the console now.
+     *
+     * <p>A {@link SwingNode} paints the embedded component into an image and does not repaint it
+     * by itself when the document changed: cleared or replaced content stays visible until
+     * something triggers a paint (e.g. scrolling).</p>
+     */
+    public void repaintConsole() {
+        final RSyntaxTextArea area = this.textArea;
+        if (area == null) {
+            return;
+        }
+        SwingUtilities.invokeLater(() -> repaint(area));
+    }
+
+    /**
+     * Repaints the editor widget and its scroll pane, twice: the pane has to be laid out before
+     * it can paint the new content.
+     *
+     * @param area the editor widget
+     */
+    private void repaint(RSyntaxTextArea area) {
+        final RTextScrollPane pane = this.scrollPane;
+        if (pane != null) {
+            pane.revalidate();
+            pane.repaint();
+        }
+        area.repaint();
+        SwingUtilities.invokeLater(() -> {
+            if (pane != null) {
+                pane.repaint();
+            }
+            area.repaint();
+        });
+    }
+
+    /**
+     * Sets the handler for files dropped onto the console.
+     *
+     * <p>The console is a Swing component: a drop is delivered to Swing, not to the JavaFX
+     * scene, so it installs its own {@link java.awt.dnd.DropTarget} ({@link FileDropTarget}).</p>
+     *
+     * @param handler receives the dropped files, returns {@code true} when one was opened
+     */
+    public void setOnFilesDropped(java.util.function.Predicate<java.util.List<java.io.File>> handler) {
+        this.onFilesDropped = handler;
     }
 
     /**
@@ -322,7 +409,9 @@ public final class Console {
      * @return the text
      */
     public String getText() {
-        return this.text;
+        synchronized (this.textBuffer) {
+            return this.textBuffer.toString();
+        }
     }
 
     /**
@@ -335,13 +424,16 @@ public final class Console {
      */
     public void setText(String text) {
         final String value = text == null ? "" : text;
-        this.text = value;
+        synchronized (this.textBuffer) {
+            this.textBuffer.setLength(0);
+            this.textBuffer.append(value);
+        }
         final RSyntaxTextArea area = this.textArea;
         if (area == null) {
             // The widget is not built yet: it picks the text up when it is.
             return;
         }
-        SwingUtilities.invokeLater(() -> writeToWidget(area));
+        SwingUtilities.invokeLater(() -> writeToWidget(area, value));
     }
 
     /**
@@ -354,24 +446,75 @@ public final class Console {
      */
     public void appendLine(String line) {
         final String l = line == null ? "" : line;
-        this.text = this.text + l + "\n";
+        final String chunk = l + "\n";
+        synchronized (this.textBuffer) {
+            this.textBuffer.append(chunk);
+        }
         final RSyntaxTextArea area = this.textArea;
         if (area == null) {
             return;
         }
-        SwingUtilities.invokeLater(() -> writeToWidget(area));
+        SwingUtilities.invokeLater(() -> {
+            synchronized (this.pending) {
+                this.pending.append(chunk);
+            }
+            scheduleFlush();
+        });
+    }
+
+    /**
+     * Appends the buffered output to the document.
+     *
+     * <p>Appending is essential: the previous implementation replaced the whole document with
+     * {@code setText()} for every line. That invalidated the editor's selection on every
+     * incoming line (a selection in the console therefore looked corrupted until it was
+     * cleared), reset the caret to the first line on every line, and re-tokenised the complete
+     * document for every line - quadratic work with a quadratic repaint.</p>
+     *
+     * <p>Running on the AWT event dispatch thread.</p>
+     */
+    private void flushPending() {
+        final RSyntaxTextArea area = this.textArea;
+        final String chunk;
+        synchronized (this.pending) {
+            if (this.pending.length() == 0) {
+                return;
+            }
+            chunk = this.pending.toString();
+            this.pending.setLength(0);
+        }
+        if (area == null) {
+            return;
+        }
+        this.applying.set(true);
+        try {
+            final javax.swing.text.Document doc = area.getDocument();
+            doc.insertString(doc.getLength(), chunk, null);
+            // A console shows the newest output; keep the caret at the end.
+            area.setCaretPosition(doc.getLength());
+        } catch (javax.swing.text.BadLocationException e) {
+            // The document was reset in between (clear/setText); the next flush starts over.
+        } finally {
+            this.applying.set(false);
+        }
+    }
+
+    /** Starts the flush timer if it is not running; running on the AWT event dispatch thread. */
+    private void scheduleFlush() {
+        if (this.flushTimer == null) {
+            this.flushTimer = new javax.swing.Timer(FLUSH_DELAY_MS, _ -> flushPending());
+            this.flushTimer.setRepeats(false);
+        }
+        if (!this.flushTimer.isRunning()) {
+            this.flushTimer.start();
+        }
     }
 
     /**
      * Clears the console text.
      */
     public void clear() {
-        this.text = "";
-        final RSyntaxTextArea area = this.textArea;
-        if (area == null) {
-            return;
-        }
-        SwingUtilities.invokeLater(() -> writeToWidget(area));
+        setText("");
     }
 
     /**

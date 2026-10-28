@@ -141,6 +141,20 @@ public final class InterfaceTypes {
     }
 
     /**
+     * Whether a writer writes the records as they come, without an output mapping.
+     *
+     * <p>{@code ConsoleWriter} and {@code FirstBatchWriter} ignore a mapping completely; the only
+     * entity related parameter they read is {@code <writer>_<entity>_fields}, the column headers
+     * of their output.</p>
+     *
+     * @param rwName writer section name, e.g. {@code console_out}
+     * @return {@code true} when the engine ignores an output mapping for this writer
+     */
+    public static boolean writesUnchanged(String rwName) {
+        return "console_out".equals(rwName) || "first_out".equals(rwName);
+    }
+
+    /**
      * Resolves the type of an interface name such as {@code csv_in}, {@code rest_out},
      * {@code code} or {@code exec}.
      *

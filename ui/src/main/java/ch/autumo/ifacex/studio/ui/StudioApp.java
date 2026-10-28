@@ -27,6 +27,7 @@ import ch.autumo.ifacex.studio.ui.view.MainView;
 import ch.autumo.ui.Constants;
 import ch.autumo.ui.fx.BaseApp;
 import ch.autumo.ui.fx.view.SplashScreen;
+import ch.autumo.ui.utils.Messages;
 import ch.autumo.ui.utils.UI;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
@@ -119,6 +120,13 @@ public class StudioApp extends BaseApp {
 
     	instance = this;
 
+        // The language must be active BEFORE the view is built: UI.setup() below loads
+        // main.fxml, and the controller applies its texts immediately. The framework sets the
+        // language after preInitialize() - too late for everything created here. The precedence
+        // is the framework's own (BaseApp.resolveLanguage): -Dapp.lang, 'language'/'lang' in
+        // cfg/app.cfg, the desktop language, English for anything unsupported.
+        Messages.setLanguage(resolveLanguage(configuration), StudioConstants.BASE);
+
         final MainView view = new MainView(this, primaryStage, Constants.STYLESHEET);
         final MainModel model = new MainModel(view);
         view.setModel(model);
@@ -155,7 +163,7 @@ public class StudioApp extends BaseApp {
         final Screen screen = Screen.getPrimary();
         final Rectangle2D bounds = screen.getVisualBounds();
         final double targetW = 1600.0;
-        final double targetH = 1000.0;
+        final double targetH = 1020.0;
         final double w = Math.min(targetW, bounds.getWidth());
         final double h = Math.min(targetH, bounds.getHeight());
         primaryStage.setWidth(Math.max(w, 1100.0));

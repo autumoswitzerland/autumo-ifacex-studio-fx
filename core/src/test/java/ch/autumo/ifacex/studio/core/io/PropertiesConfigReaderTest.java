@@ -58,8 +58,12 @@ class PropertiesConfigReaderTest {
         final EntityConfig contacts = writer.entities().get("contacts");
         final List<FieldMappingRec> fields = contacts.mapping().fields();
 
-        assertEquals(List.of("kundennummer", "vorname", "typ", "marketingsperre", "nachname"),
+        // The engine applies the rows in the order of its flat keys: standard mappings
+        // ('mapping_field_*') and insert-only mappings ('mapping_insert_*') are two separate
+        // index spaces, and 'mapping_field_' sorts before 'mapping_insert_'. So all standard
+        // rows come first - each in numeric order - followed by the insert rows.
+        assertEquals(List.of("kundennummer", "vorname", "nachname", "typ", "marketingsperre"),
                 fields.stream().map(FieldMappingRec::destField).toList(),
-                "the fields keep the order of their numbers in the file");
+                "the rows keep the order the engine applies them in");
     }
 }

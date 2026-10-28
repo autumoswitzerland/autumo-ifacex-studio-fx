@@ -117,6 +117,17 @@ public final class ConsoleTokenMaker extends AbstractTokenMaker {
         return new TokenMap();
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Note on {@code addToken}: the {@code end} parameter is the index of the <em>last</em>
+     * character, not an exclusive end - {@code TokenImpl.set(...)} computes
+     * {@code textCount = end - beg + 1}. Passing an exclusive end makes every token one
+     * character too long, so it swallows the first character of the next token: the text is
+     * painted shifted and overlapped (one white letter in front of a coloured word, letters
+     * apparently missing or displaced while selecting).
+     * </p>
+     */
     @Override
     public Token getTokenList(Segment text, int initialTokenType, int startOffset) {
         resetTokenList();
@@ -139,10 +150,10 @@ public final class ConsoleTokenMaker extends AbstractTokenMaker {
             if (matchLen > 0) {
                 // Paint the unmatched run before the match in the default colour.
                 if (i > runStart) {
-                    addToken(array, segStart + runStart, segStart + i,
+                    addToken(array, segStart + runStart, segStart + i - 1,
                             TokenTypes.IDENTIFIER, startOffset + runStart);
                 }
-                addToken(array, segStart + i, segStart + i + matchLen,
+                addToken(array, segStart + i, segStart + i + matchLen - 1,
                         matchType, startOffset + i);
                 i += matchLen;
                 runStart = i;
@@ -152,7 +163,7 @@ public final class ConsoleTokenMaker extends AbstractTokenMaker {
         }
         // Trailing unmatched run.
         if (runStart < len) {
-            addToken(array, segStart + runStart, segStart + len,
+            addToken(array, segStart + runStart, segStart + len - 1,
                     TokenTypes.IDENTIFIER, startOffset + runStart);
         }
         addNullToken();

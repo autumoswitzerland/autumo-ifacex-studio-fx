@@ -28,6 +28,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import ch.autumo.ifacex.studio.core.model.IpcConfig;
+import ch.autumo.ifacex.studio.core.model.Meta;
 
 /**
  * Golden round-trip tests over a curated set of real {@code .ifacex} templates.
@@ -117,10 +118,20 @@ class RoundTripTest {
         final List<String> lines = Files.readAllLines(file, StandardCharsets.UTF_8);
         final int close = closingRuler(lines);
         assertFalse(close < 0, "no closing ruler in " + file);
-        final String originalHeader = String.join("\n", lines.subList(0, close + 1)) + "\n";
 
         final IpcConfig cfg = PropertiesConfigReader.read(file);
-        assertEquals(originalHeader, CommentHeader.render(cfg.meta()), "header mismatch: " + file);
+        final Meta original = CommentHeader.parse(lines);
+        final Meta rendered = CommentHeader.parse(CommentHeader.render(cfg.meta()).lines().toList());
+
+        // Everything is preserved - the fields, the structure and the notes text. Two things
+        // are normalised on purpose: the date (a conversion creates a new file, so the header
+        // carries the date of the conversion) and the line breaks of the notes, which are only
+        // the wrapping of the file (they are wrapped at the width of the header).
+        assertEquals(original.title(), rendered.title(), "title: " + file);
+        assertEquals(original.version(), rendered.version(), "version: " + file);
+        assertEquals(original.author(), rendered.author(), "author: " + file);
+        assertEquals(original.notes(), rendered.notes(), "notes: " + file);
+        assertEquals(cfg.meta().date(), rendered.date(), "date: " + file);
     }
 
     private static void assertMetaEquals(IpcConfig a, IpcConfig b, Path file) {

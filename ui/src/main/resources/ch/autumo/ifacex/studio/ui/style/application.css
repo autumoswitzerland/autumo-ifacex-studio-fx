@@ -206,6 +206,16 @@
     -fx-font-size: 14.5px;
 }
 
+/* --- drop target: a configuration file dragged onto the navigation pane --- */
+.nav-host {
+    -fx-border-width: 2;
+    -fx-border-color: transparent;
+}
+.nav-host.drop-target {
+    -fx-border-color: #2DC7FE;
+    -fx-background-color: rgba(45, 199, 254, 0.08);
+}
+
 /* --- the original Studio's drag-and-drop icon (auto-mapping) -------------- */
 .dnd-button {
     -fx-background-color: transparent;

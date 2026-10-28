@@ -193,6 +193,15 @@ msgstr ""
 msgid "Job wiring"
 msgstr ""
 
+msgid "Kill"
+msgstr ""
+
+msgid "Kill the running process"
+msgstr ""
+
+msgid "Killing the process..."
+msgstr ""
+
 msgid "Language"
 msgstr ""
 
@@ -385,7 +394,16 @@ msgstr ""
 msgid "The destination mapping {0} has a wrong format!"
 msgstr ""
 
+msgid "The console shows the output up to the moment it was stopped."
+msgstr ""
+
+msgid "The ifaceX process was stopped."
+msgstr ""
+
 msgid "The legacy GUI allows exactly one destination entity per source entity. For a second target, use a view or a second processor configuration."
+msgstr ""
+
+msgid "The process was stopped."
 msgstr ""
 
 msgid "The raw configuration is not valid YAML."
@@ -694,4 +712,310 @@ msgstr ""
 
 #. Log level
 msgid "log_level"
+msgstr ""
+
+#. Value that replaces a missing source field (may be empty).
+msgid "absent_field_placeholder.help"
+msgstr ""
+
+#. Headers for the request, key and value separated by ':', the pairs by '|'.
+msgid "additional_headers.help"
+msgstr ""
+
+#. Query parameters for the request, key and value separated by '=', the pairs by '&'.
+msgid "additional_params.help"
+msgstr ""
+
+#. Continue without an error when a source field is missing; the placeholder below is 
+msgid "allow_absent_fields.help"
+msgstr ""
+
+#. API key for the authentication; it can be stored encoded.
+msgid "api_key.help"
+msgstr ""
+
+#. Name of the header or the parameter that carries the API key.
+msgid "api_key_name.help"
+msgstr ""
+
+#. Use an authenticated mail transport.
+msgid "auth.help"
+msgstr ""
+
+#. Additional body parameters of the authentication request, key and value separated 
+msgid "auth_body.help"
+msgstr ""
+
+#. OAuth grant type of the token request, e.g. 'client_credentials'.
+msgid "auth_grant_type.help"
+msgstr ""
+
+#. Host of the authentication service, if it differs from the data host.
+msgid "auth_host.help"
+msgstr ""
+
+#. URL part after the authentication host.
+msgid "auth_url.help"
+msgstr ""
+
+#. Body of the mail; line breaks are written as #BR# because the value is a single 
+msgid "body.help"
+msgstr ""
+
+#. Fully qualified class name of the Code implementation that processes the records.
+msgid "code_implementation.help"
+msgstr ""
+
+#. Position of the writer in the processing chain; 0 means the first position.
+msgid "code_proc_pos.help"
+msgstr ""
+
+#. Fully qualified class name of a DataMapper that transforms the record before it is 
+msgid "data_mapper_class.help"
+msgstr ""
+
+#. Name of the database (MongoDB: the database to use).
+msgid "db_name.help"
+msgstr ""
+
+#. Delete the processed file, so that it is not read again in the next run.
+msgid "delete_files_after_processing.help"
+msgstr ""
+
+#. Destination fields whose values identify an existing record - they decide between 
+msgid "dest_filter_fields.help"
+msgstr ""
+
+#. JSON path in the REST response that returns the id of the written record.
+msgid "dest_id_path.help"
+msgstr ""
+
+#. Destination field that holds the unique id of the record; needed for the update 
+msgid "dest_unique_id_field.help"
+msgstr ""
+
+#. Maximum number of characters taken from a document.
+msgid "doc_in_contents_max_length.help"
+msgstr ""
+
+#. Delete the document after it was processed.
+msgid "doc_in_delete_files_after_processing.help"
+msgstr ""
+
+#. Fully qualified class name of the DocumentExtractor that reads the documents.
+msgid "doc_in_extractor_implementation.help"
+msgstr ""
+
+#. Number of documents requested per call.
+msgid "doc_in_fetchSize.help"
+msgstr ""
+
+#. Character encoding of the file, e.g. UTF-8.
+msgid "encoding.help"
+msgstr ""
+
+#. URL part after the host for this entity; a trailing '/' must be part of the value.
+msgid "entities_url.help"
+msgstr ""
+
+#. Fully qualified class name of an ExclusionFilter that skips records.
+msgid "exclusion_filter_class.help"
+msgstr ""
+
+#. Arguments passed to the program.
+msgid "exec_args.help"
+msgstr ""
+
+#. Program or script to execute.
+msgid "exec_cmd.help"
+msgstr ""
+
+#. Exit code that counts as success; 0 by default.
+msgid "exec_exit_code_success.help"
+msgstr ""
+
+#. Position of the writer in the processing chain; 0 means the first position.
+msgid "exec_proc_pos.help"
+msgstr ""
+
+#. Seconds the program may run before it is stopped.
+msgid "exec_timeout.help"
+msgstr ""
+
+#. Directory the program runs in.
+msgid "exec_working_dir.help"
+msgstr ""
+
+#. Allow values such as NOW() or NULL in the insert mappings (database writers only).
+msgid "ext_insert_mapping.help"
+msgstr ""
+
+#. Number of records requested per call.
+msgid "fetchSize.help"
+msgstr ""
+
+#. Read the source fields as JSON paths instead of plain keys.
+msgid "field_path_access.help"
+msgstr ""
+
+#. Source fields of the entity, in the order of the data.
+msgid "fields.help"
+msgstr ""
+
+#. File to read.
+msgid "file.help"
+msgstr ""
+
+#. Delete the file after it was written.
+msgid "file_out_delete_files_after_processing.help"
+msgstr ""
+
+#. Folder the files are written to.
+msgid "file_out_path.help"
+msgstr ""
+
+#. Folder for input and output files; empty means the 'files_folder' of the base 
+msgid "files_folder.help"
+msgstr ""
+
+#. Number of header lines of the CSV file; 0 means no header.
+msgid "header_size.help"
+msgstr ""
+
+#. Host name or IP address of the remote system, without protocol and path.
+msgid "host.help"
+msgstr ""
+
+#. Identifier of the job, used in log output and reports.
+msgid "job_id.help"
+msgstr ""
+
+#. Sender address of the mail.
+msgid "mail_out_from.help"
+msgstr ""
+
+#. Maximum size of the attachments in megabytes.
+msgid "mail_out_max_size.help"
+msgstr ""
+
+#. Create the collection when it does not exist.
+msgid "mongo_out_create_collection.help"
+msgstr ""
+
+#. Field used to order the records of the entity; needed for stable batching.
+msgid "order_field.help"
+msgstr ""
+
+#. Name of the pointer to the first record of the next batch.
+msgid "pagination_after_id.help"
+msgstr ""
+
+#. Attribute of the pagination object that holds the number of items per page; it must 
+msgid "pagination_items_per_page.help"
+msgstr ""
+
+#. Attribute of the pagination object that holds the total amount of records; it is used 
+msgid "pagination_items_total.help"
+msgstr ""
+
+#. Attribute of the pagination object that holds the last page; it is used to verify the 
+msgid "pagination_last_page.help"
+msgstr ""
+
+#. JSON path to the object that holds the pagination details; use '.' when they are at 
+msgid "pagination_path.help"
+msgstr ""
+
+#. Request parameter that carries the fetch size.
+msgid "param_fetchSize.help"
+msgstr ""
+
+#. Request parameter that carries the offset, for APIs without page numbers.
+msgid "param_offsetName.help"
+msgstr ""
+
+#. Request parameter that carries the page number.
+msgid "param_pageName.help"
+msgstr ""
+
+#. Additional connection parameters.
+msgid "params.help"
+msgstr ""
+
+#. Password or client secret; it can be stored encoded.
+msgid "password.help"
+msgstr ""
+
+#. Port of the remote system; empty means the default port of the protocol.
+msgid "port.help"
+msgstr ""
+
+#. Folder the input files are read from; empty means the configured files folder.
+msgid "read_from_folder.help"
+msgstr ""
+
+#. Read the files that a writer of the same job produced instead of the input folder, 
+msgid "read_from_writer.help"
+msgstr ""
+
+#. Some servers reject the default HTTP client, e.g. with '502 Bad Gateway'.
+msgid "rest_in_alt_data_conn.help"
+msgstr ""
+
+#. Client secret of the OAuth token request - or the password when using the basic or 
+msgid "rest_in_password.help"
+msgstr ""
+
+#. JSON body of the data call.
+msgid "rest_in_query.help"
+msgstr ""
+
+#. Client id of the OAuth token request - or the user name when using the basic or 
+msgid "rest_in_user.help"
+msgstr ""
+
+#. Select the destination record by a single id field (REST writer only).
+msgid "single_id_filter.help"
+msgstr ""
+
+#. Only for nested records: the path inside a record element that holds the values of 
+msgid "sub_path.help"
+msgstr ""
+
+#. Subject of the mail.
+msgid "subject.help"
+msgstr ""
+
+#. Use TLS for the SMTP connection.
+msgid "tls_enable.help"
+msgstr ""
+
+#. Recipients, separated by commas.
+msgid "to.help"
+msgstr ""
+
+#. Connection URL of the data source, e.g. the JDBC URL.
+msgid "url.help"
+msgstr ""
+
+#. User name or client id used for the authentication.
+msgid "user.help"
+msgstr ""
+
+msgid "Fields (output header)"
+msgstr ""
+
+msgid "Column headers of the output of '{0}'; the values keep the order of the source fields."
+msgstr ""
+
+msgid "Only .ifcx and .ifacex files can be opened."
+msgstr ""
+
+msgid "Process timeout (s)"
+msgstr ""
+
+msgid "Seconds the external ifaceX process may run before the Studio stops it."
+msgstr ""
+
+msgid "The process timeout must be a number of seconds greater than zero."
 msgstr ""

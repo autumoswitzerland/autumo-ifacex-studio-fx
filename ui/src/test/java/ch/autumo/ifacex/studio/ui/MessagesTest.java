@@ -121,7 +121,10 @@ class MessagesTest {
         assertEquals("Datenpfad", StudioHelper.t("data_path", "Data path"));
         assertEquals("Feldpfad-Zugriff", StudioHelper.t("field_path_access", "Field path access"));
         // Help texts use "<key>.help".
-        assertEquals("Pfad zum Daten-Array in der JSON-Antwort.",
+        assertEquals("Pfad zum Datenarray in der JSON-Antwort, '.' trennt die Elemente.\n"
+        		+ "Leer (oder '.') verwenden, wenn die Datensätze in der Wurzel liegen; 'FULLARRAY'\n"
+        		+ "für ein Array direkt in der Wurzel.\n"
+        		+ "Gilt für alle Entities und kann pro Entity überschrieben werden.",
         		StudioHelper.t("data_path.help", "Path to the data array within the JSON response."));
     }
 

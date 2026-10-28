@@ -58,6 +58,32 @@ public final class YamlEmitter {
     }
 
     /**
+     * A value with the comment lines that document it.
+     *
+     * <p>YAML has no place for comments in a data model, so they travel next to the value and
+     * are written by the emitter directly above the key. The comment block gets one blank line
+     * in front of it, which keeps the generated file readable; the block itself stays glued to
+     * its key.</p>
+     *
+     * @param value    the actual value
+     * @param comments the comment lines, each including its {@code #}
+     */
+    public record Commented(Object value, List<String> comments) {
+    }
+
+    /**
+     * A value that starts a new block and therefore gets a blank line in front of it.
+     *
+     * <p>Top level sections ({@code sourceInterface}, {@code sources}, ...) and sub sections
+     * ({@code params}, {@code entities}, {@code mapping}, ...) are separated by a blank line;
+     * without it a long configuration reads like one dense list of keys.</p>
+     *
+     * @param value the actual value
+     */
+    public record Spaced(Object value) {
+    }
+
+    /**
      * Serialises a nested {@code Map}/{@code List} tree (with scalar leaves) to YAML text.
      *
      * @param root tree root, typically a {@link java.util.Map}
@@ -77,8 +103,8 @@ public final class YamlEmitter {
 
     private static void dumpMap(StringBuilder sb, Map<?, ?> map, int indent) {
         for (final Map.Entry<?, ?> e : map.entrySet()) {
+            final Object v = decorated(sb, e.getValue(), indent, false);
             sb.append(indent(indent)).append(key(String.valueOf(e.getKey()))).append(':');
-            final Object v = e.getValue();
             if (v instanceof InlineMap m) {
                 sb.append(' ').append(inline(m)).append('\n');
             } else if (v instanceof Map<?, ?> m) {
@@ -116,7 +142,19 @@ public final class YamlEmitter {
     }
 
     private static void dumpList(StringBuilder sb, List<?> list, int indent) {
-        for (final Object item : list) {
+        boolean first = true;
+        for (final Object element : list) {
+            // Sections of a list are separated by a blank line, plain value lists are not.
+            Object item = element;
+            boolean blank = false;
+            while (item instanceof Spaced spaced) {
+                blank = true;
+                item = spaced.value();
+            }
+            if (blank && !first) {
+                sb.append('\n');
+            }
+            first = false;
             if (item instanceof Map<?, ?> m) {
                 sb.append(indent(indent)).append("- ");
                 dumpMapInline(sb, m, indent + 2);
@@ -133,12 +171,15 @@ public final class YamlEmitter {
     private static void dumpMapInline(StringBuilder sb, Map<?, ?> map, int indent) {
         boolean first = true;
         for (final Map.Entry<?, ?> e : map.entrySet()) {
-            if (!first) {
+            // The first entry is written behind the list marker: no indent, no blank line.
+            final boolean isFirst = first;
+            first = false;
+            // The decoration (blank line, comments) comes first, the indentation after it.
+            final Object v = decorated(sb, e.getValue(), indent, isFirst);
+            if (!isFirst) {
                 sb.append(indent(indent));
             }
-            first = false;
             sb.append(key(String.valueOf(e.getKey()))).append(':');
-            final Object v = e.getValue();
             if (v instanceof Map<?, ?> m) {
                 if (m.isEmpty()) {
                     sb.append(" {}\n");
@@ -157,6 +198,41 @@ public final class YamlEmitter {
                 sb.append(' ').append(scalar(v)).append('\n');
             }
         }
+    }
+
+    /**
+     * Writes the decorations of an entry - a blank line for a {@link Spaced} value and the
+     * comment block of a {@link Commented} one - and returns the value itself.
+     *
+     * @param sb         target
+     * @param value      the entry value, possibly decorated
+     * @param indent     indentation of the key the decoration belongs to
+     * @param firstEntry whether this is the first entry of a list item ({@code - name: ...}):
+     *                   it is written on the marker line and gets neither indent nor blank line
+     * @return the unwrapped value
+     */
+    private static Object decorated(StringBuilder sb, Object value, int indent, boolean firstEntry) {
+        Object v = value;
+        boolean blank = false;
+        while (v instanceof Spaced spaced) {
+            blank = true;
+            v = spaced.value();
+        }
+        final List<String> notes = v instanceof Commented commented ? commented.comments() : List.of();
+        // Exactly one blank line: either before the comment block or, when there is none,
+        // before the key of the new section.
+        if (!notes.isEmpty()) {
+            sb.append('\n');
+            for (final String line : notes) {
+                sb.append(indent(indent)).append(line.stripTrailing()).append('\n');
+            }
+        } else if (blank && !firstEntry) {
+            sb.append('\n');
+        }
+        if (v instanceof Commented commented) {
+            v = commented.value();
+        }
+        return v;
     }
 
     private static String indent(int n) {

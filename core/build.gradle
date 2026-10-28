@@ -24,3 +24,19 @@ dependencies {
 test.testLogging { 
     showStandardStreams = true
 }
+
+/**
+ * Converts legacy configurations into the new .ifcx format, with the classpath and the compiled
+ * classes of this build - no IDE state involved.
+ *
+ * <pre>
+ *   ./gradlew :core:convert --args="<in.ifacex|in.cfg|in.template|dir> [outDir]"
+ *   ./gradlew :core:convert --args="--check <dir>"
+ * </pre>
+ */
+tasks.register('convert', JavaExec) {
+    group = 'ifacex'
+    description = 'Convert legacy .ifacex/.cfg/.template to .ifcx (ConvertTool)'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'ch.autumo.ifacex.studio.core.ConvertTool'
+}

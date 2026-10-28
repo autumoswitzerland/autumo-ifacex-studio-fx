@@ -18,7 +18,6 @@ import static ch.autumo.ifacex.studio.ui.StudioHelper.t;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -107,7 +106,7 @@ public final class FormBuilder {
         BOOLEAN_CHECKBOX_PARAMS.put("json_in", Set.of("field_path_access", "allow_absent_fields",
                 "delete_files_after_processing"));
         BOOLEAN_CHECKBOX_PARAMS.put("rest_in", Set.of("field_path_access", "allow_absent_fields",
-                "alt_data_conn", "root_call"));
+                "alt_data_conn"));
         BOOLEAN_CHECKBOX_PARAMS.put("doc_in", Set.of("delete_files_after_processing"));
         BOOLEAN_CHECKBOX_PARAMS.put("mail_out", Set.of("auth", "tls_enable",
                 "delete_files_after_processing"));
@@ -372,7 +371,7 @@ public final class FormBuilder {
             box.getChildren().add(collapsed(format("Entity: {0}", e.getKey()),
                     entityBody(e.getValue(), rw), false));
         }
-        if (!rw.isReader()) {
+        if (!rw.isReader() && !hasNoMapping(rw)) {
             final Node addMapping = writerAddMapping(rw);
             if (addMapping != null) {
                 box.getChildren().add(addMapping);
@@ -449,6 +448,8 @@ public final class FormBuilder {
             if (isDbLike(rw)) {
                 box.getChildren().add(destField(ec, "order_field", t("Order field")));
             }
+        } else if (hasNoMapping(rw)) {
+            box.getChildren().add(outputFieldList(ec, rw));
         } else {
             box.getChildren().add(destinationMapping(ec, rw));
         }
@@ -460,6 +461,18 @@ public final class FormBuilder {
             box.getChildren().add(hint("(empty)"));
         }
         return box;
+    }
+
+    /**
+     * Writers that do not evaluate an output mapping: {@code ConsoleWriter} and
+     * {@code FirstBatchWriter} print the records as they come and read only
+     * {@code <writer>_<entity>_fields} - the column headers of the output.
+     *
+     * @param rw writer section
+     * @return {@code true} when the engine ignores a mapping for this writer
+     */
+    private static boolean hasNoMapping(RwConfig rw) {
+        return InterfaceTypes.writesUnchanged(rw.name());
     }
 
     /** DB-like interfaces (db_*, mongo_*) support an entity order field. */
@@ -731,6 +744,23 @@ public final class FormBuilder {
      * them as a list (Add / Remove / Edit / move up / move down) instead of a comma separated text
      * field: type a name and press <em>+</em> (or Enter) to append, double-click a row to edit it.
      */
+    /**
+     * The header list of a writer that prints the records unchanged ({@code console_out},
+     * {@code first_out}): the names of the columns; the values keep the order of the source
+     * fields.
+     *
+     * @param ec entity configuration
+     * @param rw writer section
+     * @return the editor
+     */
+    private Node outputFieldList(EntityConfig ec, RwConfig rw) {
+        final ObservableList<String> items = FXCollections.observableList(ec.fields());
+        final Label caption = caption(t("Fields (output header)"));
+        caption.setTooltip(new Tooltip(t("Column headers of the output of '{0}'; "
+                + "the values keep the order of the source fields.", rw.name())));
+        return stringListEditor(caption, t("New field name"), items, this::changed, null);
+    }
+
     private Node sourceFieldList(EntityConfig ec) {
         final ObservableList<String> items = FXCollections.observableList(ec.fields());
         final Label caption = caption(t("Fields (source)"));
@@ -1012,23 +1042,22 @@ public final class FormBuilder {
         grid.setVgap(6);
         grid.setPadding(new Insets(6, 6, 6, 6));
 
-        // Reihenfolge: erst alle ParameterCatalog-Einträge dieser Sektion (Legacy-Reihenfolge),
-        // dann alle übrig gebliebenen Schlüssel in Map-Reihenfolge. Die Sektionen
-        // (Parameter / Vorgaben / Entity) werden vom caller vorgegeben und bleiben unverändert.
+        // Only the parameters the catalogue knows for this type are shown, in catalogue order.
+        // Anything else - a key of a newer engine, a typo, an obsolete parameter - stays in the
+        // model and in the file (it is written back unchanged) but is not offered as a field;
+        // the raw view is the place to edit it. A type without catalogue entries (an unknown
+        // reader/writer name) shows every key, otherwise its form would be empty.
         final List<Map.Entry<String, Object>> ordered = new ArrayList<>();
         if (rw != null) {
             final List<ParameterCatalog.Entry> catalog = ParameterCatalog.entriesFor(rw.name());
-            final HashSet<String> catalogParams = new HashSet<>();
-            for (final ParameterCatalog.Entry e : catalog) {
-                catalogParams.add(e.param());
-                if (map.containsKey(e.param())) {
-                    ordered.add(Map.entry(e.param(), map.get(e.param())));
+            if (!catalog.isEmpty()) {
+                for (final ParameterCatalog.Entry e : catalog) {
+                    if (map.containsKey(e.param())) {
+                        ordered.add(Map.entry(e.param(), map.get(e.param())));
+                    }
                 }
-            }
-            for (final Map.Entry<String, Object> e : map.entrySet()) {
-                if (!catalogParams.contains(e.getKey())) {
-                    ordered.add(e);
-                }
+            } else {
+                ordered.addAll(map.entrySet());
             }
         } else {
             ordered.addAll(map.entrySet());
@@ -1054,7 +1083,7 @@ public final class FormBuilder {
             // label (as opposed to a caption) and is queried by the UI tests.
             label.getStyleClass().addAll("field-label", "param-label");
             if (!d.help().isEmpty()) {
-                label.setTooltip(new Tooltip(t(key + ".help", d.help())));
+                label.setTooltip(new Tooltip(t(d.param() + ".help", d.help())));
             }
             final Node control = control(map, key, d, rw);
             GridPane.setHgrow(control, Priority.ALWAYS);

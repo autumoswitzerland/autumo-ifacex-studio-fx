@@ -25,6 +25,7 @@ import java.util.Map;
 import ch.autumo.ifacex.studio.core.model.EntityConfig;
 import ch.autumo.ifacex.studio.core.model.FieldMappingRec;
 import ch.autumo.ifacex.studio.core.model.IpcConfig;
+import ch.autumo.ifacex.studio.core.model.KeyModel;
 import ch.autumo.ifacex.studio.core.model.RwConfig;
 import ch.autumo.ifacex.studio.core.model.Secret;
 
@@ -112,24 +113,35 @@ public final class YamlConfigWriter {
      */
     public static Map<String, Object> toTree(IpcConfig cfg) {
         final Map<String, Object> root = new LinkedHashMap<>();
-        root.put(K_FORMAT, FORMAT_VERSION);
-        // The global parameters come first: they concern the whole configuration.
-        root.put(K_GENERAL, values(cfg.general()));
-        root.put(K_SOURCE_INTERFACE, cfg.sourceInterface());
-        root.put(K_DESTINATION_INTERFACES, new ArrayList<>(cfg.destinationInterfaces()));
-        root.put(K_PROCESS_SOURCE_ENTITIES, new ArrayList<>(cfg.processSourceEntities()));
+        root.put(K_FORMAT, withComments(FORMAT_VERSION, cfg.comments(), K_FORMAT));
+        // The global parameters come first: they concern the whole configuration. A comment
+        // written above 'general:' belongs to that key and is kept as well.
+        root.put(K_GENERAL, spaced(withComments(values(cfg.general(), cfg.comments(), ""),
+                cfg.comments(), K_GENERAL)));
+        // The job wiring only exists for an interface processor configuration; a converted
+        // general (base) configuration has none and must not get empty keys.
+        if (!cfg.sourceInterface().isEmpty()
+                || !cfg.destinationInterfaces().isEmpty()
+                || !cfg.processSourceEntities().isEmpty()) {
+            root.put(K_SOURCE_INTERFACE, spaced(withComments(cfg.sourceInterface(),
+                    cfg.comments(), KeyModel.SOURCE_INTERFACE)));
+            root.put(K_DESTINATION_INTERFACES, spaced(withComments(
+                    new ArrayList<>(cfg.destinationInterfaces()), cfg.comments(), KeyModel.DESTINATION_INTERFACES)));
+            root.put(K_PROCESS_SOURCE_ENTITIES, spaced(withComments(
+                    new ArrayList<>(cfg.processSourceEntities()), cfg.comments(), KeyModel.PROCESS_SOURCE_ENTITIES)));
+        }
 
         final List<Object> sources = new ArrayList<>();
         for (final RwConfig rw : cfg.readers().values()) {
-            sources.add(section(rw));
+            sources.add(spaced(section(rw, cfg.comments())));
         }
-        root.put(K_SOURCES, sources);
+        root.put(K_SOURCES, spaced(sources));
 
         final List<Object> destinations = new ArrayList<>();
         for (final RwConfig rw : cfg.writers().values()) {
-            destinations.add(section(rw));
+            destinations.add(spaced(section(rw, cfg.comments())));
         }
-        root.put(K_DESTINATIONS, destinations);
+        root.put(K_DESTINATIONS, spaced(destinations));
 
         return root;
     }
@@ -142,12 +154,42 @@ public final class YamlConfigWriter {
      * @param params the parameters of the model
      * @return the parameters for the YAML tree
      */
-    private static Map<String, Object> values(Map<String, Object> params) {
+    private static Map<String, Object> values(Map<String, Object> params,
+            Map<String, List<String>> comments, String prefix) {
         final Map<String, Object> out = new LinkedHashMap<>();
         for (final Map.Entry<String, Object> p : params.entrySet()) {
-            out.put(p.getKey(), value(p.getValue()));
+            out.put(p.getKey(), withComments(value(p.getValue()), comments, prefix + p.getKey()));
         }
         return out;
+    }
+
+    /**
+     * Marks a value as the start of a block: the emitter writes a blank line in front of it.
+     *
+     * @param value the value of a section
+     * @return the value, wrapped for the emitter
+     */
+    private static Object spaced(Object value) {
+        return new YamlEmitter.Spaced(value);
+    }
+
+    /**
+     * Attaches the comment lines of a flat engine key to a value, so the emitter can write them
+     * above the key. Values without a comment stay plain.
+     *
+     * @param value    the value for the YAML tree
+     * @param comments comment lines per flat key, may be {@code null}
+     * @param flatKey  the flat engine key of this entry, e.g. {@code rest_in_auth_host}
+     * @return the value, wrapped when it has comments
+     */
+    private static Object withComments(Object value, Map<String, List<String>> comments, String flatKey) {
+        if (comments == null) {
+            return value;
+        }
+        final List<String> lines = comments.get(flatKey);
+        return lines == null || lines.isEmpty()
+                ? value
+                : new YamlEmitter.Commented(value, lines);
     }
 
     /**
@@ -166,29 +208,34 @@ public final class YamlConfigWriter {
         return value;
     }
 
-    private static Map<String, Object> section(RwConfig rw) {
+    private static Map<String, Object> section(RwConfig rw, Map<String, List<String>> comments) {
         final Map<String, Object> m = new LinkedHashMap<>();
         m.put(K_NAME, rw.name());
         if (!rw.global().isEmpty()) {
-            m.put(K_PARAMS, values(rw.global()));
+            m.put(K_PARAMS, spaced(values(rw.global(), comments, rw.name() + "_")));
         }
         if (!rw.wildcard().isEmpty()) {
-            m.put(K_DEFAULTS, values(rw.wildcard()));
+            m.put(K_DEFAULTS, spaced(values(rw.wildcard(), comments, rw.name() + "_" + "*_")));
         }
         if (!rw.entities().isEmpty()) {
             final Map<String, Object> entities = new LinkedHashMap<>();
             for (final Map.Entry<String, EntityConfig> e : rw.entities().entrySet()) {
-                entities.put(e.getKey(), entity(e.getValue()));
+                entities.put(e.getKey(),
+                        entity(e.getValue(), comments, rw.name() + "_" + e.getKey() + "_"));
             }
-            m.put(K_ENTITIES, entities);
+            m.put(K_ENTITIES, spaced(entities));
         }
         return m;
     }
 
-    private static Map<String, Object> entity(EntityConfig ec) {
-        final Map<String, Object> m = values(ec.settings());
-        if (!ec.fields().isEmpty()) {
-            m.put(K_FIELDS, new ArrayList<>(ec.fields()));
+    private static Map<String, Object> entity(EntityConfig ec, Map<String, List<String>> comments,
+            String prefix) {
+        final Map<String, Object> m = values(ec.settings(), comments, prefix);
+        final String fieldsKey = prefix + K_FIELDS;
+        // The key existed in the source also when its list is empty - the comment proves it, and
+        // 'fields: []' is exactly what a template block wants to say: put your fields here.
+        if (!ec.fields().isEmpty() || (comments != null && comments.containsKey(fieldsKey))) {
+            m.put(K_FIELDS, withComments(new ArrayList<>(ec.fields()), comments, fieldsKey));
         }
         if (ec.hasMapping()) {
             if (ec.mapping().destEntity() != null) {
@@ -202,7 +249,7 @@ public final class YamlConfigWriter {
                 r.put(K_INSERT, rec.insert());
                 fields.add(r);
             }
-            m.put(K_MAPPING, fields);
+            m.put(K_MAPPING, spaced(fields));
         }
         return m;
     }

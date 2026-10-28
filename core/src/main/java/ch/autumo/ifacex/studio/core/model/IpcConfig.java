@@ -49,6 +49,15 @@ public final class IpcConfig {
     private final Map<String, Object> general = new LinkedHashMap<>();
 
     /**
+     * Comment lines per flat engine key, e.g. {@code one_error_stop} -&gt; {@code ["#", "# Only
+     * valid ...", "#"]}.
+     *
+     * <p>Only the conversion legacy properties to {@code .ifcx} uses them: the engine ignores
+     * comments completely, they are pure documentation of the generated file.</p>
+     */
+    private final Map<String, List<String>> comments = new LinkedHashMap<>();
+
+    /**
      * The metadata (comment header) of this configuration.
      *
      * @return metadata, never {@code null}
@@ -129,6 +138,16 @@ public final class IpcConfig {
      */
     public Map<String, Object> general() {
         return general;
+    }
+
+    /**
+     * The comment lines that document a parameter, keyed by the flat engine key, e.g.
+     * {@code rest_in_auth_host}.
+     *
+     * @return mutable map of flat key to comment lines (each line includes its {@code #})
+     */
+    public Map<String, List<String>> comments() {
+        return comments;
     }
 
     /**

@@ -92,8 +92,8 @@
     </top>
 
     <center>
-        <SplitPane dividerPositions="0.28">
-            <StackPane fx:id="navHost" styleClass="nav-host">
+        <SplitPane fx:id="mainSplit" dividerPositions="0.28">
+            <StackPane fx:id="navHost" styleClass="nav-host" minWidth="160">
                 <TreeView fx:id="navTree" showRoot="true"/>
                 <WebView fx:id="aboutView" />
             </StackPane>

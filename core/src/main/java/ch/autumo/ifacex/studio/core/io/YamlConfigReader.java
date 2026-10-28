@@ -23,6 +23,14 @@ import java.util.Map;
 
 import org.snakeyaml.engine.v2.api.Load;
 import org.snakeyaml.engine.v2.api.LoadSettings;
+import org.snakeyaml.engine.v2.api.lowlevel.Compose;
+import org.snakeyaml.engine.v2.comments.CommentLine;
+import org.snakeyaml.engine.v2.comments.CommentType;
+import org.snakeyaml.engine.v2.nodes.MappingNode;
+import org.snakeyaml.engine.v2.nodes.Node;
+import org.snakeyaml.engine.v2.nodes.NodeTuple;
+import org.snakeyaml.engine.v2.nodes.ScalarNode;
+import org.snakeyaml.engine.v2.nodes.SequenceNode;
 
 import ch.autumo.ifacex.studio.core.model.IpcConfig;
 import ch.autumo.ifacex.studio.core.model.KeyModel;
@@ -38,6 +46,10 @@ import ch.autumo.ifacex.studio.core.model.KeyModel;
 public final class YamlConfigReader {
 
     private static final Load LOAD = new Load(LoadSettings.builder().build());
+
+    /** Composition with comment parsing: the comments above a key belong to that key. */
+    private static final Compose COMPOSE =
+            new Compose(LoadSettings.builder().setParseComments(true).build());
 
     private YamlConfigReader() {
     }
@@ -64,7 +76,176 @@ public final class YamlConfigReader {
     public static IpcConfig read(String text) {
         final Object rootObj = LOAD.loadFromString(text);
         final Map<String, String> flat = flatten(asMap(rootObj));
-        return PropertiesConfigReader.fromFlat(flat, CommentHeader.parse(text.lines().toList()));
+        final IpcConfig cfg =
+                PropertiesConfigReader.fromFlat(flat, CommentHeader.parse(text.lines().toList()));
+        // The comments that document a parameter: without them a file that was saved once would
+        // lose everything the conversion from the legacy format had carried over.
+        cfg.comments().putAll(comments(text));
+        return cfg;
+    }
+
+    /**
+     * Reads the comments that document a parameter.
+     *
+     * <p>A comment block is attached to the key it is written above; it is stored under the same
+     * flat engine key the writer uses, e.g. {@code rest_in_host} or {@code csv_out_x_mapping_entity}.
+     * The blank line that the writer puts in front of a block is not part of it.</p>
+     *
+     * @param text complete document text
+     * @return comment lines per flat engine key, empty when the document carries none
+     */
+    static Map<String, List<String>> comments(String text) {
+        final Map<String, List<String>> out = new LinkedHashMap<>();
+        final Node root = COMPOSE.composeString(text).orElse(null);
+        if (!(root instanceof MappingNode map)) {
+            return out;
+        }
+        for (final NodeTuple tuple : map.getValue()) {
+            final String key = scalar(tuple.getKeyNode());
+            final Node value = tuple.getValueNode();
+            if (YamlConfigWriter.K_FORMAT.equals(key)) {
+                // NO comment handling here: the file header sits directly above the first key,
+                // so its comment block would be taken as the comment of 'formatVersion' and
+                // written a second time. The header is owned by CommentHeader.
+                continue;
+            } else if (YamlConfigWriter.K_GENERAL.equals(key)) {
+                // A comment above 'general:' documents the block, not a single parameter.
+                comments(out, YamlConfigWriter.K_GENERAL, tuple.getKeyNode());
+                if (value instanceof MappingNode general) {
+                    for (final NodeTuple entry : general.getValue()) {
+                        comments(out, scalar(entry.getKeyNode()), entry.getKeyNode());
+                    }
+                }
+            } else if (YamlConfigWriter.K_SOURCE_INTERFACE.equals(key)) {
+                comments(out, KeyModel.SOURCE_INTERFACE, tuple.getKeyNode());
+            } else if (YamlConfigWriter.K_DESTINATION_INTERFACES.equals(key)) {
+                comments(out, KeyModel.DESTINATION_INTERFACES, tuple.getKeyNode());
+            } else if (YamlConfigWriter.K_PROCESS_SOURCE_ENTITIES.equals(key)) {
+                comments(out, KeyModel.PROCESS_SOURCE_ENTITIES, tuple.getKeyNode());
+            } else if ((YamlConfigWriter.K_SOURCES.equals(key)
+                    || YamlConfigWriter.K_DESTINATIONS.equals(key))
+                    && value instanceof SequenceNode sections) {
+                for (final Node section : sections.getValue()) {
+                    if (section instanceof MappingNode sectionMap) {
+                        sectionComments(sectionMap, out);
+                    }
+                }
+            }
+        }
+        return out;
+    }
+
+    /**
+     * Collects the comments of one reader/writer section.
+     *
+     * @param section section mapping
+     * @param out     target
+     */
+    private static void sectionComments(MappingNode section, Map<String, List<String>> out) {
+        final String name = scalar(valueOf(section, YamlConfigWriter.K_NAME));
+        if (name.isEmpty()) {
+            return;
+        }
+        for (final NodeTuple tuple : section.getValue()) {
+            final Node value = tuple.getValueNode();
+            if (YamlConfigWriter.K_PARAMS.equals(scalar(tuple.getKeyNode()))
+                    && value instanceof MappingNode params) {
+                for (final NodeTuple entry : params.getValue()) {
+                    comments(out, name + "_" + scalar(entry.getKeyNode()), entry.getKeyNode());
+                }
+            } else if (YamlConfigWriter.K_DEFAULTS.equals(scalar(tuple.getKeyNode()))
+                    && value instanceof MappingNode defaults) {
+                for (final NodeTuple entry : defaults.getValue()) {
+                    comments(out, name + "_" + KeyModel.WILDCARD + "_" + scalar(entry.getKeyNode()),
+                            entry.getKeyNode());
+                }
+            } else if (YamlConfigWriter.K_ENTITIES.equals(scalar(tuple.getKeyNode()))
+                    && value instanceof MappingNode entities) {
+                for (final NodeTuple entity : entities.getValue()) {
+                    if (entity.getValueNode() instanceof MappingNode settings) {
+                        entityComments(out, name + "_" + scalar(entity.getKeyNode()) + "_", settings);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Collects the comments of one entity. Mapping rows are generated from an ordered list and
+     * have no key of their own, so they carry no comment.
+     *
+     * @param out    target
+     * @param prefix flat key prefix, e.g. {@code csv_out_companies_}
+     * @param map    entity mapping
+     */
+    private static void entityComments(Map<String, List<String>> out, String prefix, MappingNode map) {
+        for (final NodeTuple tuple : map.getValue()) {
+            if (YamlConfigWriter.K_MAPPING.equals(scalar(tuple.getKeyNode()))) {
+                continue;
+            }
+            comments(out, prefix + scalar(tuple.getKeyNode()), tuple.getKeyNode());
+        }
+    }
+
+    /**
+     * Stores the comment block of a key.
+     *
+     * @param out  target
+     * @param key  flat engine key
+     * @param node the key node the comments are attached to
+     */
+    private static void comments(Map<String, List<String>> out, String key, Node node) {
+        final List<String> lines = lines(node.getBlockComments());
+        if (!lines.isEmpty()) {
+            out.put(key, lines);
+        }
+    }
+
+    /**
+     * The text of a comment block, one {@code #}-line per entry.
+     *
+     * @param block comments of a key node, may be {@code null}
+     * @return the lines, including their {@code #}
+     */
+    private static List<String> lines(List<CommentLine> block) {
+        final java.util.ArrayList<String> out = new java.util.ArrayList<>();
+        if (block == null) {
+            return out;
+        }
+        for (final CommentLine line : block) {
+            if (line.getCommentType() == CommentType.BLANK_LINE) {
+                // The blank line the writer puts in front of a block.
+                continue;
+            }
+            out.add("#" + line.getValue());
+        }
+        return out;
+    }
+
+    /**
+     * The value node of a mapping entry.
+     *
+     * @param map mapping node
+     * @param key key to look up
+     * @return the value node, or {@code null} when the key is absent
+     */
+    private static Node valueOf(MappingNode map, String key) {
+        for (final NodeTuple tuple : map.getValue()) {
+            if (key.equals(scalar(tuple.getKeyNode()))) {
+                return tuple.getValueNode();
+            }
+        }
+        return null;
+    }
+
+    /**
+     * The scalar value of a node.
+     *
+     * @param node node
+     * @return its value, an empty string for a non-scalar
+     */
+    private static String scalar(Node node) {
+        return node instanceof ScalarNode scalar ? scalar.getValue() : "";
     }
 
     private static Map<String, String> flatten(Map<String, Object> root) {

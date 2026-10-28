@@ -170,7 +170,6 @@ public final class ParameterCatalog {
             entry("auth_grant_type", Scope.GLOBAL, FieldType.TEXT, ""),
             entry("auth_body", Scope.GLOBAL, FieldType.TEXT_AREA, ""),
             entry("alt_data_conn", Scope.GLOBAL, FieldType.BOOLEAN, "no"),
-            entry("root_call", Scope.GLOBAL, FieldType.BOOLEAN, "no"),
             entry("entities_url", Scope.WILDCARD, FieldType.TEXT, "/"),
             entry("data_path", Scope.WILDCARD, FieldType.TEXT, ""),
             entry("sub_path", Scope.WILDCARD, FieldType.TEXT, ""),

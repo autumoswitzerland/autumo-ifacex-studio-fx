@@ -29,6 +29,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.ResourceBundle;
 
+import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,6 +39,7 @@ import ch.autumo.ifacex.studio.core.StudioConstants;
 import ch.autumo.ifacex.studio.core.io.PropertiesConfigReader;
 import ch.autumo.ifacex.studio.core.io.YamlConfigReader;
 import ch.autumo.ifacex.studio.core.io.YamlConfigWriter;
+import ch.autumo.ifacex.studio.core.meta.InterfaceTypes;
 import ch.autumo.ifacex.studio.core.model.IpcConfig;
 import ch.autumo.ifacex.studio.core.model.RwConfig;
 import ch.autumo.ifacex.studio.ui.Console;
@@ -73,6 +75,8 @@ import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.Node;
+import javafx.scene.control.SplitPane;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.ToolBar;
@@ -82,9 +86,11 @@ import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.Dragboard;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
+import javafx.scene.input.TransferMode;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundImage;
 import javafx.scene.layout.BackgroundPosition;
@@ -93,6 +99,7 @@ import javafx.scene.layout.BackgroundSize;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
+import javafx.scene.text.Text;
 import javafx.scene.web.WebView;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
@@ -130,6 +137,8 @@ public class MainController extends BaseController {
     /** Style class that renders a navigation entry in bold (see style/application.css). */
     private static final String NAV_EMPHASIS = "nav-emphasis";
 
+    private String work_folder = null;
+    
     /**
      * Creates the controller of the main view.
      *
@@ -152,6 +161,8 @@ public class MainController extends BaseController {
     TreeView<FormBuilder.NavNode> navTree;
     @FXML
     StackPane navHost;
+    @FXML
+    SplitPane mainSplit;
     @FXML
     WebView aboutView;
     @FXML
@@ -229,16 +240,48 @@ public class MainController extends BaseController {
     final FormBuilder formBuilder = new FormBuilder((StudioApp) app, this::onModelChanged, this::rebuild);
     IpcConfig config;
     Path sourceFile;
+
+    /**
+     * Base name of the file the configuration was loaded from, without its extension.
+     *
+     * <p>"Save As…" proposes this name for a loaded configuration, so a file that was converted
+     * from {@code name.ifacex} is saved again as {@code name.ifcx} - and not under the title of
+     * the configuration. Only a brand new configuration is named after its title.</p>
+     */
+    private String loadedBaseName;
+
     /** Toolbar buttons that only make sense once a configuration is loaded. */
     private Button tbSave;
     private Button tbClose;
     private Button tbConfig;
     private Button tbRun;
+
+    /** Phosphor glyph of the Run button. */
+    private static final String RUN_ICON = "play";
+    /** Phosphor glyph of the Kill button (a round stop sign). */
+    private static final String KILL_ICON = "stop-circle";
+    /** Fill of the Kill glyph - the alarm red of the legacy kill icon. */
+    private static final String KILL_COLOR = "#e53935";
+    /** The controller of the currently running external process, {@code null} when idle. */
+    private ProcessController processController;
+
+    /**
+     * Set while the navigation is rebuilt programmatically. Selecting a tree item then must not
+     * switch the tab: whoever triggered the rebuild (the raw editor, save, run) stays where it is.
+     */
+    private boolean rebuilding;
     private Button tbFolder;
     private TreeItem<FormBuilder.NavNode> rootItem;
 
     /** Whether an external ifaceX process is currently running. */
     private boolean processRunning = false;
+
+    /** Fixed width of the navigation pane in pixels - it never changes with the window. */
+    private static final double NAV_WIDTH = 532;
+
+    /** Style class that highlights the navigation pane while a file is dragged over it. */
+    private static final String DROP_TARGET = "drop-target";
+
 
     /** The raw YAML editor of the "Raw" tab; built in {@link #init}. Package-private for the UI tests. */
     RawEditor rawEditor;
@@ -266,8 +309,10 @@ public class MainController extends BaseController {
         buildRecentMenu();
         buildRawEditor();
         buildConsole();
+        keepNavigationWidth();
         // Start with the About page in the navigation pane; the tree appears once a file is loaded.
         showAboutInNav();
+        installDropTarget();
         showEmptyForm();
         buildToolBar();
         buildMenuIcons();
@@ -450,8 +495,10 @@ public class MainController extends BaseController {
 
         tbConfig = toolButton("gear-six", t("Configuration"),
                 t("Edit file metadata and job wiring (selects the root node)"), this::selectRoot);
-        tbRun = toolButton("play", t("Run"),
-                t("Run the IPC"), this::onRun);
+        // Run and Kill share one button, as in the legacy Studio: while the external process
+        // runs, the same button kills it.
+        tbRun = toolButton(RUN_ICON, t("Run"),
+                t("Run the IPC"), this::toggleRun);
         tbFolder = toolButton("arrow-u-up-right", t("External Edit"),
                 t("Open in an external editor"), () -> openExternalEditor());
 
@@ -577,26 +624,112 @@ public class MainController extends BaseController {
         updateRunButtons();
     }
 
-    /** Enables or disables the Run toolbar button and Process › Run menu item. */
+    /**
+     * Updates the Run/Kill button and the actions that must not be used while a process runs.
+     *
+     * <p>The button itself always stays enabled: while the process runs it is the Kill button.</p>
+     */
     private void updateRunButtons() {
-        boolean enabled = !processRunning;
-        tbRun.setDisable(!enabled);
-        tbFolder.setDisable(!enabled);
-        tbConfig.setDisable(!enabled);
-        miRun.setDisable(!enabled);
-        navTree.setDisable(!enabled);
+        final boolean idle = !processRunning;
+        setRunButtonRunning(processRunning);
+        tbFolder.setDisable(!idle);
+        tbConfig.setDisable(!idle);
+        miRun.setDisable(!idle);
+        navTree.setDisable(!idle);
+        // While the IPC runs, the console is the only view: the form and the raw text must not
+        // be switched to (the configuration is being processed, editing it makes no sense).
+        if (tabForm != null) {
+            tabForm.setDisable(!idle);
+        }
+        if (tabRaw != null) {
+            tabRaw.setDisable(!idle);
+        }
+    }
+
+    /**
+     * Switches the toolbar button between Run and Kill.
+     *
+     * <p>As in the legacy Studio, the icon becomes a stop sign in alarm red while the external
+     * ifaceX process is running; the button then calls {@link ProcessController#kill(int)}.</p>
+     *
+     * @param running {@code true} while the external process runs
+     */
+    private void setRunButtonRunning(boolean running) {
+        if (tbRun == null) {
+            return;
+        }
+        if (tbRun.getGraphic() instanceof StackPane box) {
+            final Text icon = Icons.create(running ? KILL_ICON : RUN_ICON, 40);
+            if (icon != null) {
+                if (running) {
+                    icon.setStyle("-fx-fill: " + KILL_COLOR + ";");
+                }
+                box.getChildren().setAll(icon);
+            }
+        }
+        tbRun.setText(t(running ? "Kill" : "Run"));
+        tbRun.setTooltip(new Tooltip(t(running ? "Kill the running process" : "Run the IPC")));
+    }
+
+    /** Runs the IPC, or kills the running one - the single action of the toolbar button. */
+    private void toggleRun() {
+        if (processRunning) {
+            killProcess();
+        } else {
+            onRun();
+        }
+    }
+
+    /**
+     * Kills the running external ifaceX process, the counterpart of the legacy Studio's
+     * {@code Kill} button.
+     */
+    private void killProcess() {
+        final ProcessController running = this.processController;
+        if (running == null) {
+            return;
+        }
+        status(t("Killing the process..."));
+        running.kill();
+    }
+
+    /**
+     * The view state after a configuration was opened or closed.
+     *
+     * <p>Invariant of the Studio, in one place so it cannot drift apart:</p>
+     * <ul>
+     *   <li>a loaded or closed configuration shows the <b>form</b>, never the console of the
+     *       previous file,</li>
+     *   <li>the <b>console</b> is empty - its output belongs to the file that produced it,</li>
+     *   <li>the raw text is refreshed from the model by the caller.</li>
+     * </ul>
+     */
+    private void resetViews() {
+        if (console != null) {
+            console.clear();
+        }
+        if (tabForm != null && tabPane != null) {
+            tabPane.getSelectionModel().select(tabForm);
+        }
     }
 
     /**
      * Called by {@link ProcessController} when the external process has finished – in every case
-     * (normal end, error, or watchdog timeout). Re-enables the Run buttons.
+     * (normal end, error, kill or watchdog timeout). Re-enables the Run/Kill button and reports
+     * the outcome in the status line.
      *
      * @param exitCode the exit code of the external process ({@code 0} means success)
+     * @param killed whether the process was stopped on purpose; a killed process ends with a
+     *               non-zero exit code, which must not be reported as an error
      */
-    public void processFinished(int exitCode) {
+    public void processFinished(int exitCode, boolean killed) {
         processRunning = false;
+        processController = null;
         updateRunButtons();
-        // The error dialog is shown by ProcessController when exitCode != 0 or error patterns found.
+        // The status line keeps the outcome; the dialog itself is shown by ProcessController.
+        if (killed) {
+            status(t("The process was stopped."));
+        }
     }
 
     private void selectRoot() {
@@ -612,6 +745,7 @@ public class MainController extends BaseController {
     private void onNew() {
         config = new IpcConfig();
         sourceFile = null;
+        loadedBaseName = null;
         rebuild();
         status(t("New configuration"));
     }
@@ -632,12 +766,14 @@ public class MainController extends BaseController {
     private void closeConfig() {
         config = null;
         sourceFile = null;
+        loadedBaseName = null;
         rootItem = null;
         navTree.setRoot(null);
         showAboutInNav();
         setRawText("");
         showEmptyForm();
         setConfigActionsEnabled(false);
+        resetViews();
         status(t("Closed"));
     }
 
@@ -718,9 +854,11 @@ public class MainController extends BaseController {
     @FXML
     private void onOpen() {
         final FileChooser chooser = new FileChooser();
-        String folder = app.getConfigurationParameter(StudioConstants.PROP_KEY_PROJECT_ROOT);
-        if (folder != null && folder.length() > 0) {
-            chooser.setInitialDirectory(new File(folder));
+        if (work_folder == null) {
+        	work_folder = app.getConfigurationParameter(StudioConstants.PROP_KEY_PROJECT_ROOT);	
+        }
+        if (work_folder != null && work_folder.length() > 0) {
+            chooser.setInitialDirectory(new File(work_folder));
         }
         chooser.setTitle(t("Open configuration"));
         chooser.getExtensionFilters().addAll(
@@ -729,6 +867,7 @@ public class MainController extends BaseController {
                 new FileChooser.ExtensionFilter("YAML", "*.ifcx", "*.yaml", "*.yml"));
         final File file = chooser.showOpenDialog(window());
         if (file != null) {
+        	work_folder = file.getParent();
             openFile(file.toPath());
         }
     }
@@ -754,6 +893,11 @@ public class MainController extends BaseController {
      */
     @Override
     protected void innerOpen(File file) {
+        // Every way of opening a file ends here - File › Open, Open Recent, the command line and
+        // a drop on the tree, the form, the raw view or the console. The console of the previous
+        // file is cleared and the form is shown; deferred, because a drop must not change the
+        // scene graph while the drag event is still being handled.
+        javafx.application.Platform.runLater(this::resetViews);
         try {
             loadConfig(file.toPath());
             app.addRecentFile(file);
@@ -770,6 +914,8 @@ public class MainController extends BaseController {
                 ? PropertiesConfigReader.read(path)
                 : YamlConfigReader.read(path);
         sourceFile = path;
+        // Keep the name of the (possibly converted) file: it is what "Save As…" proposes.
+        loadedBaseName = baseName(path);
         rebuild();
         final boolean legacy = name.endsWith(".ifacex");
         status(legacy ? t("Converted from legacy .ifacex") : t("Loaded"));
@@ -787,6 +933,30 @@ public class MainController extends BaseController {
         final String sourceInterface = config.sourceInterface();
         config.readers().keySet().removeIf(r -> !r.equals(sourceInterface));
         config.writers().keySet().removeIf(w -> !config.destinationInterfaces().contains(w));
+
+        // A declared interface belongs to the job even when the file carries no section for it:
+        // the section is created with the complete parameter set of its type, so the user sees
+        // what can be configured (defaults included) - these fields cannot be added by hand in
+        // the form, only an output mapping can. Existing sections are never touched.
+        if (sourceInterface != null && !sourceInterface.isBlank()
+                && config.reader(sourceInterface) == null) {
+            config.initializeReader(sourceInterface);
+        }
+        for (final String writer : config.destinationInterfaces()) {
+            if (writer != null && !writer.isBlank() && config.writer(writer) == null) {
+                config.initializeWriter(writer);
+            }
+        }
+        // Writers that print the records unchanged (console_out, first_out) have no mapping to
+        // add, so their entities would never come into existence - and with them the editor for
+        // their output headers. Every source entity is therefore prepared in those sections.
+        for (final RwConfig writer : config.writers().values()) {
+            if (InterfaceTypes.writesUnchanged(writer.name())) {
+                for (final String entity : config.sourceEntityNames()) {
+                    writer.ensureEntity(entity);
+                }
+            }
+        }
 
         final TreeItem<FormBuilder.NavNode> root = new TreeItem<>(
                 new FormBuilder.NavNode(K_ROOT, label(), config, null));
@@ -808,7 +978,12 @@ public class MainController extends BaseController {
         rootItem = root;
         showTreeInNav();
         final TreeItem<FormBuilder.NavNode> restore = findNode(root, prev);
-        navTree.getSelectionModel().select(restore != null ? restore : root);
+        rebuilding = true;
+        try {
+            navTree.getSelectionModel().select(restore != null ? restore : root);
+        } finally {
+            rebuilding = false;
+        }
         setConfigActionsEnabled(true);
         refreshRaw();
     }
@@ -885,7 +1060,7 @@ public class MainController extends BaseController {
         if (item == null) {
             return;
         }
-        if (tabPane != null && tabForm != null) {
+        if (!rebuilding && tabPane != null && tabForm != null) {
             tabPane.getSelectionModel().select(tabForm);
         }
         formScroll.setContent(formBuilder.build(item.getValue()));
@@ -914,8 +1089,10 @@ public class MainController extends BaseController {
                 // Left the raw tab: adopt its text into the model.
                 applyRawText();
             } else if (config != null) {
-                // Entered the raw tab: show the current model.
+                // Entered the raw tab: show the current model and repaint the Swing editor -
+                // a SwingNode that became visible does not repaint its content by itself.
                 refreshRaw();
+                rawEditor.repaintEditor();
             }
         });
     }
@@ -924,6 +1101,12 @@ public class MainController extends BaseController {
         console = new Console();
         if (tabConsole != null) {
             tabConsole.setContent(console.node());
+            // A SwingNode that becomes visible does not repaint its content by itself.
+            tabConsole.setOnSelectionChanged(_ -> {
+                if (tabConsole.isSelected()) {
+                    console.repaintConsole();
+                }
+            });
         }
     }
 
@@ -989,23 +1172,22 @@ public class MainController extends BaseController {
      * <p>Package-private for the UI tests, which assert the decision
      * ({@link #saveTarget()}) before the write happens.</p>
      */
-    void save() {
+    boolean save() {
         if (config == null) {
             status(t("Nothing to save."));
-            return;
+            return false;
         }
         if (tabRaw.isSelected()) {
             // The user may have edited the raw text and hit Save without leaving the tab.
             if (!applyRawText()) {
-                return;
+                return false;
             }
         }
         final Path target = saveTarget();
         if (target == null) {
-            saveAs();
-            return;
+            return saveAs();
         }
-        write(target, YamlConfigWriter.toText(config));
+        return write(target, YamlConfigWriter.toText(config));
     }
 
     /**
@@ -1033,7 +1215,7 @@ public class MainController extends BaseController {
         saveAs();
     }
 
-    private void saveAs() {
+    private boolean saveAs() {
         final FileChooser chooser = new FileChooser();
         chooser.setTitle(t("Save as .ifcx"));
         chooser.getExtensionFilters().add(
@@ -1041,9 +1223,9 @@ public class MainController extends BaseController {
         chooser.setInitialFileName(suggestedFileName());
         final File out = chooser.showSaveDialog(window());
         if (out == null) {
-            return;
+            return false;
         }
-        write(out.toPath(), YamlConfigWriter.toText(config));
+        return write(out.toPath(), YamlConfigWriter.toText(config));
     }
 
     /**
@@ -1054,20 +1236,47 @@ public class MainController extends BaseController {
      * @return the suggested file name, always ending in {@code .ifcx}
      */
     String suggestedFileName() {
+        // A loaded configuration keeps the name of its file - a file converted from
+        // 'name.ifacex' is saved as 'name.ifcx', not under its title.
+        if (loadedBaseName != null && !loadedBaseName.isBlank()) {
+            return safeFileName(loadedBaseName) + ".ifcx";
+        }
         if (config != null) {
             final String title = config.meta().title();
             if (title != null && !title.isBlank()) {
-                final String safe = title.trim().replaceAll("[\\\\/:*?\"<>|]", "_");
+                final String safe = safeFileName(title.trim());
                 if (!safe.isBlank()) {
                     return safe + ".ifcx";
                 }
             }
         }
         if (sourceFile != null) {
-            final String base = sourceFile.getFileName().toString().replaceAll("\\.[^.]+$", "");
-            return base + ".ifcx";
+            return safeFileName(baseName(sourceFile)) + ".ifcx";
         }
         return t("untitled") + ".ifcx";
+    }
+
+    /**
+     * The base name of a file, without its extension: {@code name.ifacex} becomes {@code name}.
+     *
+     * @param path the file
+     * @return the base name, or an empty string when the path has no file name
+     */
+    static String baseName(Path path) {
+        if (path == null || path.getFileName() == null) {
+            return "";
+        }
+        return path.getFileName().toString().replaceAll("\\.[^.]+$", "");
+    }
+
+    /**
+     * Strips the characters a file name must not contain.
+     *
+     * @param name the suggested name
+     * @return the name as a safe file name
+     */
+    static String safeFileName(String name) {
+        return name == null ? "" : name.replaceAll("[\\\\/:*?\"<>|]", "_").trim();
     }
 
     /** Whether the path carries the new {@code .ifcx} format (case-insensitive). */
@@ -1081,16 +1290,19 @@ public class MainController extends BaseController {
      * @param out  the file to write
      * @param text the content
      */
-    void write(Path out, String text) {
+    boolean write(Path out, String text) {
         try {
             java.nio.file.Files.writeString(out, text);
             sourceFile = out;
+            loadedBaseName = baseName(out);
             app.addRecentFile(out.toFile());
             buildRecentMenu();
             status(format("Saved {0}", out.getFileName().toString()));
             renderTitle();
+            return true;
         } catch (Exception e) {
             error(format("Could not write {0}", out.getFileName().toString()), e);
+            return false;
         }
     }
 
@@ -1227,6 +1439,7 @@ public class MainController extends BaseController {
         stage.setMinWidth(640);
 
         final DefaultCodeEditorView view = new DefaultCodeEditorView(app, stage, null);
+        view.registerSyntaxStyle("ifcx", SyntaxConstants.SYNTAX_STYLE_YAML);
         final DefaultCodeEditorController controller =
                 (DefaultCodeEditorController) UI.setup(app, app.getBaseResourcePath(), view, Constants.VIEW_CODE_EDITOR);
         controller.customize(t("Base Interface Configuration"), "gear-six", null);
@@ -1417,16 +1630,13 @@ public class MainController extends BaseController {
                 }
             }
             final Path target = saveTarget();
-            if (target == null) {
-                saveAs();
-                if (modified || sourceFile == null) {
-                    return;
-                }
-            } else {
-                write(target, YamlConfigWriter.toText(config));
-                if (modified) {
-                    return;
-                }
+            // A file that was just converted from the legacy format has no .ifcx yet: it is
+            // saved first and then executed. Cancelling the dialog aborts the run.
+            final boolean saved = target == null
+                    ? saveAs()
+                    : write(target, YamlConfigWriter.toText(config));
+            if (!saved) {
+                return;
             }
         } else {
             if (tabRaw.isSelected()) {
@@ -1434,8 +1644,7 @@ public class MainController extends BaseController {
                     return;
                 }
             }
-            save();
-            if (modified) {
+            if (!save()) {
                 return;
             }
         }
@@ -1455,10 +1664,10 @@ public class MainController extends BaseController {
         }
 
         final boolean debugMode = miDebugMode != null && miDebugMode.isSelected();
+        processController = new ProcessController(this, debugMode);
         processRunning = true;
         updateRunButtons();
 
-        final ProcessController processController = new ProcessController(this, debugMode);
         processController.execute(rootCall);
     }
 
@@ -1568,5 +1777,179 @@ public class MainController extends BaseController {
 
     private Window window() {
         return statusLabel.getScene() == null ? null : statusLabel.getScene().getWindow();
+    }
+
+    /**
+     * Keeps the navigation pane at a fixed width while the window is resized.
+     *
+     * <p>A {@link SplitPane} distributes a resize proportionally over its items - the divider
+     * position is a ratio, so narrowing the window also narrowed the tree. The tree must keep
+     * its width and only the right side may shrink (down to the minimum of the navigation
+     * pane).</p>
+     */
+    private void keepNavigationWidth() {
+        if (mainSplit == null || navHost == null) {
+            return;
+        }
+        // The split pane must not resize the navigation pane by itself; its width is fixed.
+        SplitPane.setResizableWithParent(navHost, Boolean.FALSE);
+        keepNavigationWidth(mainSplit.getWidth());
+        mainSplit.widthProperty().addListener((_, _, width) -> keepNavigationWidth(width.doubleValue()));
+    }
+
+    /**
+     * Sets the divider so that the navigation pane is exactly {@link #NAV_WIDTH} pixels wide.
+     *
+     * <p>The width is fixed: resizing the window only changes the form/raw/console side. The
+     * split pane can only be told a ratio, hence the one division by the pane width.</p>
+     *
+     * @param total width of the split pane in pixels
+     */
+    private void keepNavigationWidth(double total) {
+        if (total <= 0) {
+            return;
+        }
+        mainSplit.setDividerPositions(NAV_WIDTH / total);
+    }
+
+
+    /**
+     * Makes the navigation pane the drop target for configuration files: a file dragged onto the
+     * tree (or onto the About page, as long as no configuration is loaded) is opened.
+     *
+     * <p>Only the left side accepts a drop - a configuration is opened from the navigation, the
+     * right side is where it is edited. The {@code aboutView} is a {@link WebView} and handles
+     * drag events itself, so it is registered separately.</p>
+     */
+    private void installDropTarget() {
+        installDropTarget(navHost, null);
+        installDropTarget(aboutView, null);
+        // The whole right side accepts a drop - the form, the raw view and the console.
+        installDropTarget(tabPane, null);
+        // The raw editor is a Swing component inside a SwingNode: JavaFX never sees a drop
+        // over it, so it gets its own handler.
+        if (rawEditor != null) {
+            rawEditor.setOnFilesDropped(this::openDroppedFiles);
+        }
+        if (console != null) {
+            console.setOnFilesDropped(this::openDroppedFiles);
+        }
+    }
+
+    /**
+     * Registers the drag-and-drop handlers of a drop target.
+     *
+     * @param target node that accepts a dropped configuration file
+     */
+    private void installDropTarget(final Node target, final java.util.function.BooleanSupplier enabled) {
+        if (target == null) {
+            return;
+        }
+        target.setOnDragEntered(event -> {
+            if (accepts(enabled) && hasConfigurationFiles(event.getDragboard())) {
+                if (!target.getStyleClass().contains(DROP_TARGET)) {
+                    target.getStyleClass().add(DROP_TARGET);
+                }
+            }
+            event.consume();
+        });
+        target.setOnDragExited(event -> {
+            target.getStyleClass().remove(DROP_TARGET);
+            event.consume();
+        });
+        target.setOnDragOver(event -> {
+            if (accepts(enabled) && hasConfigurationFiles(event.getDragboard())) {
+                event.acceptTransferModes(TransferMode.COPY);
+            }
+            event.consume();
+        });
+        target.setOnDragDropped(event -> {
+            target.getStyleClass().remove(DROP_TARGET);
+            final boolean done = accepts(enabled) && openDroppedFiles(event.getDragboard().getFiles());
+            event.setDropCompleted(done);
+            event.consume();
+        });
+    }
+
+    /**
+     * Whether a drop target is active at the moment (e.g. not while the console is shown).
+     *
+     * @param enabled condition, may be {@code null} for "always"
+     * @return {@code true} when a drop is accepted
+     */
+    private static boolean accepts(java.util.function.BooleanSupplier enabled) {
+        return enabled == null || enabled.getAsBoolean();
+    }
+
+    /**
+     * Opens the first configuration file of a drop - used by the JavaFX drop targets and by the
+     * raw editor ({@link RawEditor#setOnFilesDropped}).
+     *
+     * @param files dropped files, may be {@code null}
+     * @return {@code true} when a file was opened
+     */
+    boolean openDroppedFiles(final List<File> files) {
+        if (files == null || files.isEmpty()) {
+            return false;
+        }
+        if (!javafx.application.Platform.isFxApplicationThread()) {
+            // A drop onto a Swing component (console, raw editor) is delivered on the AWT
+            // thread; opening a file touches the JavaFX scene and must run on the FX thread.
+            javafx.application.Platform.runLater(() -> openDroppedFiles(files));
+            return true;
+        }
+        final File file = firstConfigurationFile(files);
+        if (file == null) {
+            UI.showFineWarningDialog(app, t("Only .ifcx and .ifacex files can be opened."));
+            return false;
+        }
+        if (modified && !confirmDiscardChanges()) {
+            return false;
+        }
+        openFile(file.toPath());
+        return true;
+    }
+
+    /**
+     * Whether the dragboard carries a configuration file.
+     *
+     * @param board dragboard of the drag event
+     * @return {@code true} for a supported file
+     */
+    private static boolean hasConfigurationFiles(Dragboard board) {
+        return firstConfigurationFile(board) != null;
+    }
+
+    /**
+     * The first supported configuration file of a dragboard.
+     *
+     * @param board dragboard of the drag event
+     * @return the file, or {@code null} when the drag carries none
+     */
+    private static File firstConfigurationFile(Dragboard board) {
+        if (board == null || !board.hasFiles()) {
+            return null;
+        }
+        return firstConfigurationFile(board.getFiles());
+    }
+
+    /**
+     * The first supported configuration file of a dropped file list.
+     *
+     * @param files dropped files
+     * @return the file, or {@code null} when none is supported
+     */
+    private static File firstConfigurationFile(List<File> files) {
+        if (files == null) {
+            return null;
+        }
+        for (final File file : files) {
+            final String name = file.getName().toLowerCase(Locale.ROOT);
+            if (name.endsWith(".ifcx") || name.endsWith(".ifacex")
+                    || name.endsWith(".yaml") || name.endsWith(".yml")) {
+                return file;
+            }
+        }
+        return null;
     }
 }

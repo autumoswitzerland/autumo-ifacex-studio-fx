@@ -38,8 +38,10 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Tooltip;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.stage.DirectoryChooser;
 
 
@@ -51,9 +53,13 @@ public class SettingsActions extends BaseAction {
 	/** Logger. */
 	private static final Logger LOG = LoggerFactory.getLogger(SettingsActions.class.getName());
 	
+    /** Timeout the watchdog uses when the configuration carries none (seconds). */
+    private static final int DEFAULT_TIMEOUT_SECONDS = 60;
+
     private final TextField projectRootField = new TextField();
     private final TextField ifacexFolderField = new TextField();
     private final TextField seedField = new TextField();
+    private final TextField timeoutField = new TextField();
     private final CheckBox playSoundsCheck = new CheckBox();
     private final CheckBox playJingleCheck = new CheckBox();
 
@@ -103,6 +109,23 @@ public class SettingsActions extends BaseAction {
             }
         });
 
+        timeoutField.setPrefWidth(420);
+        timeoutField.setMaxWidth(Double.MAX_VALUE);
+        timeoutField.setTooltip(new Tooltip(
+                t("Seconds the external ifaceX process may run before the Studio stops it.")));
+        // Seconds only.
+        timeoutField.textProperty().addListener((_, _, newV) -> {
+            if (newV == null) {
+                return;
+            }
+            final String filtered = newV.replaceAll("[^0-9]", "");
+            if (filtered.length() > 6) {
+                timeoutField.setText(filtered.substring(0, 6));
+            } else if (!filtered.equals(newV)) {
+                timeoutField.setText(filtered);
+            }
+        });
+
         playSoundsCheck.setText(t("Play sounds"));
         playJingleCheck.setText(t("Play jingle"));
 
@@ -110,6 +133,13 @@ public class SettingsActions extends BaseAction {
         grid.setHgap(12);
         grid.setVgap(10);
         grid.setPadding(new Insets(24, 24, 16, 24));
+        // The dialog may be widened: the value column takes the extra width.
+        grid.setMaxWidth(Double.MAX_VALUE);
+        final ColumnConstraints labelColumn = new ColumnConstraints();
+        final ColumnConstraints valueColumn = new ColumnConstraints();
+        valueColumn.setHgrow(Priority.ALWAYS);
+        valueColumn.setFillWidth(true);
+        grid.getColumnConstraints().addAll(labelColumn, valueColumn);
 
         grid.add(new Label(t("Project Root Folder")), 0, 0);
         grid.add(rootBox(projectRootField, projectRootButton), 1, 0);
@@ -117,11 +147,15 @@ public class SettingsActions extends BaseAction {
         grid.add(rootBox(ifacexFolderField, ifacexFolderButton), 1, 1);
         grid.add(new Label(t("Seed (for encoder)")), 0, 2);
         grid.add(seedField, 1, 2);
-        grid.add(playSoundsCheck, 1, 3);
-        grid.add(playJingleCheck, 1, 4);
+        grid.add(new Label(t("Process timeout (s)")), 0, 3);
+        grid.add(timeoutField, 1, 3);
+        grid.add(playSoundsCheck, 1, 4);
+        grid.add(playJingleCheck, 1, 5);
 
-        GridPane.setHgrow(projectRootField, javafx.scene.layout.Priority.ALWAYS);
-        GridPane.setHgrow(ifacexFolderField, javafx.scene.layout.Priority.ALWAYS);
+        GridPane.setHgrow(projectRootField, Priority.ALWAYS);
+        GridPane.setHgrow(ifacexFolderField, Priority.ALWAYS);
+        GridPane.setHgrow(seedField, Priority.ALWAYS);
+        GridPane.setHgrow(timeoutField, Priority.ALWAYS);
 
         pane.setCenter(grid);
         
@@ -139,6 +173,9 @@ public class SettingsActions extends BaseAction {
         projectRootField.setText(app.getConfigurationParameter(StudioConstants.PROP_KEY_PROJECT_ROOT));
         ifacexFolderField.setText(app.getConfigurationParameter(StudioConstants.PROP_KEY_IFACEX_FOLDER));
         seedField.setText(app.getConfigurationParameter(Constants.SEC_KEY_SEED));
+        final String timeout = app.getConfigurationParameter(StudioConstants.PROP_KEY_TIMEOUT);
+        timeoutField.setText(timeout == null || timeout.isBlank()
+                ? String.valueOf(DEFAULT_TIMEOUT_SECONDS) : timeout.trim());
         playSoundsCheck.setSelected(booleanParameter(StudioConstants.PROP_KEY_PLAY_SOUNDS, true));
         playJingleCheck.setSelected(booleanParameter(StudioConstants.PROP_KEY_PLAY_JINGLE, false));
     }
@@ -172,6 +209,14 @@ public class SettingsActions extends BaseAction {
 			}
         }
         
+        final String timeout = timeoutField.getText() == null ? "" : timeoutField.getText().trim();
+        if (timeout.isEmpty() || Integer.parseInt(timeout) <= 0) {
+            UI.showFineWarningDialog(app,
+                    t("The process timeout must be a number of seconds greater than zero."));
+            return;
+        }
+        app.setConfigurationParameter(StudioConstants.PROP_KEY_TIMEOUT, timeout);
+
         app.setConfigurationParameter(StudioConstants.PROP_KEY_PLAY_SOUNDS,
                 String.valueOf(playSoundsCheck.isSelected()));
         
@@ -184,7 +229,8 @@ public class SettingsActions extends BaseAction {
     private static HBox rootBox(TextField field, Button button) {
         final HBox box = new HBox(8, field, button);
         box.setAlignment(Pos.CENTER_LEFT);
-        HBox.setHgrow(field, javafx.scene.layout.Priority.ALWAYS);
+        box.setMaxWidth(Double.MAX_VALUE);
+        HBox.setHgrow(field, Priority.ALWAYS);
         return box;
     }
     

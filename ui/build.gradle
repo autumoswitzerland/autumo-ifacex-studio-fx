@@ -16,7 +16,7 @@ plugins {
 
 javafx {
     version = '25'
-    modules = ['javafx.controls', 'javafx.fxml', 'javafx.web', 'javafx.swing']
+    modules = ['javafx.controls', 'javafx.fxml', 'javafx.web', 'javafx.swing', 'javafx.media']
 }
 
 eclipse {
@@ -74,7 +74,7 @@ shadowJar {
 def runtimeJdk = 'zulu25.36.205-ca-fx-jdk25.0.4.1'
 
 runtime {
-    modules = ['javafx.controls', 'javafx.fxml', 'javafx.web', 'javafx.swing']
+    modules = ['javafx.controls', 'javafx.fxml', 'javafx.web', 'javafx.swing', 'javafx.media']
 
     // jpackage accepts one to three dot-separated integers as the application version, so the
     // development version's '-SNAPSHOT' qualifier (3.0.0-SNAPSHOT) is stripped for the installer.

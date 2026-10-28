@@ -43,8 +43,17 @@ public final class ExternalProcessWatchdog implements Runnable {
 		this.studioApp = studioApp;
 	}
 	
+	/**
+	 * Stops the watchdog and wakes its thread up immediately.
+	 *
+	 * <p>Without the notification the thread would sit in {@code lock.wait(timeout)} until the
+	 * timeout expires - up to a minute after the run has already finished.</p>
+	 */
 	public void stop() {
 		isStopped = true;
+		synchronized (lock) {
+			lock.notifyAll();
+		}
 	}
 	
 	public void watch() {

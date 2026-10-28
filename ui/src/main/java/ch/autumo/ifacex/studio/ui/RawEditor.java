@@ -94,6 +94,9 @@ public final class RawEditor {
     private final java.util.concurrent.atomic.AtomicBoolean applying =
             new java.util.concurrent.atomic.AtomicBoolean();
 
+    /** Notified when files are dropped onto the editor. */
+    private volatile java.util.function.Predicate<java.util.List<java.io.File>> onFilesDropped;
+
     /** Notified when the user changed the text in the editor. */
     private volatile Runnable onEdit;
 
@@ -113,6 +116,10 @@ public final class RawEditor {
      */
     public RawEditor() {
         this.root.getStyleClass().add("raw-editor");
+        // The typing cursor (I-beam) over the whole view. The editor itself is a Swing
+        // component inside a SwingNode - its own cursor is not shown by JavaFX, the cursor of
+        // the JavaFX node is.
+        this.root.setCursor(javafx.scene.Cursor.TEXT);
         SwingUtilities.invokeLater(this::buildEditor);
     }
 
@@ -146,6 +153,15 @@ public final class RawEditor {
         });
         final RTextScrollPane pane = createScrollPane(area);
         applyTheme(area);
+        // The Swing popup follows the look & feel (bright): paint it like the editor.
+        ch.autumo.ui.fx.view.EditorPopup.applyDarkTheme(area);
+        // A drop onto the editor is a Swing event (the editor lives in a SwingNode). Both the
+        // editor and its scroll pane take the drop, so the gutter accepts one as well.
+        FileDropTarget.install(area, files -> onFilesDropped != null && onFilesDropped.test(files));
+        FileDropTarget.install(pane, files -> onFilesDropped != null && onFilesDropped.test(files));
+        // The editing shortcuts of the editor (copy/paste/...) are caught here: inside a
+        // SwingNode the key events do not reliably reach the Swing component.
+        ch.autumo.ui.fx.view.EditorShortcuts.install(this.root, area);
         this.textArea = area;
         this.scrollPane = pane;
         // The SwingNode is a JavaFX node: it is filled on the JavaFX thread.
@@ -180,6 +196,59 @@ public final class RawEditor {
         } finally {
             this.applying.set(false);
         }
+        repaint(area);
+    }
+
+    /**
+     * Repaints the editor now.
+     *
+     * <p>Needed when the tab becomes visible: the content may have been written while the tab
+     * was hidden, and the SwingNode then shows the image of the old content until something
+     * triggers a paint (e.g. scrolling).</p>
+     */
+    public void repaintEditor() {
+        final RSyntaxTextArea area = this.textArea;
+        if (area == null) {
+            return;
+        }
+        SwingUtilities.invokeLater(() -> repaint(area));
+    }
+
+    /**
+     * Repaints the editor.
+     *
+     * <p>A {@link javafx.embed.swing.SwingNode} paints the embedded component into an image and
+     * does not repaint it by itself when the document changed: the new text only appears with the
+     * next paint, e.g. after scrolling. The repaint is therefore requested explicitly - twice,
+     * because the scroll pane has to be laid out before it can paint the new content.</p>
+     *
+     * @param area the editor widget
+     */
+    private void repaint(RSyntaxTextArea area) {
+        final RTextScrollPane pane = this.scrollPane;
+        if (pane != null) {
+            pane.revalidate();
+            pane.repaint();
+        }
+        area.repaint();
+        SwingUtilities.invokeLater(() -> {
+            if (pane != null) {
+                pane.repaint();
+            }
+            area.repaint();
+        });
+    }
+
+    /**
+     * Sets the handler for files dropped onto the editor.
+     *
+     * <p>The editor is a Swing component: a drop is delivered to Swing, not to the JavaFX scene,
+     * so it installs its own {@link java.awt.dnd.DropTarget} ({@link FileDropTarget}).</p>
+     *
+     * @param handler receives the dropped files, returns {@code true} when one was opened
+     */
+    public void setOnFilesDropped(java.util.function.Predicate<java.util.List<java.io.File>> handler) {
+        this.onFilesDropped = handler;
     }
 
     /**
@@ -331,4 +400,6 @@ public final class RawEditor {
         return System.getProperty("os.name", "").toLowerCase(Locale.ROOT).startsWith("windows")
                 ? "Consolas" : "Monaco";
     }
+
+
 }

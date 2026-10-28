@@ -92,7 +92,16 @@ public final class PropertiesConfigWriter {
             for (final Map.Entry<String, EntityConfig> en : rw.entities().entrySet()) {
                 final String entity = en.getKey();
                 final EntityConfig ec = en.getValue();
-                ec.settings().forEach((p, v) -> flat.put(n + "_" + entity + "_" + p, value(v)));
+                ec.settings().forEach((p, v) -> {
+                    // The engine resolves these two with Class.forName() as soon as the key
+                    // exists - an empty value would abort the run, so an unconfigured class
+                    // must be omitted instead of written as 'key='.
+                    if ((p.equals("data_mapper_class") || p.equals("exclusion_filter_class"))
+                            && value(v).isEmpty()) {
+                        return;
+                    }
+                    flat.put(n + "_" + entity + "_" + p, value(v));
+                });
                 if (!ec.fields().isEmpty()) {
                     flat.put(n + "_" + entity + "_fields", String.join(",", ec.fields()));
                 }
@@ -187,7 +196,7 @@ public final class PropertiesConfigWriter {
         if ("overwritten".equals(bucket)) {
             sb.append("#-------- Overwritten Values ---------").append('\n');
             for (final String key : keys) {
-                sb.append(key).append('=').append(flat.get(key)).append('\n');
+                sb.append(escapeKey(key)).append('=').append(escapeValue(flat.get(key))).append('\n');
             }
         } else {
             writeSection(sb, flat, keys, label);
@@ -202,8 +211,65 @@ public final class PropertiesConfigWriter {
         sb.append("#-------- ").append(label.endsWith("_in") ? "Reader: " : "Writer: ")
                 .append(label).append(' ').append(end).append('\n');
         for (final String key : keys) {
-            sb.append(key).append('=').append(flat.get(key)).append('\n');
+            sb.append(escapeKey(key)).append('=').append(escapeValue(flat.get(key))).append('\n');
         }
+    }
+
+    /**
+     * Escapes a property key so that {@link java.util.Properties} - and with it the engine and
+     * {@link PropertiesConfigReader} - reads back exactly the key of the model.
+     *
+     * <p>Only the characters that would otherwise break the key are escaped; a key without them
+     * (the normal case, e.g. {@code csv_out_articles_mapping_entity}) is written unchanged.
+     * Entity names may contain colons or spaces, e.g. {@code *:apache:log4j:2.15.0}, which
+     * become {@code *\:apache\:log4j\:2.15.0}.</p>
+     *
+     * @param key key of the model
+     * @return key as written to the file
+     */
+    static String escapeKey(String key) {
+        final StringBuilder sb = new StringBuilder(key.length() + 8);
+        for (int i = 0; i < key.length(); i++) {
+            final char c = key.charAt(i);
+            switch (c) {
+                case '\\' -> sb.append("\\\\");
+                case ':' -> sb.append("\\:");
+                case '=' -> sb.append("\\=");
+                case ' ' -> sb.append("\\ ");
+                case '\t' -> sb.append("\\t");
+                case '\n' -> sb.append("\\n");
+                case '\r' -> sb.append("\\r");
+                default -> sb.append(c);
+            }
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Escapes a property value so that {@link java.util.Properties} reads back exactly the value
+     * of the model. Only backslashes and a leading space need escaping: a colon, an equals sign
+     * or a hash inside a value is preserved by the parser, so URLs and formulas stay readable.
+     *
+     * @param value value of the model
+     * @return value as written to the file
+     */
+    static String escapeValue(String value) {
+        if (value == null) {
+            return "";
+        }
+        final StringBuilder sb = new StringBuilder(value.length() + 8);
+        for (int i = 0; i < value.length(); i++) {
+            final char c = value.charAt(i);
+            switch (c) {
+                case '\\' -> sb.append("\\\\");
+                case '\t' -> sb.append("\\t");
+                case '\n' -> sb.append("\\n");
+                case '\r' -> sb.append("\\r");
+                case ' ' -> sb.append(i == 0 ? "\\ " : " ");
+                default -> sb.append(c);
+            }
+        }
+        return sb.toString();
     }
 
     private static String bucket(String key) {
