@@ -122,7 +122,6 @@ runtime {
             installerType = 'pkg'
             installerOptions += ['--name', 'ifaceX-Studio-FX-arm64']
             installerOptions += ['--mac-app-category', 'Development']
-            installerOptions += ['--mac-package-identifier', 'ch.autumo.ifacex.studio.fx']
         }
 
         if (targetPlatformName == 'mac') {
@@ -133,7 +132,6 @@ runtime {
             installerType = 'pkg'
             installerOptions += ['--name', 'ifaceX-Studio-FX-x64']
             installerOptions += ['--mac-app-category', 'Development']
-            installerOptions += ['--mac-package-identifier', 'ch.autumo.ifacex.studio.fx']
         }
 
         if (targetPlatformName == 'win') {
@@ -156,6 +154,15 @@ runtime {
 
         if (installerType == 'pkg') {
             imageOptions += ['--icon', 'src/main/resources/ch/autumo/ifacex/studio/ui/icons/autumo-ifacex-studio.icns']
+            // Document types: without them macOS does not know that the Studio opens .ifcx/.ifacex
+            // files, so a double-click in the Finder would not reach the application at all
+            // (CFBundleDocumentTypes in Info.plist, and therefore the open-file event).
+            imageOptions += ['--file-associations',
+                             rootProject.file('product/packaging/file-associations/ifcx.properties').absolutePath,
+                             '--file-associations',
+                             rootProject.file('product/packaging/file-associations/ifacex.properties').absolutePath]
+            // Bundle identifier of the application itself (Info.plist), not of the installer.
+            imageOptions += ['--mac-package-identifier', 'ch.autumo.ifacex.studio.fx']
             installerOptions += [
                 // Absolute path: jpackage resolves a relative --license-file against its own
                 // working directory, which is not necessarily this project.
@@ -165,6 +172,12 @@ runtime {
 
         if (installerType == 'exe') {
             imageOptions += ['--icon', 'src/main/resources/ch/autumo/ifacex/studio/ui/icons/autumo-ifacex-studio.ico']
+            imageOptions += ['--file-associations',
+                             rootProject.file('product/packaging/file-associations/ifcx.properties').absolutePath,
+                             '--file-associations',
+                             rootProject.file('product/packaging/file-associations/ifacex.properties').absolutePath]
+            // Bundle identifier of the application itself (Info.plist), not of the installer.
+            imageOptions += ['--mac-package-identifier', 'ch.autumo.ifacex.studio.fx']
             installerOptions += [
                 '--win-dir-chooser',
                 '--win-menu',
@@ -174,6 +187,10 @@ runtime {
 
         if (installerType in ['deb', 'rpm']) {
             imageOptions += ['--icon', 'src/main/resources/ch/autumo/ifacex/studio/ui/icons/app-256.png']
+            imageOptions += ['--file-associations',
+                             rootProject.file('product/packaging/file-associations/ifcx.properties').absolutePath,
+                             '--file-associations',
+                             rootProject.file('product/packaging/file-associations/ifacex.properties').absolutePath]
             installerOptions += [
                 '--resource-dir', 'build/jpackage/ifaceX Studio FX/lib',
                 '--license-file', rootProject.file('LICENSE').absolutePath,

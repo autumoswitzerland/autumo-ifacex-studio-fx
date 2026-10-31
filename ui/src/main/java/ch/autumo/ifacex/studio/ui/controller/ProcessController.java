@@ -57,7 +57,7 @@ public class ProcessController {
 
 	private final String ROOT_CALL_START_MARKER = "-------- Root call test: --------";
 	private final String ROOT_CALL_END_MARKER   = "-------- End root call ----------";
-	private final int ROOT_CALL_MAX_CHARS       = 20000;
+	private final int ROOT_CALL_MAX_CHARS       = 200000;
 	
 
 	private MainController mainController = null;

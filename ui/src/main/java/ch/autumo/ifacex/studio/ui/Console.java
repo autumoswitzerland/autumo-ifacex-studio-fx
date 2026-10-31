@@ -311,7 +311,14 @@ public final class Console {
         area.setCaretColor(FG);
         area.setBackground(BG);
         area.setMargin(new java.awt.Insets(8, 8, 8, 8));
-        area.setLineWrap(true);
+        // Line wrapping forces the WrappedSyntaxView to recalculate the line counts of the whole
+        // document on every layout/selection - with tens of thousands of characters that is slow,
+        // especially through the SwingNode. A log view does not need it: long lines are simply
+        // cut and can be reached with the horizontal scrollbar.
+        area.setLineWrap(false);
+        // The current-line highlight is meaningless in a read-only log and makes the caret move
+        // (and therefore select-all) call modelToView() on every change.
+        area.setHighlightCurrentLine(false);
         area.setAntiAliasingEnabled(true);
         area.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_NONE);
 
@@ -327,13 +334,27 @@ public final class Console {
      * @return the scroll pane holding the editor
      */
     private RTextScrollPane createScrollPane(RSyntaxTextArea area) {
+        // Inside a SwingNode the Swing content is painted off screen and copied into a JavaFX
+        // texture on every repaint: the Swing double buffer is a redundant second copy and makes
+        // scrolling slow (see DefaultCodeEditorView in autumo-ui, same setting).
+        area.setDoubleBuffered(false);
+
         final RTextScrollPane pane = new RTextScrollPane(area);
+        pane.setDoubleBuffered(false);
+        pane.getViewport().setDoubleBuffered(false);
         pane.setFoldIndicatorEnabled(true);
         pane.setBorder(BorderFactory.createLineBorder(BORDER));
         pane.getVerticalScrollBar().setUI(new DarkScrollBarUI());
         pane.getHorizontalScrollBar().setUI(new DarkScrollBarUI());
-        pane.getVerticalScrollBar().setUnitIncrement(16);
-        pane.getHorizontalScrollBar().setUnitIncrement(16);
+        // The scroll pane and its viewport paint the corners around the bars - without this the
+        // look & feel leaves light grey patches at the ends of the horizontal bar.
+        pane.setOpaque(true);
+        pane.setBackground(BG);
+        pane.getViewport().setOpaque(true);
+        pane.getViewport().setBackground(BG);
+        // A wheel notch moves more pixels: fewer repaints for the same distance.
+        pane.getVerticalScrollBar().setUnitIncrement(32);
+        pane.getHorizontalScrollBar().setUnitIncrement(32);
         return pane;
     }
 

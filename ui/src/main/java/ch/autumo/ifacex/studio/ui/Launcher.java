@@ -33,6 +33,16 @@ public final class Launcher {
      * @param args command-line arguments (a configuration file to open)
      */
     public static void main(String[] args) {
+        // AWT (used by java.awt.Desktop below and later by the Swing code editor) sets the
+        // appearance of the whole application on macOS. Without this it can force the light
+        // "Aqua" look. The Studio is a dark application only, so the appearance is pinned to the
+        // dark one - the window title bar stays dark even when macOS itself is in light mode.
+        System.setProperty("apple.awt.application.appearance", "NSAppearanceNameDarkAqua");
+
+        // A double-click on a configuration (macOS: open-file event) must not be lost while
+        // JavaFX is starting: install the handler first, the files are queued until the shell
+        // exists (see PendingOpens).
+        PendingOpens.install();
         Application.launch(StudioApp.class, args);
     }
 }
