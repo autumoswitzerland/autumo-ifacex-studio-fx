@@ -114,6 +114,14 @@ public final class FormBuilder {
         BOOLEAN_CHECKBOX_PARAMS.put("rest_out", Set.of("single_id_filter"));
         BOOLEAN_CHECKBOX_PARAMS.put("mongo_out", Set.of("create_collection"));
         BOOLEAN_CHECKBOX_PARAMS.put("file_out", Set.of("delete_files_after_processing"));
+
+        // Additional readers/writers (autumo-ifacex-iprw): every yes/no parameter is a checkbox.
+        BOOLEAN_CHECKBOX_PARAMS.put("webdav_file_in", Set.of("ssl"));
+        BOOLEAN_CHECKBOX_PARAMS.put("webdav_file_out", Set.of("ssl", "allow_delete"));
+        BOOLEAN_CHECKBOX_PARAMS.put("ftp_file_in", Set.of("ssl", "reusable_ssl"));
+        BOOLEAN_CHECKBOX_PARAMS.put("ftp_file_out", Set.of("ssl", "reusable_ssl"));
+        BOOLEAN_CHECKBOX_PARAMS.put("os_swift_file_in", Set.of("ssl"));
+        BOOLEAN_CHECKBOX_PARAMS.put("os_swift_file_out", Set.of("ssl"));
     }
 
     private final Runnable onChange;

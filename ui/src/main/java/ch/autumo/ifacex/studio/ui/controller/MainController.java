@@ -746,6 +746,10 @@ public class MainController extends BaseController {
 
     @FXML
     private void onNew() {
+        // A new configuration replaces the loaded one - never drop unsaved changes silently.
+        if (!confirmDiscardChanges()) {
+            return;
+        }
         final StudioApp app = StudioApp.get();
         final boolean wizardEnabled = app == null
                 || !"false".equalsIgnoreCase(app.getConfigurationParameter(StudioConstants.PROP_KEY_NEW_CONFIG_WIZARD));
@@ -754,7 +758,10 @@ public class MainController extends BaseController {
             UI.showPaneAndWait(app, null, action, t("New configuration"));
             final NewConfigAction.Result r = action.getResult();
             if (r == null) {
-                return; // cancelled
+                // The wizard was cancelled: nothing was discarded, so the next attempt has to
+                // ask again (confirmDiscardChanges() has marked the answer as given).
+                discardConfirmed = false;
+                return;
             }
             config = new IpcConfig();
             config.setSourceInterface(r.reader);
@@ -790,8 +797,12 @@ public class MainController extends BaseController {
         closeConfig();
     }
 
-    /** The actual close: drops the configuration and shows the empty start state. */
-    private void closeConfig() {
+    /**
+     * The actual close: drops the configuration and shows the empty start state, without asking
+     * (the question belongs to {@link #onClose()}). Package-private for the UI tests, which reset
+     * the shell between the tests and must not run into a modal confirmation.
+     */
+    void closeConfig() {
         config = null;
         sourceFile = null;
         loadedBaseName = null;
@@ -925,6 +936,9 @@ public class MainController extends BaseController {
         // a drop on the tree, the form, the raw view or the console. The console of the previous
         // file is cleared and the form is shown; deferred, because a drop must not change the
         // scene graph while the drag event is still being handled.
+        if (!confirmDiscardChanges()) {
+            return;
+        }
         javafx.application.Platform.runLater(this::resetViews);
         try {
             loadConfig(file.toPath());
@@ -947,6 +961,8 @@ public class MainController extends BaseController {
         rebuild();
         final boolean legacy = name.endsWith(".ifacex");
         status(legacy ? t("Converted from legacy .ifacex") : t("Loaded"));
+        // A freshly loaded file is unmodified: the next action may ask again.
+        discardConfirmed = false;
     }
 
     private void rebuild() {

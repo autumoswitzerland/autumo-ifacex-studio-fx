@@ -13,6 +13,7 @@
  */
 package ch.autumo.ifacex.studio.core.model;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -54,6 +55,9 @@ public final class KeyModel {
 
     private static final Pattern RW = Pattern.compile("^([a-z0-9]+)_(in|out)_.*$");
 
+    /** All interface names the Studio knows (standard and additional ones), longest first. */
+    private static final List<String> KNOWN_INTERFACES = knownInterfaces();
+
     private KeyModel() {
     }
 
@@ -65,15 +69,30 @@ public final class KeyModel {
      *         key is not reader/writer scoped
      */
     public static String rwPrefix(String key) {
-        final Matcher m = RW.matcher(key);
-        if (m.matches()) {
-            return m.group(1) + "_" + m.group(2);
+        if (key == null) {
+            return null;
         }
         if (key.startsWith("exec_")) {
             return "exec";
         }
         if (key.startsWith("code_")) {
             return "code";
+        }
+        // Known interfaces first: their names may contain underscores ('aws_file_in',
+        // 'os_swift_file_in', ...), which the generic pattern below cannot resolve. The longest
+        // name wins, so 'aws_file_in_x' is attributed to 'aws_file_in' and not to 'aws_in'.
+        String best = null;
+        for (final String name : KNOWN_INTERFACES) {
+            if (key.startsWith(name + "_") && (best == null || name.length() > best.length())) {
+                best = name;
+            }
+        }
+        if (best != null) {
+            return best;
+        }
+        final Matcher m = RW.matcher(key);
+        if (m.matches()) {
+            return m.group(1) + "_" + m.group(2);
         }
         return null;
     }
@@ -110,4 +129,14 @@ public final class KeyModel {
     public static String remainder(String key, String prefix) {
         return key.substring(prefix.length() + 1);
     }
+
+    /** Builds the list of known interface names, longest first. */
+    private static List<String> knownInterfaces() {
+        final List<String> names = new ArrayList<>();
+        names.addAll(ch.autumo.ifacex.studio.core.meta.InterfaceTypes.readerNames());
+        names.addAll(ch.autumo.ifacex.studio.core.meta.InterfaceTypes.writerNames());
+        names.sort((a, b) -> Integer.compare(b.length(), a.length()));
+        return List.copyOf(names);
+    }
+
 }

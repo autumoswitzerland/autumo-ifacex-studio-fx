@@ -1034,3 +1034,655 @@ msgstr ""
 
 msgid "The process timeout must be a number of seconds greater than zero."
 msgstr ""
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "aws_file_in_access_key"
+msgstr "Access key"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "aws_file_in_secret_key"
+msgstr "Secret key"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "aws_file_in_url_endpoint"
+msgstr "URL end-point"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "aws_file_in_region"
+msgstr "Region"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "aws_file_in_temp_out_path"
+msgstr "Temporary output path"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "aws_file_out_access_key"
+msgstr "Access key"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "aws_file_out_secret_key"
+msgstr "Secret key"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "aws_file_out_url_endpoint"
+msgstr "URL end-point"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "aws_file_out_region"
+msgstr "Region"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "aws_file_out_bucket_name"
+msgstr "Bucket name"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "aws_file_out_key_prefix"
+msgstr "Key prefix"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "gdrive_file_in_application_name"
+msgstr "Application name"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "gdrive_file_in_project_id"
+msgstr "Project ID"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "gdrive_file_in_client_id"
+msgstr "Client ID"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "gdrive_file_in_client_secret"
+msgstr "Client secret"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "gdrive_file_in_auth_uri"
+msgstr "Authentication URI"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "gdrive_file_in_token_uri"
+msgstr "Token URI"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "gdrive_file_in_auth_provider_x509_cert_url"
+msgstr "Auth provider x509 cert URL"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "gdrive_file_in_redirect_uris"
+msgstr "Redirect URIs"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "gdrive_file_in_corpora"
+msgstr "Corpora"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "gdrive_file_in_drive_id"
+msgstr "Drive ID"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "gdrive_file_in_folder"
+msgstr "Folder"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "gdrive_file_in_temp_out_path"
+msgstr "Temporary output path"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "gdrive_file_out_application_name"
+msgstr "Application name"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "gdrive_file_out_project_id"
+msgstr "Project ID"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "gdrive_file_out_client_id"
+msgstr "Client ID"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "gdrive_file_out_client_secret"
+msgstr "Client secret"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "gdrive_file_out_auth_uri"
+msgstr "Authentication URI"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "gdrive_file_out_token_uri"
+msgstr "Token URI"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "gdrive_file_out_auth_provider_x509_cert_url"
+msgstr "Auth provider x509 cert URL"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "gdrive_file_out_redirect_uris"
+msgstr "Redirect URIs"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "gdrive_file_out_folder"
+msgstr "Folder"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "gdrive_file_out_folder_id_parent"
+msgstr "Parent folder ID"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "gstorage_file_in_credentials_file"
+msgstr "Credentials file"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "gstorage_file_in_project_id"
+msgstr "Project ID"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "gstorage_file_in_temp_out_path"
+msgstr "Temporary output path"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "gstorage_file_out_credentials_file"
+msgstr "Credentials file"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "gstorage_file_out_project_id"
+msgstr "Project ID"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "gstorage_file_out_bucket_name"
+msgstr "Bucket name"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "gstorage_file_out_region"
+msgstr "Region"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "gstorage_file_out_storage_class"
+msgstr "Storage class"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "dbox_file_in_app_name"
+msgstr "App name"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "dbox_file_in_app_version"
+msgstr "App version"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "dbox_file_in_oauth_access_token"
+msgstr "OAuth access token"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "dbox_file_in_path"
+msgstr "Path"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "dbox_file_in_temp_out_path"
+msgstr "Temporary output path"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "dbox_file_out_app_name"
+msgstr "App name"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "dbox_file_out_app_version"
+msgstr "App version"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "dbox_file_out_oauth_access_token"
+msgstr "OAuth access token"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "dbox_file_out_path"
+msgstr "Path"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "webdav_file_in_url"
+msgstr "URL"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "webdav_file_in_ssl"
+msgstr "SSL"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "webdav_file_in_user"
+msgstr "User"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "webdav_file_in_password"
+msgstr "Password"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "webdav_file_in_temp_out_path"
+msgstr "Temporary output path"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "webdav_file_out_url"
+msgstr "URL"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "webdav_file_out_ssl"
+msgstr "SSL"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "webdav_file_out_user"
+msgstr "User"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "webdav_file_out_password"
+msgstr "Password"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "webdav_file_out_dest_uri"
+msgstr "Destination URI"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "webdav_file_out_allow_delete"
+msgstr "Allow delete"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "ftp_file_in_host"
+msgstr "Host"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "ftp_file_in_port"
+msgstr "Port"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "ftp_file_in_user"
+msgstr "User"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "ftp_file_in_password"
+msgstr "Password"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "ftp_file_in_ssl"
+msgstr "SSL"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "ftp_file_in_reusable_ssl"
+msgstr "Reusable SSL"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "ftp_file_in_prot"
+msgstr "PROT command"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "ftp_file_in_temp_out_path"
+msgstr "Temporary output path"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "ftp_file_out_host"
+msgstr "Host"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "ftp_file_out_port"
+msgstr "Port"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "ftp_file_out_user"
+msgstr "User"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "ftp_file_out_password"
+msgstr "Password"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "ftp_file_out_ssl"
+msgstr "SSL"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "ftp_file_out_reusable_ssl"
+msgstr "Reusable SSL"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "ftp_file_out_prot"
+msgstr "PROT command"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "ftp_file_out_directory"
+msgstr "Directory"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "sftp_file_in_host"
+msgstr "Host"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "sftp_file_in_port"
+msgstr "Port"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "sftp_file_in_user"
+msgstr "User"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "sftp_file_in_password"
+msgstr "Password"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "sftp_file_in_known_hosts"
+msgstr "Known hosts file"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "sftp_file_in_temp_out_path"
+msgstr "Temporary output path"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "sftp_file_out_host"
+msgstr "Host"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "sftp_file_out_port"
+msgstr "Port"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "sftp_file_out_user"
+msgstr "User"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "sftp_file_out_password"
+msgstr "Password"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "sftp_file_out_known_hosts"
+msgstr "Known hosts file"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "sftp_file_out_directory"
+msgstr "Directory"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "os_swift_file_in_version"
+msgstr "Version"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "os_swift_file_in_url_endpoint"
+msgstr "URL end-point"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "os_swift_file_in_user"
+msgstr "User"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "os_swift_file_in_user_id"
+msgstr "User ID"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "os_swift_file_in_password"
+msgstr "Password"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "os_swift_file_in_project"
+msgstr "Project"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "os_swift_file_in_domain"
+msgstr "Domain"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "os_swift_file_in_ssl"
+msgstr "SSL"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "os_swift_file_in_container"
+msgstr "Container"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "os_swift_file_in_temp_out_path"
+msgstr "Temporary output path"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "os_swift_file_out_version"
+msgstr "Version"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "os_swift_file_out_url_endpoint"
+msgstr "URL end-point"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "os_swift_file_out_user"
+msgstr "User"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "os_swift_file_out_user_id"
+msgstr "User ID"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "os_swift_file_out_password"
+msgstr "Password"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "os_swift_file_out_project"
+msgstr "Project"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "os_swift_file_out_domain"
+msgstr "Domain"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "os_swift_file_out_ssl"
+msgstr "SSL"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "os_swift_file_out_container"
+msgstr "Container"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "azure_file_in_connection_string"
+msgstr "Connection string"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "azure_file_in_account"
+msgstr "Account name"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "azure_file_in_temp_out_path"
+msgstr "Temporary output path"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "azure_file_out_connection_string"
+msgstr "Connection string"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "azure_file_out_account"
+msgstr "Account name"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "azure_file_out_container"
+msgstr "Container"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "b2_file_in_api_key_id"
+msgstr "API key ID"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "b2_file_in_api_key"
+msgstr "API key"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "b2_file_in_temp_out_path"
+msgstr "Temporary output path"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "b2_file_out_api_key_id"
+msgstr "API key ID"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "b2_file_out_api_key"
+msgstr "API key"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "b2_file_out_bucket"
+msgstr "Bucket"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "url_endpoint.help"
+msgstr "URL end-point of the service. Can be empty; provide it for faster access."
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "access_key.help"
+msgstr "Access key of the account (can be encrypted, use the encoder)."
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "secret_key.help"
+msgstr "Secret key of the account (can be encrypted, use the encoder)."
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "region.help"
+msgstr "Region of the service; can be empty if the service does not need it."
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "bucket_name.help"
+msgstr "Name of the bucket (only lower-case characters are allowed)."
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "key_prefix.help"
+msgstr "Key prefix for the whole key; a '/' is appended and the file name is added."
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "bucket.help"
+msgstr "Bucket to write to. It is created if it does not exist."
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "storage_class.help"
+msgstr "Storage class used when a new bucket has to be created, e.g. STANDARD."
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "credentials_file.help"
+msgstr "Google credentials file (JSON) of the project."
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "project_id.help"
+msgstr "ID of the cloud project."
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "application_name.help"
+msgstr "Application name that is connected through OAuth 2.0."
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "client_id.help"
+msgstr "OAuth 2.0 client ID (can be encrypted, use the encoder)."
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "client_secret.help"
+msgstr "OAuth 2.0 client secret (can be encrypted, use the encoder)."
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "auth_uri.help"
+msgstr "URI used to authenticate."
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "token_uri.help"
+msgstr "URI used to retrieve the access token."
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "auth_provider_x509_cert_url.help"
+msgstr "URL of the X.509 certificates of the authentication provider."
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "redirect_uris.help"
+msgstr "Redirect URIs, a comma-separated list or empty."
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "corpora.help"
+msgstr "Groupings of files to which the query applies; may be empty."
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "drive_id.help"
+msgstr "Necessary if the corpora is set to 'drive', otherwise unused."
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "folder.help"
+msgstr "Folder to read from or to write to. Can be left empty."
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "folder_id_parent.help"
+msgstr "ID of the existing parent folder in which the folder above is created."
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "app_name.help"
+msgstr "Application name; can be left empty."
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "app_version.help"
+msgstr "Application version; can be left empty."
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "oauth_access_token.help"
+msgstr "Dropbox OAuth 2.0 access token (can be encrypted, use the encoder)."
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "path.help"
+msgstr "Remote path; '/' is the root directory and is not supported."
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "ssl.help"
+msgstr "Use SSL/TLS for the connection?"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "reusable_ssl.help"
+msgstr "Reusable SSL/TLS connections? Necessary for servers like FileZilla."
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "prot.help"
+msgstr "FTP PROT command: C - clear, S - safe, E - confidential, P - private."
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "known_hosts.help"
+msgstr "Path of the 'known_hosts' file used to verify the server."
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "directory.help"
+msgstr "Remote target directory."
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "temp_out_path.help"
+msgstr "Temporary directory for the files read from the remote service."
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "dest_uri.help"
+msgstr "Remote directory to upload the files to."
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "allow_delete.help"
+msgstr "Does the server allow to delete files?"
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "version.help"
+msgstr "Version of the OpenStack KeyStone API; use 2 or 3."
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "user_id.help"
+msgstr "User ID; works only with KeyStone version 3 (can be encrypted, use the encoder)."
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "project.help"
+msgstr "Project name; with KeyStone version 2 this is the tenant."
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "domain.help"
+msgstr "Domain name; 'Default' is used when empty. Only used with KeyStone version 3."
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "container.help"
+msgstr "Container to write to. It is created if it does not exist."
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "connection_string.help"
+msgstr "Azure connection string from 'Access Keys' in the Azure portal. If left blank, the more secure default authentication chain is used."
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "account.help"
+msgstr "Name of the Azure storage account."
+
+#. additional readers/writers (autumo-ifacex-iprw)
+msgid "api_key_id.help"
+msgstr "Backblaze B2 API key ID (can be encrypted, use the encoder)."
+
+# autumo-ifacex-iprw-office (201 Excel)
+msgid "excel_out_buffer_size"
+msgstr "Buffer size"
+
+msgid "buffer_size.help"
+msgstr "Excel file streaming buffer size: number of rows kept in memory while writing."
+

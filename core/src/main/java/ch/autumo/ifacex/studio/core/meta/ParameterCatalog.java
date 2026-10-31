@@ -91,6 +91,16 @@ public final class ParameterCatalog {
                 case "mongo" -> all.addAll(MONGO_READER);
                 case "rest" -> all.addAll(REST_READER);
                 case "doc" -> all.addAll(DOC_READER);
+                case "aws_file" -> all.addAll(AWS_FILE_READER);
+                case "gdrive_file" -> all.addAll(GDRIVE_FILE_READER);
+                case "gstorage_file" -> all.addAll(GSTORAGE_FILE_READER);
+                case "dbox_file" -> all.addAll(DBOX_FILE_READER);
+                case "webdav_file" -> all.addAll(WEBDAV_FILE_READER);
+                case "ftp_file" -> all.addAll(FTP_FILE_READER);
+                case "sftp_file" -> all.addAll(SFTP_FILE_READER);
+                case "os_swift_file" -> all.addAll(OS_SWIFT_FILE_READER);
+                case "azure_file" -> all.addAll(AZURE_FILE_READER);
+                case "b2_file" -> all.addAll(B2_FILE_READER);
                 default -> {
                 }
             }
@@ -105,6 +115,17 @@ public final class ParameterCatalog {
                 case "console" -> all.addAll(CONSOLE_WRITER);
                 case "first" -> all.addAll(FIRST_WRITER);
                 case "file" -> all.addAll(FILE_WRITER);
+                case "aws_file" -> all.addAll(AWS_FILE_WRITER);
+                case "gdrive_file" -> all.addAll(GDRIVE_FILE_WRITER);
+                case "gstorage_file" -> all.addAll(GSTORAGE_FILE_WRITER);
+                case "dbox_file" -> all.addAll(DBOX_FILE_WRITER);
+                case "webdav_file" -> all.addAll(WEBDAV_FILE_WRITER);
+                case "ftp_file" -> all.addAll(FTP_FILE_WRITER);
+                case "sftp_file" -> all.addAll(SFTP_FILE_WRITER);
+                case "os_swift_file" -> all.addAll(OS_SWIFT_FILE_WRITER);
+                case "azure_file" -> all.addAll(AZURE_FILE_WRITER);
+                case "b2_file" -> all.addAll(B2_FILE_WRITER);
+                case "excel" -> all.addAll(EXCEL_WRITER);
                 default -> {
                 }
             }
@@ -314,4 +335,179 @@ public final class ParameterCatalog {
         }
         return out;
     }
+
+    // ---------------------------------------------------------------- Additional readers/writers
+    // autumo-ifacex-iprw (module sources: mod-*) - parameter names verified against the reader/
+    // writer classes, defaults taken from the interface templates (interfaces/*.template) where
+    // they are real values (ports, SSL flags, OAuth endpoints, regions) and left empty where the
+    // template only shows a placeholder (<YOUR_...>) or a machine specific path.
+
+    // ---------------------------------------------------------------- AWS S3 file
+    private static final List<Entry> AWS_FILE_READER = List.of(
+            entry("access_key", Scope.GLOBAL, FieldType.SECRET, ""),
+            entry("secret_key", Scope.GLOBAL, FieldType.SECRET, ""),
+            entry("url_endpoint", Scope.GLOBAL, FieldType.TEXT, ""),
+            entry("region", Scope.GLOBAL, FieldType.TEXT, ""),
+            entry("temp_out_path", Scope.GLOBAL, FieldType.PATH, ""));
+
+    private static final List<Entry> AWS_FILE_WRITER = List.of(
+            entry("access_key", Scope.GLOBAL, FieldType.SECRET, ""),
+            entry("secret_key", Scope.GLOBAL, FieldType.SECRET, ""),
+            entry("url_endpoint", Scope.GLOBAL, FieldType.TEXT, ""),
+            entry("region", Scope.GLOBAL, FieldType.TEXT, ""),
+            entry("bucket_name", Scope.GLOBAL, FieldType.TEXT, ""),
+            entry("key_prefix", Scope.GLOBAL, FieldType.TEXT, ""));
+
+    // ---------------------------------------------------------------- Google Drive file
+    private static final List<Entry> GDRIVE_FILE_COMMON = List.of(
+            entry("application_name", Scope.GLOBAL, FieldType.TEXT, ""),
+            entry("project_id", Scope.GLOBAL, FieldType.TEXT, ""),
+            entry("client_id", Scope.GLOBAL, FieldType.SECRET, ""),
+            entry("client_secret", Scope.GLOBAL, FieldType.SECRET, ""),
+            entry("auth_uri", Scope.GLOBAL, FieldType.TEXT, "https://accounts.google.com/o/oauth2/auth"),
+            entry("token_uri", Scope.GLOBAL, FieldType.TEXT, "https://oauth2.googleapis.com/token"),
+            entry("auth_provider_x509_cert_url", Scope.GLOBAL, FieldType.TEXT,
+                    "https://www.googleapis.com/oauth2/v1/certs"),
+            entry("redirect_uris", Scope.GLOBAL, FieldType.TEXT, ""));
+
+    private static final List<Entry> GDRIVE_FILE_READER = concat(GDRIVE_FILE_COMMON, List.of(
+            entry("corpora", Scope.GLOBAL, FieldType.TEXT, ""),
+            entry("drive_id", Scope.GLOBAL, FieldType.TEXT, ""),
+            entry("folder", Scope.GLOBAL, FieldType.PATH, ""),
+            entry("temp_out_path", Scope.GLOBAL, FieldType.PATH, "")));
+
+    private static final List<Entry> GDRIVE_FILE_WRITER = concat(GDRIVE_FILE_COMMON, List.of(
+            entry("folder", Scope.GLOBAL, FieldType.PATH, ""),
+            entry("folder_id_parent", Scope.GLOBAL, FieldType.TEXT, "")));
+
+    // ---------------------------------------------------------------- Google Storage file
+    private static final List<Entry> GSTORAGE_FILE_READER = List.of(
+            entry("credentials_file", Scope.GLOBAL, FieldType.PATH, ""),
+            entry("project_id", Scope.GLOBAL, FieldType.TEXT, ""),
+            entry("temp_out_path", Scope.GLOBAL, FieldType.PATH, ""));
+
+    private static final List<Entry> GSTORAGE_FILE_WRITER = List.of(
+            entry("credentials_file", Scope.GLOBAL, FieldType.PATH, ""),
+            entry("project_id", Scope.GLOBAL, FieldType.TEXT, ""),
+            entry("bucket_name", Scope.GLOBAL, FieldType.TEXT, ""),
+            entry("region", Scope.GLOBAL, FieldType.TEXT, "EU"),
+            entry("storage_class", Scope.GLOBAL, FieldType.TEXT, "STANDARD"));
+
+    // ---------------------------------------------------------------- Dropbox file
+    private static final List<Entry> DBOX_FILE_COMMON = List.of(
+            entry("app_name", Scope.GLOBAL, FieldType.TEXT, ""),
+            entry("app_version", Scope.GLOBAL, FieldType.TEXT, ""),
+            entry("oauth_access_token", Scope.GLOBAL, FieldType.SECRET, ""),
+            entry("path", Scope.GLOBAL, FieldType.PATH, ""));
+
+    private static final List<Entry> DBOX_FILE_READER = concat(DBOX_FILE_COMMON, List.of(
+            entry("temp_out_path", Scope.GLOBAL, FieldType.PATH, "")));
+
+    private static final List<Entry> DBOX_FILE_WRITER = DBOX_FILE_COMMON;
+
+    // ---------------------------------------------------------------- WebDAV file
+    private static final List<Entry> WEBDAV_FILE_READER = List.of(
+            entry("url", Scope.GLOBAL, FieldType.TEXT, ""),
+            entry("ssl", Scope.GLOBAL, FieldType.BOOLEAN, "yes"),
+            entry("user", Scope.GLOBAL, FieldType.SECRET, ""),
+            entry("password", Scope.GLOBAL, FieldType.SECRET, ""),
+            entry("temp_out_path", Scope.GLOBAL, FieldType.PATH, ""));
+
+    private static final List<Entry> WEBDAV_FILE_WRITER = List.of(
+            entry("url", Scope.GLOBAL, FieldType.TEXT, ""),
+            entry("ssl", Scope.GLOBAL, FieldType.BOOLEAN, "yes"),
+            entry("user", Scope.GLOBAL, FieldType.SECRET, ""),
+            entry("password", Scope.GLOBAL, FieldType.SECRET, ""),
+            entry("dest_uri", Scope.GLOBAL, FieldType.TEXT, ""),
+            entry("allow_delete", Scope.GLOBAL, FieldType.BOOLEAN, "yes"));
+
+    // ---------------------------------------------------------------- FTP file
+    private static final List<Entry> FTP_FILE_READER = List.of(
+            entry("host", Scope.GLOBAL, FieldType.TEXT, ""),
+            entry("port", Scope.GLOBAL, FieldType.INTEGER, "21"),
+            entry("user", Scope.GLOBAL, FieldType.SECRET, ""),
+            entry("password", Scope.GLOBAL, FieldType.SECRET, ""),
+            entry("ssl", Scope.GLOBAL, FieldType.BOOLEAN, "no"),
+            entry("reusable_ssl", Scope.GLOBAL, FieldType.BOOLEAN, "yes"),
+            entry("prot", Scope.GLOBAL, FieldType.TEXT, "P"),
+            entry("temp_out_path", Scope.GLOBAL, FieldType.PATH, ""));
+
+    private static final List<Entry> FTP_FILE_WRITER = List.of(
+            entry("host", Scope.GLOBAL, FieldType.TEXT, ""),
+            entry("port", Scope.GLOBAL, FieldType.INTEGER, "21"),
+            entry("user", Scope.GLOBAL, FieldType.SECRET, ""),
+            entry("password", Scope.GLOBAL, FieldType.SECRET, ""),
+            entry("ssl", Scope.GLOBAL, FieldType.BOOLEAN, "no"),
+            entry("reusable_ssl", Scope.GLOBAL, FieldType.BOOLEAN, "yes"),
+            entry("prot", Scope.GLOBAL, FieldType.TEXT, "P"),
+            entry("directory", Scope.GLOBAL, FieldType.PATH, ""));
+
+    // ---------------------------------------------------------------- SFTP file
+    private static final List<Entry> SFTP_FILE_READER = List.of(
+            entry("host", Scope.GLOBAL, FieldType.TEXT, ""),
+            entry("port", Scope.GLOBAL, FieldType.INTEGER, "22"),
+            entry("user", Scope.GLOBAL, FieldType.SECRET, ""),
+            entry("password", Scope.GLOBAL, FieldType.SECRET, ""),
+            entry("known_hosts", Scope.GLOBAL, FieldType.PATH, ""),
+            entry("temp_out_path", Scope.GLOBAL, FieldType.PATH, ""));
+
+    private static final List<Entry> SFTP_FILE_WRITER = List.of(
+            entry("host", Scope.GLOBAL, FieldType.TEXT, ""),
+            entry("port", Scope.GLOBAL, FieldType.INTEGER, "22"),
+            entry("user", Scope.GLOBAL, FieldType.SECRET, ""),
+            entry("password", Scope.GLOBAL, FieldType.SECRET, ""),
+            entry("known_hosts", Scope.GLOBAL, FieldType.PATH, ""),
+            entry("directory", Scope.GLOBAL, FieldType.PATH, ""));
+
+    // ---------------------------------------------------------------- OpenStack Swift file
+    private static final List<Entry> OS_SWIFT_FILE_COMMON = List.of(
+            entry("version", Scope.GLOBAL, FieldType.INTEGER, "3"),
+            entry("url_endpoint", Scope.GLOBAL, FieldType.TEXT, ""),
+            entry("user", Scope.GLOBAL, FieldType.SECRET, ""),
+            entry("user_id", Scope.GLOBAL, FieldType.SECRET, ""),
+            entry("password", Scope.GLOBAL, FieldType.SECRET, ""),
+            entry("project", Scope.GLOBAL, FieldType.TEXT, ""),
+            entry("domain", Scope.GLOBAL, FieldType.TEXT, "Default"),
+            entry("ssl", Scope.GLOBAL, FieldType.BOOLEAN, "yes"),
+            entry("container", Scope.GLOBAL, FieldType.TEXT, ""));
+
+    private static final List<Entry> OS_SWIFT_FILE_READER = concat(OS_SWIFT_FILE_COMMON, List.of(
+            entry("temp_out_path", Scope.GLOBAL, FieldType.PATH, "")));
+
+    private static final List<Entry> OS_SWIFT_FILE_WRITER = OS_SWIFT_FILE_COMMON;
+
+    // ---------------------------------------------------------------- Azure Blob file
+    private static final List<Entry> AZURE_FILE_READER = List.of(
+            entry("connection_string", Scope.GLOBAL, FieldType.SECRET, ""),
+            entry("account", Scope.GLOBAL, FieldType.TEXT, ""),
+            entry("temp_out_path", Scope.GLOBAL, FieldType.PATH, ""));
+
+    private static final List<Entry> AZURE_FILE_WRITER = List.of(
+            entry("connection_string", Scope.GLOBAL, FieldType.SECRET, ""),
+            entry("account", Scope.GLOBAL, FieldType.TEXT, ""),
+            entry("container", Scope.GLOBAL, FieldType.TEXT, ""));
+
+    // ---------------------------------------------------------------- Excel (iprw-office)
+    private static final List<Entry> EXCEL_WRITER = List.of(
+            entry("buffer_size", Scope.GLOBAL, FieldType.INTEGER, "1000"));
+
+    // ---------------------------------------------------------------- Backblaze B2 file
+    private static final List<Entry> B2_FILE_READER = List.of(
+            entry("api_key_id", Scope.GLOBAL, FieldType.SECRET, ""),
+            entry("api_key", Scope.GLOBAL, FieldType.SECRET, ""),
+            entry("temp_out_path", Scope.GLOBAL, FieldType.PATH, ""));
+
+    private static final List<Entry> B2_FILE_WRITER = List.of(
+            entry("api_key_id", Scope.GLOBAL, FieldType.SECRET, ""),
+            entry("api_key", Scope.GLOBAL, FieldType.SECRET, ""),
+            entry("bucket", Scope.GLOBAL, FieldType.TEXT, ""));
+
+    // ---------------------------------------------------------------- helpers
+    /** Concatenates two entry lists, keeping the order. */
+    private static List<Entry> concat(List<Entry> first, List<Entry> second) {
+        final List<Entry> all = new ArrayList<>(first);
+        all.addAll(second);
+        return List.copyOf(all);
+    }
+
 }

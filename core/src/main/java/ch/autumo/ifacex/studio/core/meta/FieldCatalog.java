@@ -16,6 +16,7 @@ package ch.autumo.ifacex.studio.core.meta;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -269,6 +270,109 @@ public final class FieldCatalog {
                 "Delete the file after it was written.");
 
         // --- files / folders --------------------------------------------------------------
+
+        // --- additional readers/writers (autumo-ifacex-iprw) --------------------------------
+        // Labels and help texts are derived from the interface templates
+        // (autumo-ifacex-iprw/interfaces/*.template); parameters whose template comment says
+        // "can be encrypted" are rendered as secret fields.
+        text("url_endpoint", "URL end-point",
+                "URL end-point of the service. Can be empty; provide it for faster access.");
+        text("access_key", "Access key",
+                "Access key of the account.");
+        secret("access_key", "Access key",
+                "Access key of the account (can be encrypted, use the encoder).");
+        secret("secret_key", "Secret key",
+                "Secret key of the account (can be encrypted, use the encoder).");
+        text("region", "Region",
+                "Region of the service; can be empty if the service does not need it.");
+        text("bucket_name", "Bucket name",
+                "Name of the bucket (only lower-case characters are allowed).");
+        text("key_prefix", "Key prefix",
+                "Key prefix for the whole key; a '/' is appended and the file name is added.");
+        text("bucket", "Bucket",
+                "Bucket to write to. It is created if it does not exist.");
+        text("storage_class", "Storage class",
+                "Storage class used when a new bucket has to be created, e.g. STANDARD.");
+        path("credentials_file", "Credentials file",
+                "Google credentials file (JSON) of the project.");
+        text("project_id", "Project ID", "ID of the cloud project.");
+        text("application_name", "Application name",
+                "Application name that is connected through OAuth 2.0.");
+        text("client_id", "Client ID", "OAuth 2.0 client ID.");
+        secret("client_id", "Client ID",
+                "OAuth 2.0 client ID (can be encrypted, use the encoder).");
+        secret("client_secret", "Client secret",
+                "OAuth 2.0 client secret (can be encrypted, use the encoder).");
+        text("auth_uri", "Authentication URI", "URI used to authenticate.");
+        text("token_uri", "Token URI", "URI used to retrieve the access token.");
+        text("auth_provider_x509_cert_url", "Auth provider x509 cert URL",
+                "URL of the X.509 certificates of the authentication provider.");
+        text("redirect_uris", "Redirect URIs",
+                "Redirect URIs, a comma-separated list or empty.");
+        text("corpora", "Corpora",
+                "Groupings of files to which the query applies; may be empty.");
+        text("drive_id", "Drive ID",
+                "Necessary if the corpora is set to 'drive', otherwise unused.");
+        text("folder", "Folder",
+                "Folder to read from or to write to. Can be left empty.");
+        text("folder_id_parent", "Parent folder ID",
+                "ID of the existing parent folder in which the folder above is created.");
+        text("app_name", "App name", "Application name; can be left empty.");
+        text("app_version", "App version", "Application version; can be left empty.");
+        secret("oauth_access_token", "OAuth access token",
+                "Dropbox OAuth 2.0 access token (can be encrypted, use the encoder).");
+        path("path", "Path",
+                "Remote path; '/' is the root directory and is not supported.");
+        bool("ssl", "SSL",
+                "Use SSL/TLS for the connection?");
+        bool("reusable_ssl", "Reusable SSL",
+                "Reusable SSL/TLS connections? Necessary for servers like FileZilla.");
+        text("prot", "PROT command",
+                "FTP PROT command: C - clear, S - safe, E - confidential, P - private.");
+        path("known_hosts", "Known hosts file",
+                "Path of the 'known_hosts' file used to verify the server.");
+        path("directory", "Directory", "Remote target directory.");
+        path("temp_out_path", "Temporary output path",
+                "Temporary directory for the files read from the remote service.");
+        text("dest_uri", "Destination URI", "Remote directory to upload the files to.");
+        bool("allow_delete", "Allow delete",
+                "Does the server allow to delete files?");
+        integer("version", "Version",
+                "Version of the openstack API; use 2 or 3.");
+        integer("os_swift_file_in_version", "OpenStack KeyStone version",
+                "Version of the OpenStack KeyStone API; use 2 or 3.");
+        integer("os_swift_file_out_version", "OpenStack KeyStone version",
+                "Version of the OpenStack KeyStone API; use 2 or 3.");
+        text("user_id", "User ID",
+                "User ID; works only with KeyStone version 3. If blank, the user name is used "
+                        + "(can be encrypted, use the encoder).");
+        secret("user_id", "User ID",
+                "User ID; works only with KeyStone version 3 (can be encrypted, use the encoder).");
+        text("project", "Project",
+                "Project name; with KeyStone version 2 this is the tenant.");
+        text("domain", "Domain",
+                "Domain name; 'Default' is used when empty. Only used with KeyStone version 3.");
+        text("container", "Container",
+                "Container to write to. It is created if it does not exist.");
+        secret("connection_string", "Connection string",
+                "Azure connection string from 'Access Keys' in the Azure portal. If left blank, "
+                        + "the more secure default authentication chain is used.");
+        text("account", "Account name", "Name of the Azure storage account.");
+        secret("api_key_id", "API key ID",
+                "Backblaze B2 API key ID (can be encrypted, use the encoder).");
+        secret("api_key", "API key",
+                "Backblaze B2 API key (can be encrypted, use the encoder).");
+        integer("excel_out_buffer_size", "Buffer size",
+                "Excel file streaming buffer size: number of rows kept in memory while writing.");
+
+        // "can be encrypted, use encoder.sh" in the interface templates: the user name of these
+        // services is a secret as well, not a plain text field.
+        for (final String iface : List.of("webdav_file_in", "webdav_file_out", "ftp_file_in",
+                "ftp_file_out", "sftp_file_in", "sftp_file_out", "os_swift_file_in",
+                "os_swift_file_out")) {
+            secret(iface + "_user", "User",
+                    "User name used for the authentication (can be encrypted, use the encoder).");
+        }
         text("job_id", "Job id",
                 "Identifier of the job, used in log output and reports.");
     }
@@ -321,6 +425,17 @@ public final class FieldCatalog {
         return new FieldDescriptor(param, label, FieldType.TEXT);
     }
 
+    /**
+     * Acronyms that are written in capitals in a label.
+     *
+     * <p>{@code ssl} becomes {@code SSL}, {@code url_endpoint} becomes {@code URL end-point} - a
+     * label derived from a key must not produce "Ssl" or "Api Key ID".</p>
+     */
+    private static final Set<String> ACRONYMS = Set.of(
+            "ssl", "tls", "api", "url", "uri", "id", "http", "https", "json", "csv", "db", "ftp",
+            "sftp", "ssh", "os", "aws", "oauth", "uuid", "xml", "yaml", "sql", "smtp", "dns", "ip",
+            "s3", "b2", "prot", "acl", "jdbc", "tcp", "gm", "utc", "otp", "rest");
+
     private static String humanize(String param) {
         final StringBuilder sb = new StringBuilder();
         for (final String w : param.split("_")) {
@@ -330,7 +445,11 @@ public final class FieldCatalog {
             if (sb.length() > 0) {
                 sb.append(' ');
             }
-            sb.append(Character.toUpperCase(w.charAt(0))).append(w.substring(1));
+            if (ACRONYMS.contains(w.toLowerCase(Locale.ROOT))) {
+                sb.append(w.toUpperCase(Locale.ROOT));
+            } else {
+                sb.append(Character.toUpperCase(w.charAt(0))).append(w.substring(1));
+            }
         }
         return sb.toString();
     }

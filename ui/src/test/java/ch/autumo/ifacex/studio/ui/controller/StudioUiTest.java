@@ -188,8 +188,10 @@ class StudioUiTest {
      */
     @BeforeEach
     void resetShell() {
+        // closeConfig() instead of onClose(): a configuration created by a test is unsaved by
+        // definition, and the reset must not run into the modal "unsaved changes" confirmation.
         run(() -> {
-            controller.onClose();
+            controller.closeConfig();
             controller.switchLanguage(START_LANG);
         });
     }

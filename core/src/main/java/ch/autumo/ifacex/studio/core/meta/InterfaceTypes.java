@@ -125,6 +125,36 @@ public final class InterfaceTypes {
         writer("db", "DB", "ch.autumo.ifacex.writer.database.JDBCDatabaseWriter");
         writer("mongo", "Mongo DB", "ch.autumo.ifacex.writer.database.MongoDatabaseWriter");
         writer("rest", "REST", "ch.autumo.ifacex.writer.rest.RESTWriter");
+
+        // --- Additional readers/writers (module autumo-ifacex-iprw) --------------------------
+        // They are registered after the standard ones on purpose: the wizard lists the standard
+        // interfaces first and the additional ones below them, in the order of the iprw modules
+        // (101 AWS, 111 Google Drive, 112 Google Storage, 121 Dropbox, 131 WebDAV, 141 FTP,
+        // 142 SFTP, 151 OpenStack Swift, 161 Azure Blob, 171 Backblaze B2).
+        reader("aws_file", "AWS File", "ch.autumo.ifacex.ip.amazon.AWSS3FileReader");
+        reader("gdrive_file", "Google Drive File", "ch.autumo.ifacex.ip.google.GoogleDriveReader");
+        reader("gstorage_file", "Google Storage File", "ch.autumo.ifacex.ip.google.GoogleStorageReader");
+        reader("dbox_file", "Dropbox File", "ch.autumo.ifacex.ip.dropbox.DropboxReader");
+        reader("webdav_file", "WebDAV File", "ch.autumo.ifacex.ip.webdav.WebDAVReader");
+        reader("ftp_file", "FTP File", "ch.autumo.ifacex.ip.ftp.FTPReader");
+        reader("sftp_file", "SFTP File", "ch.autumo.ifacex.ip.sftp.SFTPReader");
+        reader("os_swift_file", "OpenStack Swift File", "ch.autumo.ifacex.ip.openstack.OpenStackSwiftReader");
+        reader("azure_file", "Azure Blob File", "ch.autumo.ifacex.ip.microsoft.AzureBlobStorageReader");
+        reader("b2_file", "Backblaze B2 File", "ch.autumo.ifacex.ip.backblaze.B2StorageReader");
+
+        writer("aws_file", "AWS File", "ch.autumo.ifacex.ip.amazon.AWSS3FileWriter");
+        writer("gdrive_file", "Google Drive File", "ch.autumo.ifacex.ip.google.GoogleDriveWriter");
+        writer("gstorage_file", "Google Storage File", "ch.autumo.ifacex.ip.google.GoogleStorageWriter");
+        writer("dbox_file", "Dropbox File", "ch.autumo.ifacex.ip.dropbox.DropboxWriter");
+        writer("webdav_file", "WebDAV File", "ch.autumo.ifacex.ip.webdav.WebDAVWriter");
+        writer("ftp_file", "FTP File", "ch.autumo.ifacex.ip.ftp.FTPWriter");
+        writer("sftp_file", "SFTP File", "ch.autumo.ifacex.ip.sftp.SFTPWriter");
+        writer("os_swift_file", "OpenStack Swift File", "ch.autumo.ifacex.ip.openstack.OpenStackSwiftWriter");
+        writer("azure_file", "Azure Blob File", "ch.autumo.ifacex.ip.microsoft.AzureBlobStorageWriter");
+        writer("b2_file", "Backblaze B2 File", "ch.autumo.ifacex.ip.backblaze.B2StorageWriter");
+
+        // autumo-ifacex-iprw-office (201 Excel)
+        writer("excel", "Excel", "ch.autumo.ifacex.ip.office.excel.ExcelWriter");
     }
 
     private InterfaceTypes() {
