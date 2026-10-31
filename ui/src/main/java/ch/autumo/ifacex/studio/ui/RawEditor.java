@@ -45,7 +45,7 @@ import javafx.scene.layout.Pane;
  * needs - so this small holder builds only the editor widget and its JavaFX container.</p>
  *
  * <p>Look and feel come from the framework: the RSyntaxTextArea theme
- * ({@code /ch/autumo/ui/cfg/autumo-edit.xml}) defines the background, caret, gutter and token
+ * ({@code /ch/autumo/ui/cfg/edit.xml}) defines the background, caret, gutter and token
  * colours, exactly as in the JSON formatter, and {@link DarkScrollBarUI} paints the scrollbars
  * dark instead of Swing's light Metal look.</p>
  *
@@ -70,7 +70,7 @@ import javafx.scene.layout.Pane;
 public final class RawEditor {
 
     /** Resource path of the framework's RSyntaxTextArea theme. */
-    private static final String THEME_RESOURCE = "/ch/autumo/ui/cfg/autumo-edit.xml";
+    private static final String THEME_RESOURCE = "/ch/autumo/ui/cfg/edit.xml";
 
     /** Editor background ({@code Constants.BG_COLOR}). */
     private static final java.awt.Color BG = new java.awt.Color(47, 47, 47);

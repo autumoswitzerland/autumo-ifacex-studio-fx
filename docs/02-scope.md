@@ -34,8 +34,8 @@ not connect to ifaceX Server/Web for operations.
 - Internationalization (English, German) with runtime switching.
 - Dark theme.
 - **Sound feedback** (jingle, finish ok/nok) — retained.
-- **Customer extension mechanism:** a generic, plugin-style way to add extra menus /
-  toolbar actions / dialogs for customers (replaces the hardcoded CreaSPA hook).
+- **Customer extension mechanism:** dropped by decision (2026-10-31) — no plugin API is
+  shipped; customer-specific menus stay out of scope.
 - Native packaging (Windows, macOS, Linux) via `jpackage`.
 
 ## 2.3 Out of Scope

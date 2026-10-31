@@ -62,6 +62,7 @@ public class SettingsActions extends BaseAction {
     private final TextField timeoutField = new TextField();
     private final CheckBox playSoundsCheck = new CheckBox();
     private final CheckBox playJingleCheck = new CheckBox();
+    private final CheckBox newConfigWizardCheck = new CheckBox();
 
     
 	/**
@@ -126,9 +127,6 @@ public class SettingsActions extends BaseAction {
             }
         });
 
-        playSoundsCheck.setText(t("Play sounds"));
-        playJingleCheck.setText(t("Play jingle"));
-
         final GridPane grid = new GridPane();
         grid.setHgap(12);
         grid.setVgap(10);
@@ -149,8 +147,12 @@ public class SettingsActions extends BaseAction {
         grid.add(seedField, 1, 2);
         grid.add(new Label(t("Process timeout (s)")), 0, 3);
         grid.add(timeoutField, 1, 3);
-        grid.add(playSoundsCheck, 1, 4);
-        grid.add(playJingleCheck, 1, 5);
+        grid.add(new Label(t("Show the new-configuration wizard")), 0, 4);
+        grid.add(newConfigWizardCheck, 1, 4);
+        grid.add(new Label(t("Play sounds")), 0, 5);
+        grid.add(playSoundsCheck, 1, 5);
+        grid.add(new Label(t("Play jingle")), 0, 6);
+        grid.add(playJingleCheck, 1, 6);
 
         GridPane.setHgrow(projectRootField, Priority.ALWAYS);
         GridPane.setHgrow(ifacexFolderField, Priority.ALWAYS);
@@ -158,7 +160,6 @@ public class SettingsActions extends BaseAction {
         GridPane.setHgrow(timeoutField, Priority.ALWAYS);
 
         pane.setCenter(grid);
-        
         
         final Button doneButton = controller.getFooterButton();
         doneButton.setText(t("Done"));
@@ -178,6 +179,7 @@ public class SettingsActions extends BaseAction {
                 ? String.valueOf(DEFAULT_TIMEOUT_SECONDS) : timeout.trim());
         playSoundsCheck.setSelected(booleanParameter(StudioConstants.PROP_KEY_PLAY_SOUNDS, true));
         playJingleCheck.setSelected(booleanParameter(StudioConstants.PROP_KEY_PLAY_JINGLE, false));
+        newConfigWizardCheck.setSelected(booleanParameter(StudioConstants.PROP_KEY_NEW_CONFIG_WIZARD, true));
     }
     
     /** Saves the values and closes the dialog. */
@@ -222,6 +224,8 @@ public class SettingsActions extends BaseAction {
         
         app.setConfigurationParameter(StudioConstants.PROP_KEY_PLAY_JINGLE,
                 String.valueOf(playJingleCheck.isSelected()));
+        app.setConfigurationParameter(StudioConstants.PROP_KEY_NEW_CONFIG_WIZARD,
+                String.valueOf(newConfigWizardCheck.isSelected()));
 
         getStage().hide();
     }

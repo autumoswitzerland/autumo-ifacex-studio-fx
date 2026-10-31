@@ -55,6 +55,12 @@ msgstr ""
 msgid "Author"
 msgstr ""
 
+msgid "Available writers"
+msgstr ""
+
+msgid "Cancel"
+msgstr ""
+
 msgid "Check for Updates"
 msgstr ""
 
@@ -86,6 +92,9 @@ msgid "Could not read {0}"
 msgstr ""
 
 msgid "Could not write {0}"
+msgstr ""
+
+msgid "Create"
 msgstr ""
 
 msgid "Create a new, empty configuration"
@@ -307,6 +316,9 @@ msgstr ""
 msgid "Raw"
 msgstr ""
 
+msgid "Reader"
+msgstr ""
+
 msgid "Ready"
 msgstr ""
 
@@ -341,6 +353,9 @@ msgid "Save as .ifcx"
 msgstr ""
 
 msgid "Save the configuration (.ifcx)"
+msgstr ""
+
+msgid "Selected writers"
 msgstr ""
 
 msgid "The configuration has unsaved changes.<br>Close anyway and lose them?"

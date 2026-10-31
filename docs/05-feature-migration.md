@@ -1,6 +1,7 @@
 # 05 — Feature Inventory & Migration
 
-Migration status legend:
+Migration status legend (status added 2026-10-31):
+`done` = implemented and tested ·
 `reuse` = take over from reference with minimal change ·
 `extract` = logic exists but must be decoupled from UI ·
 `rewrite` = new implementation in JavaFX ·
@@ -87,14 +88,14 @@ tab today — verify against reference).
 | Remove app data | `RemovePanel` | `autumo-ui` (`UI.showRemovePane`) — `Configuration › Remove App Data`; the pane's HTML is the **framework default** (`ch/autumo/ui/html/remove_<lang>.html`), the Studio ships none |
 | License view | `LicensePanel` | `autumo-ui` (`UI.showLicense`, `html/license_<lang>.html`) — no menu item; shown by the **License** button of the About dialog (`UI.showAboutWithLicense`), as in the legacy Studio |
 | Open online documentation / visit website | `jMenuItem_OpenDoco`, `jMenuItem_Visit` | `reuse` (browser via `Helper.openURL`, URLs from `cfg/app.cfg`) |
-| Registration | `RegisterPanel` | `rewrite` (open — own top-level menu, as in the original) |
+| Registration | `RegisterPanel` | done — own top-level menu (`Registration › Register an ifaceX instance`), as in the original |
 | OS file open/edit | `os/FileHandler` | `extract` |
 
 ## 5.6 Installer & License
 
 | Feature | Reference | Migration |
 | --- | --- | --- |
-| First-run wizard (license→lang→settings→done) | `installer/*` | `rewrite` — **done** (2026-10-18): framework steps *About/Terms* → `StepSettings` → *Done*; settings = `project.root`, `play.sounds`, `play.jingle` (no consumer in the FX Studio yet). The legacy *language* step is dropped — the language follows the desktop and is switched at runtime (`Help › Language`). License acceptance is part of the first step |
+| First-run wizard (license→lang→settings→done) | `installer/*` | `rewrite` — **done** (2026-10-18): framework steps *About/Terms* → `StepSettings` → *Done*; settings = `project.root`, `play.sounds`, `play.jingle` (the sounds are played after a test run; `Configuration › General Settings` extends them with the test instance, the encoder seed, the process timeout and the new-configuration wizard). The legacy *language* step is dropped — the language follows the desktop and is switched at runtime (`Help › Language`). License acceptance is part of the first step |
 | License acceptance flag | `licenseAccepted` | `extract` |
 | License server check | `LicenseUtils` (autumo-commons) | `reuse` |
 | Registration data handling | `RegisterPanel`, `Registration.*` | `extract` |
@@ -103,7 +104,7 @@ tab today — verify against reference).
 
 | Feature | Reference | Migration |
 | --- | --- | --- |
-| Customer extension mechanism (plugin-style: extra menus/toolbar actions/dialogs) | `ClientConfigurator`, `ClientCreaSPA`, `BaseClient` (hardcoded) | `rewrite` as a **generic plugin API** |
+| Customer extension mechanism (plugin-style: extra menus/toolbar actions/dialogs) | `ClientConfigurator`, `ClientCreaSPA`, `BaseClient` (hardcoded) | **dropped** (2026-10-31) — no plugin API, customer-specific menus are out of scope |
 | Merged internal config | `/conf/ifacex-studio.cfg` (+ creaspa variant) | `reuse` |
 
 ## 5.8 Summary Counts (rough)

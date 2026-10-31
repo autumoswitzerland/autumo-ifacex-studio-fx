@@ -157,6 +157,30 @@ public class StudioApp extends BaseApp {
         // installed the autumo-ui base style first and the application's own style sheet
         // (style/application.css, DevGuide §4.5) on top of it.
         scene = primaryStage.getScene();
+
+        // Single-instance "open while running": when a second configuration file is opened
+        // (double-click / "Open with") while the Studio is already running, the OS delivers
+        // it through the desktop's open-file handler instead of starting a new process. Route
+        // it to the same innerOpen() path the command line and "Open Recent" use. macOS needs
+        // no extra --add-exports for this API (java.awt.Desktop is public since Java 9).
+        try {
+            if (java.awt.Desktop.isDesktopSupported()
+                    && java.awt.Desktop.getDesktop().isSupported(java.awt.Desktop.Action.APP_OPEN_FILE)) {
+                java.awt.Desktop.getDesktop().setOpenFileHandler(e -> {
+                    for (java.io.File f : e.getFiles()) {
+                        javafx.application.Platform.runLater(() -> {
+                            try {
+                                controller.openFile(f.toPath());
+                            } catch (Exception ex) {
+                                System.err.println("Could not open " + f + ": " + ex);
+                            }
+                        });
+                    }
+                });
+            }
+        } catch (Exception e) {
+            System.err.println("Open-file handler not available: " + e);
+        }
         
         // Size the window to ~1600x1000, but never larger than the available
         // screen: on smaller displays fall back to the previous size (1100x720).

@@ -51,7 +51,7 @@ import javafx.scene.layout.Pane;
 public final class Console {
 
     /** Resource path of the framework's RSyntaxTextArea theme. */
-    private static final String THEME_RESOURCE = "/ch/autumo/ui/cfg/autumo-edit.xml";
+    private static final String THEME_RESOURCE = "/ch/autumo/ui/cfg/edit.xml";
 
     /** Editor background ({@code Constants.BG_COLOR}). */
     private static final Color BG = new Color(47, 47, 47);

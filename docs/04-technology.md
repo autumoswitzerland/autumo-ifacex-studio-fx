@@ -26,7 +26,7 @@
 | --- | --- | --- |
 | Swing (`javax.swing`) | whole UI | JavaFX |
 | FlatLaf (+ IntelliJ themes) | dark look & feel | JavaFX CSS theme (custom stylesheet) |
-| RSyntaxTextArea / RTextScrollPane | code/config editing with syntax highlighting | **kept** — autumo-ui `DefaultCodeEditorView` (RSyntaxTextArea in a `SwingNode`, theme `cfg/autumo-edit.xml`) |
+| RSyntaxTextArea / RTextScrollPane | code/config editing with syntax highlighting | **kept** — autumo-ui `DefaultCodeEditorView` (RSyntaxTextArea in a `SwingNode`, theme `cfg/edit.xml`) |
 | JGoodies Forms | form layouts | JavaFX layout panes (GridPane, etc.) |
 | JGoodies Validation | form validation | JavaFX validation + optional **ControlsFX** |
 | AbsoluteLayout | absolute positioning | JavaFX layout (avoid absolute positioning) |
@@ -57,7 +57,7 @@
 | Code editor | RSyntaxTextArea (`com.fifesoft:rsyntaxtextarea`) via autumo-ui `DefaultCodeEditorView` | the legacy editor itself, embedded with a `SwingNode`; RichTextFX was dropped (caret colour, border/divider, highlighting) |
 | Extra UI controls | ControlsFX | validation decoration, notifications, dialogs |
 | Unit tests | JUnit 5 | replaces the missing test framework |
-| UI tests | TestFX | automated JavaFX UI smoke tests |
+| UI tests | JUnit on the JavaFX thread | no TestFX; `StudioUiTest` builds the real shell (see 07 §7.5, 2026-10-18) |
 | Settings | plain `Properties` (as today) | keeps compatibility with existing files |
 
 Candidates must be confirmed before adoption (see open questions).
@@ -89,7 +89,7 @@ Candidates must be confirmed before adoption (see open questions).
 
 ## 4.6 Continuous Integration
 
-- Adapt the reference GitHub Actions (`.github/workflows/`) for the new module layout.
+- Adapt the reference GitHub Actions (`.github/workflows/`) for the new module layout — **done**: `.github/workflows/build.yml` (build + tests on every OS; native packages on `workflow_dispatch` with `package=true`).
 - Multi-OS matrix (Windows/macOS/Linux) for `jpackage` release artifacts.
 
 ## 4.7 Explicit Non-Choices

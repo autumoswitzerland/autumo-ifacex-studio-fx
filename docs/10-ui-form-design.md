@@ -120,12 +120,17 @@ Decisions and explanations:
 1. **Where do the field descriptors live?** → **Deferred to a later step** (decision).
    The PoC uses an **in-code registry**; an external, customer-extendable override can
    follow later.
-2. **Per-entity UI: defaults + overrides table, or tabs?**
-   Only relevant when an IPC has **more than one source entity** (see 10.4). Option A: one
-   **table** with a "default" column and per-entity overrides. Option B: **tabs**, one per
-   entity plus a "Default" tab.
-   *Recommendation for PoC:* try the **table** (makes the `*` wildcard visible); fall back
-   to tabs if it gets crowded.
+2. **Per-entity UI: defaults + overrides table, or tabs?** → **decided (2026-10-31): neither.**
+   A table of defaults plus per-entity override columns (or tabs) is overkill: it only helps
+   when an IPC has several source entities whose *general* parameters differ, which is the
+   exception. The legacy Studio did not offer it either. The collapsible per-entity sections
+   of the navigation tree stay as they are (see 10.9), and every entity-scoped parameter —
+   including a general one such as `entities_url` that an author overrides for a single
+   entity — is edited in the entity's settings grid. **Nothing is changed here.**
+   Requirement that holds instead: keys added to the YAML by hand (or an entity-scoped
+   override of a general parameter) are **preserved** on save, because the model keeps them
+   in free maps and the writer emits every entry (verified: `params`, `defaults` and
+   `entities.<name>` keys that have no descriptor survive a load → save round trip).
 3. **Field set** → **all current fields are kept** (decision). The existing field set is the
    current standard; nothing is dropped. Grouping/collapsing ("advanced") is a presentation
    choice only.
@@ -142,7 +147,7 @@ the autumo-ui framework** (decision D12) and **installed, not portable** since 2
 
 **Shell (FXML).** `ui/src/main/resources/ch/autumo/ifacex/studio/ui/main.fxml` declares the
 static frame: `MenuBar` (File/Help), `ToolBar`, a `SplitPane` with a navigation `TreeView`
-on the left and a `TabPane` on the right (tabs: **Form**, **Raw**), and a status bar.
+on the left and a `TabPane` on the right (tabs: **Form**, **Raw**, **Console**), and a status bar.
 Controller: `MainController`. The **Raw** tab shows the loaded configuration as editable YAML
 in an `RSyntaxTextArea` (`RawEditor`, syntax style YAML, dark scrollbars) and is kept in sync
 with the form editor both ways (leaving the tab adopts its text, entering it shows the model).
@@ -196,7 +201,8 @@ left and a right `ToolBar` (transparent inner bars; each button carries a **Phos
 glyph at 32px with the label underneath — the icon font ships with autumo-ui, see
 `ch.autumo.ui.fx.control.Icons`; the legacy 48px PNGs are no longer used). Left: **New · Open ·
 Save · Close | Configuration | Run | External Edit**. `Configuration` selects the root node (file
-metadata + job wiring); `Run` and `External Edit` are placeholders until engine integration.
+metadata + job wiring); `Run` launches the external engine (console streaming, kill, timeout);
+`External Edit` opens the saved file in an external editor (enabled only after a save).
 Right (as in the original): the **ifaceX Studio title logo** (`ifacex-studio-reddot2-40.png`)
 and the clickable **ifaceX mark with the label `ifaceX` underneath**, which opens
 `url.website`. The same 16px Phosphor glyphs are used in the File menu. **Save always writes the
@@ -230,8 +236,10 @@ changes are visible without restarting. Off by default; the application switches
 `-Dapp.livereload=true` (e.g. in `bin/run.sh`). Active only in a `file:`-under-`target/classes`
 dev layout (in a packaged build it is a no-op). Java changes still need a rebuild + restart.
 
-**Per-entity UI (open).** The PoC currently uses collapsible per-entity sections; the
-table-vs-tabs evaluation (§10.8, item 2) is still open and only matters for multi-entity IPCs.
+**Per-entity UI (decided).** Collapsible per-entity sections in the navigation tree, with
+the entity's settings grid for all entity-scoped parameters (including overrides of general
+parameters such as `entities_url`); no defaults/overrides table, no per-entity tabs
+(§10.8, item 2). Unknown or hand-written keys are kept, never dropped.
 
 **Not yet done.** Typed validation messages, search/filter, secret encryption toggle, a
 light/dark theme *switch* (the modern dark palette is now the default), plugin/extensibility

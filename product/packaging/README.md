@@ -38,11 +38,16 @@ required in the packaged form. The development launcher still uses the explicit
 
 ## Still open (phase 7)
 
-- **Application icon** (`--icon`): a `.icns` (macOS) / `.ico` (Windows) / `.png`
-  (Linux) is still needed; the shipped PNGs are toolbar images, not app icons.
-- **Bundle identity**: `--mac-package-identifier`, `--vendor`, `--version`.
+- **Application icon** — done: `src/main/resources/.../icons/autumo-ifacex-studio.icns`
+  (macOS) / `.ico` (Windows) / `app-256.png` (Linux) are wired into the jpackage
+  `imageOptions` of `ui/build.gradle`. The toolbar PNGs are separate.
+- **Bundle identity**: `--vendor` and `--copyright` are set (autumo GmbH, 2026);
+  `--mac-package-identifier` and the final `--version` are still to be fixed.
 - **Single-instance "open while running"**: on macOS an already-running app
   receives further double-clicks through the `com.apple.eawt` open-documents
   event. Handling it needs `--add-exports java.desktop/com.apple.eawt=ALL-UNNAMED`
   at launch and is wired together with the real packaging step.
-- **Runtime image** (`jlink`) including the JavaFX modules.
+- **Runtime image** (`jlink`) — wired through badass-runtime (`:ui:runtime`), the
+  JavaFX modules are listed in `runtime { modules = [...] }`.
+- **CI**: `.github/workflows/build.yml` runs build + tests on every OS and, on
+  `workflow_dispatch` with `package=true`, builds the native installers.

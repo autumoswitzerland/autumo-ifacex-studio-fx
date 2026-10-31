@@ -52,6 +52,9 @@ public final class StudioConstants {
     /** Whether the Studio plays its start-up jingle ({@code true}/{@code false}). */
     public static final String PROP_KEY_PLAY_JINGLE = "play.jingle";
 
+    /** Whether the "New configuration" wizard is shown ({@code true}/{@code false}); default {@code true}. */
+    public static final String PROP_KEY_NEW_CONFIG_WIZARD = "newConfigWizard.enabled";
+
     /** Name of the default project root folder below the user's home directory. */
     public static final String DEFAULT_PROJECT_ROOT_FOLDER = "ifaceXProjects";
 

@@ -13,7 +13,7 @@
 | R7 | Hidden features only reachable via OS-specific code paths | Missing functionality | Inventory macOS/Windows/Linux branches explicitly |
 | R8 | Behavior drift vs. reference | User confusion | Keep reference accessible; compare behavior per feature |
 | R9 | Scope creep toward web/monitoring features | Oversized project | Scope document (doc 02) explicitly excludes them |
-| R10 | Plugin API designed too narrowly (customer needs vary) | Rework / unmet customer needs | Design a general extension point (menus/actions/dialogs/services) |
+| R10 | Plugin API designed too narrowly (customer needs vary) | — | **Dropped 2026-10-31**: no plugin API is shipped; customer-specific menus stay out of scope |
 
 *(R10 and R11 regarding licensing are resolved: the owner authorizes code reuse and there
 is no external remote.)*
@@ -28,7 +28,7 @@ is no external remote.)*
 | D4 | **Java 25** (latest LTS, Azul Zulu builds); JavaFX 25 |
 | D5 | **Code reuse authorized** — source may be copied/extracted (owner is the rights holder) |
 | D6 | **Sound feature retained** (jingle, finish ok/nok) |
-| D7 | **CreaSPA-specific hook dropped**, replaced by a **generic, plugin-style extension mechanism** for customer menus/functions |
+| D7 | **CreaSPA-specific hook dropped.** Superseded 2026-10-31: no plugin API is shipped; customer-specific menus stay out of scope |
 | D8 | **New structured config format** from day one; legacy properties files are **converted on load with a notice**; engine support later |
 | D8a | **Format = YAML** (owner decision); guardrails: YAML 1.2 + safe parser, canonical writer, schema validation |
 | D8b | **Dual serialization required:** the engine reads only properties → Studio exports properties for test runs (properties = execution format, YAML = authoring format) |
@@ -58,13 +58,13 @@ is no external remote.)*
 4. ~~Secret representation~~ → **resolved:** structured `{enc, value}` (Option B, D8h).
 5. ~~Base config file name~~ → **resolved:** `ifacex-base.ifcx` (new) / `ifacex.cfg` (legacy),
    inside the test engine's tree (see 8.12).
-6. ~~Properties export required~~ → **yes** (resolved; until the engine supports the new format).
+6. ~~Properties export required~~ → **explicit feature** (resolved): ifaceX 3.0.0 reads
+   `.ifcx` directly (`Yaml2Properties`, verified against 73 production files); the
+   properties export stays as a deliberate legacy-export action.
 
 ### Plugin / extension mechanism
-5. What exactly should plugins be able to contribute (menus, toolbar actions, dialogs,
-   whole views, background services)?
-6. Discovery mechanism: `ServiceLoader`, a plugin folder scanned at startup, or both?
-7. API stability/versioning of the plugin interface.
+**Dropped (2026-10-31):** no plugin API is shipped. Customer-specific menus stay out of
+scope (see D7). The earlier questions 5–7 are therefore closed without implementation.
 
 ### PoC & engine access
 8. ~~Developer read access to ifaceX~~ → **granted** (engine + templates as read-only references).
@@ -89,13 +89,15 @@ is no external remote.)*
     excludes autumo-ui's JavaFX and pins its own 25.x.
 11b. **autumo-ui release/governance:** how are framework changes versioned/published, given
     multiple consumers (Studio, Documents UI, demo, …)?
-12. **Dependency scope:** keep the reference `provided` approach or normal scopes + `jlink`?
+12. ~~**Dependency scope**~~ → **decided:** normal Gradle scopes; the runtime image is built
+    by badass-runtime (`:ui:runtime`, `jlink`) and packaged by `jpackage`.
 13. **Settings migration:** migrate existing app-data settings automatically, or start fresh?
 14. ~~Editor library~~ → **resolved (2026-10-19):** **RSyntaxTextArea 1:1** — no JavaFX rewrite.
     The autumo-ui framework ships `DefaultCodeEditorView` (RSyntaxTextArea + `RTextScrollPane`
-    in a `SwingNode`), styled by the legacy theme `cfg/autumo-edit.xml`; **RichTextFX is dropped**
+    in a `SwingNode`), styled by the legacy theme `cfg/edit.xml`; **RichTextFX is dropped**
     (broken caret colour, invisible border/divider, no syntax highlighting).
-15. **Testing depth:** how much automated UI testing (TestFX) vs. core-only?
+15. ~~**Testing depth**~~ → **decided (2026-10-31): JUnit only.** No TestFX; the UI is covered
+    by `StudioUiTest` (real shell on the JavaFX thread) plus the core unit tests.
 15a. ~~Installer/licensing activation~~ → **resolved (2026-10-18):** the autumo-ui installer is
     **wired and active** — first start runs *About/Terms* → **General Settings** → *Done*
     (`StudioApp.isPortableApp()` returns `false`). The wizard copies the bundled template values
@@ -112,28 +114,38 @@ is no external remote.)*
     (`if (!key.startsWith("meta"))`) and persists the metadata only in the **comment header**;
     `loadComments()` keeps `meta_*` in memory only. Our comment-header-only behaviour is therefore
     already the legacy parity.
-21. **Interfaces without a legacy editor** (`doc_in`, `file_in`, `file_out`, `null_in`,
-    `console_out`, `code`, `exec`, `first_out`, cloud plugins): full editor, read-only, or raw view?
-22. **Priority order** for closing the parity gaps in doc 11 §9 (complete per-type parameters,
-    destination-mapping editor with STD/INS + drag & drop, new-configuration wizard).
-23. **New-configuration workflow:** wizard (reader → writers → entities) or empty model +
-    inline "add" actions in the tree?
-24. **Menu items deliberately not built yet** (doc 11 §11.1): `Process › Run` and `Debug Mode`
-    (need the engine integration), `Registration` (own top-level menu), `Help › Format JSON`
-    (formatter), `Configuration › General Settings` (the legacy pane was the Studio's own
-    `PrefPanel`). Implement when their feature exists, or drop them for good?
+21. ~~**Interfaces without a legacy editor**~~ → **decided:** they get the **same generic
+    editor** as the others — `InterfaceTypes` registers all of them (`null_in`, `file_in`,
+    `doc_in`, `console_out`, `first_out`, `code`, `exec`, …) and `FieldCatalog` renders every
+    parameter of the section, even without a descriptor. Cloud/plugin interfaces are treated
+    the same way as soon as they appear in a configuration.
+22. ~~**Priority order** for closing the parity gaps in doc 11 §9~~ → all three are done:
+    complete per-type parameters (`ParameterCatalog`), destination-mapping editor with
+    STD/INS + drag & drop, new-configuration wizard.
+23. ~~**New-configuration workflow**~~ → **decided (2026-10-31): wizard** (reader →
+    any number of writers) in a framework pane (`NewConfigAction`, `UI.showPaneAndWait`),
+    switchable with `newConfigWizard.enabled` (default `yes`); with the switch off, *New*
+    creates an empty model and the sections are added with the inline "+" actions of the
+    tree. The legacy Studio also asked for reader/writers first.
+24. ~~**Menu items deliberately not built yet**~~ → **all implemented:** `Process › Run` and
+    `Debug mode` (`ProcessController`), `Registration` (own top-level menu),
+    `Help › Format JSON` → `Configuration › JSON Formatter`, `Configuration › General Settings`
+    (`SettingsActions`), plus `Configuration › Base interface configuration` and
+    `Interface Configuration` (raw editors).
 24a. **Test instance (next PoC step).** The legacy Studio's *General Settings* held the **ifaceX
     instance directory**, from which the encoder **seed** (`secret_key_seed`) was read
     automatically, the same place the Studio checks before a test run, before editing the base/
-    interfaces config, and before licensing an instance. This concept is **not built yet** (the
-    PoC is still growing towards full parity). When it lands: pick an instance directory, resolve
-    its base config (`cfg/ifacex.cfg` or `cfg/ifacex-base.ifcx`, whichever exists — doc 08 §8.12),
-    load the seed into the app configuration for the encoder, and add the "no test instance set"
-    guards at the run / base-config / licensing entry points.
+    interfaces config, and before licensing an instance. **Implemented:** the test instance is
+    set in `Configuration › General Settings` (`SettingsActions`, key `ifaceXFolder`), its base
+    config is resolved on save (`cfg/ifacex.cfg` or `cfg/ifacex-base.ifcx`, doc 08 §8.12), the
+    seed is loaded into the app configuration for the encoder and validated (32 hex characters).
+    **Still open:** explicit "no test instance set" guards at the run / base-config / licensing
+    entry points.
 
 ### Process / repository
-16. **Versioning scheme** for the new app (e.g. `3.0.0` or `1.0.0`)?
-17. **Application name/bundle id:** keep "ifaceX Studio" or mark as FX edition?
+16. ~~**Versioning scheme**~~ → **decided: `3.0.0`** (`build.gradle`, `CHANGELOG.md`).
+17. ~~**Application name/bundle id**~~ → **decided: "ifaceX Studio FX"**, bundle identifier
+    `ch.autumo.ifacex.studio.fx` (jpackage `--mac-package-identifier`).
 18. **Coexistence:** does the old Swing Studio remain available, or is this a full
     replacement (affects settings locations and package names)?
 
@@ -171,7 +183,7 @@ Access path / location is to be provided by the owner if desired.
 | 2026-10-16 | **Dark theme**: the PoC now loads the autumo-ui base stylesheet (`ch/autumo/ui/style/application.css`) before the Studio `studio.css` overrides; dialogs reuse the same base style | user |
 | 2026-10-16 | `bin/run.sh [file]` opens a config directly (`--open`); run script forces JDK 25 | assistant |
 | 2026-10-16 | **Readability:** base font size raised to 14px with LCD font smoothing; mono (raw views) 13px | user |
-| 2026-10-16 | **Toolbar adopted from the original Studio** (icons + labels, ifaceX mark on the right): New · Open · Save · Close · Configuration · Run · External Edit; Run/External Edit are placeholders | user |
+| 2026-10-16 | **Toolbar adopted from the original Studio** (icons + labels, ifaceX mark on the right): New · Open · Save · Close · Configuration · Run · External Edit; ~~Run/External Edit are placeholders~~ *(superseded: both implemented — Run/Kill with console streaming, External Edit opens the saved file; it stays disabled until the configuration is saved)* | user |
 | 2026-10-16 | **Typography = Aileron** (the autumo-ui brand font, bundled); also fixed the autumo-ui dialog-header family name (`Aileron-Semibold` → `Aileron SemiBold`, autumo-ui commit `6d3bc79b`) | user |
 | 2026-10-16 | **Toolbar right side = original:** title logo (`ifacex-studio-reddot2-40.png`) + clickable ifaceX mark with label `ifaceX` (opens `url.website`). Invented Website/Documentation/Purchase links **removed**. Structure per FX reference `autumo-documents-ui` (`tool-bar-pane` + left/right ToolBar) | user |
 | 2026-10-16 | **Save always writes the new `.ifcx` format** (`.ifacex` = export-only) | user |
@@ -216,7 +228,12 @@ Access path / location is to be provided by the owner if desired.
 | 2026-10-18 | **Icons: Phosphor icon font (MIT) bundled in autumo-ui; the Alert dialogs keep JavaFX's own warning/error/info graphics.** The collected 16/48px PNGs were inconsistent; autumo-ui now ships `fonts/Phosphor.ttf` (1530 icons) plus `fonts/phosphor-codepoints.properties` (name → codepoint, because JavaFX does not apply the font's ligatures reliably) and `ch.autumo.ui.fx.control.Icons` (`create(name)`, `create(name, size)`, `isAvailable(name)` → `javafx.scene.text.Text`, or `null`). The standard Alert dialogs (`showConfirmationDialog`, `showInformationDialog`, `showWarningDialog`, `showExceptionDialogExtended`) keep JavaFX's built-in graphics — they are not overridden. The Studio toolbar and File menu now use Phosphor glyphs (32px toolbar / 16px menu); the framework's `Help › Language` menu uses the Phosphor `translate` glyph with a fall-back to the legacy `language-16.png`. Unused framework PNGs (project-*, settings, process, folder, help, json, excel, debug, kill-process, quit-*, r_project-save-*, ifaceX16, register-16 where unused, …) were removed; flags, branding (ifaceX/icns/ico/reddot, autumo*), pane-header images (error/config/about/register/remove-config/update-48), the busy cursor, `lang_*` and `language-16.png` stay. `StudioUiTest.phosphorIconsResolve` asserts every Studio icon name resolves and an unknown name yields `null`; `toolbarButtonsResolveTheirIcons` now accepts both `ImageView` and `Text` graphics. autumo-ui changes stay uncommitted, version stays `1.2.0`. | user |
 | 2026-10-18 | **The About pane header is now the Phosphor `info` glyph instead of `about-48.png`.** `DefaultInfoController.customize` recognises a Phosphor name (no slash, no image extension) and shows the glyph directly in the header (replacing the `ImageView` in the `BorderPane`'s right slot) instead of rendering a bitmap, so it stays crisp, transparent and themeable; the fill colour is set explicitly (`#dddddd`) because the node is off-scene. The Studio passes `"info"` to `UI.showAboutWithLicense` and dropped its own `icons/about-48.png`. `about-48.png` stays in the framework, because `showAboutWithLicense(app)` (no icon argument) and other applications still use it as the default. autumo-ui changes stay uncommitted, version stays `1.2.0`. | user |
 | 2026-10-18 | **The mapping pane's auto-map control is now the Phosphor `magic-wand` glyph.** `FormBuilder.dndButton` (the clickable control that generates a mapping line for every source field whose name matches a destination field) used the legacy `icons/dnd-48.png`; it now uses `Icons.create("magic-wand", 40)` (light `#dddddd`), and the Studio dropped its own `icons/dnd-48.png`. autumo-ui changes stay uncommitted, version stays `1.2.0`. | user |
-| 2026-10-18 | **Every autumo-ui application has an application icon on all operating systems; an application can define its own.** `BaseApp.start()` now applies `Helper.getApplicationIcons(app)` (sizes 16, 32, 48, 64, 128, 256, ascending): (1) the application's own icons — `icons/app-16.png` … `icons/app-256.png` (any subset) or a single `icons/app.png`, resolved relative to the app class; (2) otherwise the new framework default `icons/autumo-ui-logo-16.png` … `-256.png` (vector source `icons/autumo-ui-logo.svg`: dark grey rounded button, "UI" lettering, red "FX" corner badge). The macOS dock icon is **not** covered by stage icons (JDK-8095033, "Won't Fix" — no AWT hack); it is defined by the packaged application (jpackage `--icon`, `.icns`). The framework also ships `icons/autumo-ui-logo.icns` / `.ico` as packaging defaults. **The Studio's own app icon is the user's `00_AUTUMO-LOGO-SQUARE.png`** (copied to `ui/.../ui/icons/autumo-ifacex-studio.png`, derived `app-16…256.png` for the runtime, `autumo-ifacex-studio.icns` / `.ico` for packaging); the toolbar's clickable **ifaceX** button now shows `app-48.png`. Bug fix found on the way: the earlier PNG cleanup had deleted `icons/ifaceX48.png` from the framework while `MainController.icon(...)` still resolved it via the base resources (runtime crash); `MainController.icon(...)` now uses `Helper.getAppResourceOrBase(app, ...)` (application first, framework second), and `getAppResourceOrBase` itself now raises a readable `MissingResourceException` naming the resource and the app class instead of a bare `NullPointerException`. `StudioUiTest.applicationIconsComeFromTheStudio` pins the convention (exactly the 6 `app-*.png` URLs). 105 tests green (63 core + 42 ui). autumo-ui changes stay uncommitted, version stays `1.2.0`. See DevGuide §4.6. | user |
+| 2026-10-18 | **Every autumo-ui application has an application icon on all operating systems; an application can define its own.** `BaseApp.start()` now applies `Helper.getApplicationIcons(app)` (sizes 16, 32, 48, 64, 128, 256, ascending): (1) the application's own icons — `icons/app-16.png` … `icons/app-256.png` (any subset) or a single `icons/app.png`, resolved relative to the app class; (2) otherwise the new framework default `icons/autumo-ui-logo-16.png` … `-256.png` (vector source `icons/autumo-ui-logo.svg`: dark grey rounded button, "UI" lettering, red "FX" corner badge). The macOS dock icon is **not** covered by stage icons (JDK-8095033, "Won't Fix" — no AWT hack); it is defined by the packaged application (jpackage `--icon`, `.icns`). The framework also ships `icons/autumo-ui-logo.icns` / `.ico` as packaging defaults. **The Studio's own app icon is the user's `00_AUTUMO-LOGO-SQUARE.png`** (copied to `ui/.../ui/icons/autumo-ifacex-studio.png`, derived `app-16…256.png` for the runtime, `autumo-ifacex-studio.icns` / `.ico` for packaging); the toolbar's clickable **ifaceX** button now shows `app-48.png`. Bug fix found on the way: the earlier PNG cleanup had deleted `icons/ifaceX48.png` from the framework while `MainController.icon(...)` still resolved it via the base resources (runtime crash); `MainController.icon(...)` now uses `Helper.getAppResourceOrBase(app, ...)` (application first, framework second), and `getAppResourceOrBase` itself now raises a readable `MissingResourceException` naming the resource and the app class instead of a bare `NullPointerException`. `StudioUiTest.applicationIconsComeFromTheStudio` pins the convention (exactly the 6 `app-*.png` URLs). 109 tests green (18 test classes: 9 core + 9 ui). autumo-ui changes stay uncommitted, version stays `1.2.0`. See DevGuide §4.6. | user |
 | 2026-10-19 | **Maven is removed from the project — the build is Gradle only** (supersedes the "stays Maven" resolution of open question 11). All four tracked `pom.xml` (root, `core/`, `ui/`, `spike/`) are deleted; `settings.gradle` includes `core` and `ui`. Comments, `product/packaging/README.md` and this documentation were adjusted accordingly (`./gradlew :ui:run`, `ui/build.gradle` test JVM with a scratch `user.home`). autumo-ui itself stays a Gradle project published to `mavenLocal`, so consuming it as a binary is unchanged. | user |
-| 2026-10-19 | **RichTextFX is dropped — the code editor is RSyntaxTextArea 1:1** (supersedes the "RichTextFX" answer of open question 14 and the R6 mitigation). RichTextFX had a broken caret colour, an invisible border/divider and no syntax highlighting; instead of rewriting the editor, the framework now ships `ch.autumo.ui.fx.view.DefaultCodeEditorView` + `DefaultCodeEditorController` + `codeEditorPane.fxml`: RSyntaxTextArea in an `RTextScrollPane` embedded with a `SwingNode`, theme `cfg/autumo-edit.xml` copied from the legacy Studio (only the gutter background `3a3a3a`, the gutter divider `666666` and the scrollbars — new `DarkScrollBarUI`, dark track/thumb without arrow buttons — were adjusted), pane chrome (header/title/glyph, footer buttons, help text) set from outside via `customize(...)`/`setButtons(...)`, content either preloaded or empty (JSON formatter starts empty). Title, icon, footer buttons and initial content are all settable from outside; `com.fifesoft:rsyntaxtextarea:3.5.0` is an `api` dependency of autumo-ui. 105 tests green (63 core + 42 ui); autumo-ui changes stay uncommitted, version stays `1.2.0`. | user |
+| 2026-10-19 | **RichTextFX is dropped — the code editor is RSyntaxTextArea 1:1** (supersedes the "RichTextFX" answer of open question 14 and the R6 mitigation). RichTextFX had a broken caret colour, an invisible border/divider and no syntax highlighting; instead of rewriting the editor, the framework now ships `ch.autumo.ui.fx.view.DefaultCodeEditorView` + `DefaultCodeEditorController` + `codeEditorPane.fxml`: RSyntaxTextArea in an `RTextScrollPane` embedded with a `SwingNode`, theme `cfg/edit.xml` copied from the legacy Studio (only the gutter background `3a3a3a`, the gutter divider `666666` and the scrollbars — new `DarkScrollBarUI`, dark track/thumb without arrow buttons — were adjusted), pane chrome (header/title/glyph, footer buttons, help text) set from outside via `customize(...)`/`setButtons(...)`, content either preloaded or empty (JSON formatter starts empty). Title, icon, footer buttons and initial content are all settable from outside; `com.fifesoft:rsyntaxtextarea:3.5.0` is an `api` dependency of autumo-ui. 105 tests green (63 core + 42 ui); autumo-ui changes stay uncommitted, version stays `1.2.0`. | user |
 | 2026-10-19 | **Every pane shown through `UI.showPane` is resizable down to 640x480, and only the middle content shrinks — header and footer keep their 60px height.** The panes' FXML roots carried `maxHeight="-Infinity" maxWidth="-Infinity"` with `minHeight/minWidth` equal to the preferred size (800x600 info, 1280x800 code editor), so the window could not be reduced at all; when it was forced smaller, the body refused to shrink and the footer buttons were clipped. `defaultInfoPane.fxml` and `codeEditorPane.fxml` now use `minHeight="400.0" minWidth="480.0"` (no max), the header/footer carry an explicit `minHeight="60.0"` and the body frame/body `minHeight="0.0" minWidth="0.0"`; `UI.showPane`/`showPaneAndWait`/`showJsonFormatter` set the stage minimum to 640x480 (was 800x628 / 1280x800). The registration pane stays fixed-size (deliberately not resizable). `StudioUiTest.panesShrinkToTheMinimumWithoutClippingHeaderOrFooter` pins the contract by driving the layout directly (640x480 → header 60, footer 60, body 360) and fails on the previous FXML. Also: gutter divider is now `#555555`. autumo-ui changes stay uncommitted, version stays `1.2.0`. | user |
+
+| 2026-10-20 … 2026-10-29 | **Post-19.10 work, now recorded** (supersedes the "not built yet" notes above): raw editor + splash/jingle + full parameter sets + secret handling + interface base configuration + ESC protection + package restructure (24.10.); file open via project root, settings robustness, CSS cleanup (24.10.); raw tab + code editor + save behaviour + window title (22.10.); CLI/CSS-reload/i18n/toolbar helpers moved into autumo-ui (20.10.); complete reader/writer forms, console highlighting, legacy parameter completeness (26.10.); inline editor for overwritten values, catalog defaults, nav UX (27.10.); `.ifcx` conversion keeps comments, run/console and drop targets fixed (29.10.). The encoder now uses the engine seed, configs open via CLI and double-click, menus from the original Studio (Encoder, Remove App Data, Help entries, Open Recent), and PO support lives in autumo-ui. | user + assistant |
+| 2026-10-31 | **Decisions closed by the owner:** customer plugin API dropped (D7 superseded); TestFX rejected — JUnit on the JavaFX thread is enough; the test instance concept (project root, ifaceX folder, seed, timeout, sounds) is implemented in `SettingsActions` and persisted; versioning set to **3.0.0**, application name **ifaceX Studio FX**, coexistence with the Swing Studio left to the packaging step; aliases/anchors in YAML closed (forbidden, canonical writer); interfaces without a legacy editor are covered generically by `InterfaceTypes` + `FieldCatalog`. | user |
+| 2026-10-31 | **New-configuration wizard implemented — as a framework pane, not as a hand-built dialog.** `NewConfigAction` (`BaseAction`) builds the pane content and is opened with `UI.showPaneAndWait(app, null, action, t("New configuration"))`; the result (`getResult()`) creates the `IpcConfig` with initialized reader/writer sections. The user picks one reader and any number of writers by their display name (e.g. "REST Reader", not `rest_in`). `onNew()` uses the wizard when `newConfigWizard.enabled` is set (default `yes` in `cfg/app.cfg`), otherwise creates an empty model. The toggle is in `SettingsActions` and persisted. | user |
+| 2026-10-31 | **Packaging.** Single-instance "open while running" is implemented: `StudioApp.initialize()` registers `Desktop.setOpenFileHandler(...)` and routes a file delivered by the OS to `controller.openFile(...)` (same path as the command line and *Open Recent*; no `--add-exports` needed). The runtime image is trimmed by badass-runtime (`runtime.modules`, `--strip-debug`, `--compress zip-6`); `bin/lib.sh` no longer hardcodes a JDK path (`java_home -v 25`, then `JAVA_HOME`). A GitHub Actions workflow (`.github/workflows/build.yml`) builds and tests on every OS and publishes the native installers to the public repository on `workflow_dispatch`. | user |

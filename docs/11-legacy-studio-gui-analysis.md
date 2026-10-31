@@ -427,12 +427,12 @@ legacy Studio set its language once at start-up (`SwingLocaleChanger`), not at r
 | File: Export .ifcx / .ifacex | **new** items: the YAML format is primary, `.ifacex` is import/export only |
 | Configuration: Interface Processor / Base / Interfaces Configuration | the navigation tree + raw views (no separate editors) |
 | Configuration: Encoder | `UI.showEncoder(app, false)` (framework, **unique** security key = engine seed `secret_key_seed`; not the internal framework key) |
-| Configuration: General Settings | open — the legacy pane was the Studio's own `PrefPanel` |
+| Configuration: General Settings | `SettingsActions` (framework pane): project root, ifaceX test instance, encoder seed, process timeout, sounds, new-configuration wizard |
 | Configuration: Remove App Data | `UI.showRemovePane(app)` (framework) |
-| Process: Run | toolbar `Run` button (placeholder until the engine integration) |
-| Process: Debug Mode | open — needs the engine run |
-| Registration | open — own top-level menu later, as in the original |
-| Help: Format JSON | open — the formatter is not rebuilt yet |
+| Process: Run | `ProcessController` — external engine, console streaming with severity colours, timeout watchdog, Run/Kill button |
+| Process: Debug Mode | menu check item `Process › Debug mode` (adds `DEBUG` to the test switches) |
+| Registration | own top-level menu `Registration › Register an ifaceX instance`, as in the original |
+| Help: Format JSON | `Configuration › JSON Formatter` → `UI.showJsonFormatter(app)` (framework code editor; the post-run root call is formatted there too) |
 | Help: Open Online Documentation / Visit Website | wired, URLs from `cfg/app.cfg` |
 | Help: Check for Updates | `UI.showUpdatePane(app)` (framework) |
 | Help: About | `UI.showAboutWithLicense(app)` — the dialog carries a **License** button (same as the legacy Studio; there is deliberately no `Help › License` item) |

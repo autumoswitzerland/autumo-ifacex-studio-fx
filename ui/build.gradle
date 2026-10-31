@@ -73,6 +73,12 @@ shadowJar {
 
 def runtimeJdk = 'zulu25.36.205-ca-fx-jdk25.0.4.1'
 
+def jdkHomeFor(String path) {
+    return providers.provider {
+        new File(path).exists() ? path : System.getProperty('java.home')
+    }
+}
+
 runtime {
     modules = ['javafx.controls', 'javafx.fxml', 'javafx.web', 'javafx.swing', 'javafx.media']
 
@@ -110,31 +116,29 @@ runtime {
 
         if (targetPlatformName == 'macArch') {
             targetPlatform('macArch') {
-                jdkHome = providers.provider {
-                    '/Volumes/Fastdrive/Development/JDKs/Azul/mac/' +
-                        runtimeJdk + '-macosx_aarch64/Contents/Home'
-                }
+                jdkHome = jdkHomeFor('/Volumes/Fastdrive/Development/JDKs/Azul/mac/' +
+                        runtimeJdk + '-macosx_aarch64/Contents/Home')
             }
             installerType = 'pkg'
             installerOptions += ['--name', 'ifaceX-Studio-FX-arm64']
+            installerOptions += ['--mac-app-category', 'Development']
+            installerOptions += ['--mac-package-identifier', 'ch.autumo.ifacex.studio.fx']
         }
 
         if (targetPlatformName == 'mac') {
             targetPlatform('mac') {
-                jdkHome = providers.provider {
-                    '/Volumes/Fastdrive/Development/JDKs/Azul/mac/' +
-                        runtimeJdk + '-macosx_x64/Contents/Home'
-                }
+                jdkHome = jdkHomeFor('/Volumes/Fastdrive/Development/JDKs/Azul/mac/' +
+                        runtimeJdk + '-macosx_x64/Contents/Home')
             }
             installerType = 'pkg'
             installerOptions += ['--name', 'ifaceX-Studio-FX-x64']
+            installerOptions += ['--mac-app-category', 'Development']
+            installerOptions += ['--mac-package-identifier', 'ch.autumo.ifacex.studio.fx']
         }
 
         if (targetPlatformName == 'win') {
             targetPlatform('win') {
-                jdkHome = providers.provider {
-                    'G:/Java/JDKs/Azul/' + runtimeJdk + '-win_x64'
-                }
+                jdkHome = jdkHomeFor('G:/Java/JDKs/Azul/' + runtimeJdk + '-win_x64')
             }
             installerType = 'exe'
             installerOptions += ['--name', 'ifaceX-Studio-FX']
@@ -142,12 +146,12 @@ runtime {
 
         if (targetPlatformName == 'linux') {
             targetPlatform('linux') {
-                jdkHome = providers.provider {
-                    '/opt/java/' + runtimeJdk + '-linux_amd64'
-                }
+                jdkHome = jdkHomeFor('/opt/java/' + runtimeJdk + '-linux_amd64')
             }
             installerType = 'deb'
             installerOptions += ['--name', 'ifaceX-Studio-FX']
+            installerOptions += ['--linux-app-category', 'Development']
+            installerOptions += ['--linux-deb-maintainer', 'info@autumo.ch']
         }
 
         if (installerType == 'pkg') {
@@ -172,7 +176,7 @@ runtime {
             imageOptions += ['--icon', 'src/main/resources/ch/autumo/ifacex/studio/ui/icons/app-256.png']
             installerOptions += [
                 '--resource-dir', 'build/jpackage/ifaceX Studio FX/lib',
-                '--license-file', rootProject.file('package/LICENSE.txt').absolutePath,
+                '--license-file', rootProject.file('LICENSE').absolutePath,
                 '--linux-menu-group', 'Utility',
                 '--linux-shortcut'
             ]

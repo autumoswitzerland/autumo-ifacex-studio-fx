@@ -34,7 +34,7 @@ Carries over / reimplements the UI-free logic from the reference project:
 | --- | --- |
 | IPC model (properties, load/save, comment header, grouping/sorting) | `IfacexConfiguration` |
 | Project wrapper | `project/Project` |
-| Process launching + output streaming + watchdog | `control/Controller` (extracted, UI-agnostic) |
+| Process launching + output streaming + watchdog | `ui/controller/ProcessController` + `ExternalProcessWatchdog` (UI layer) |
 | Settings model (app-data properties) | `IfacexStudio`, `Constants` (keys) |
 | Crypto helper | `util` + `CryptUtils` usage (autumo-commons) |
 | License handling | `LicIfaceXApp100`, autumo-registration |
@@ -43,7 +43,7 @@ Carries over / reimplements the UI-free logic from the reference project:
 | Reader/writer metadata (tabs, fields, validation rules) | extracted from `Config*Panel` |
 | Templates / file layout constants | `Constants` |
 | OS helpers | `os/OSHelper`, `os/FileHandler` (non-UI parts) |
-| Launcher command-line handling (which config to open; `--open` / bare path for double-click) | new (`cli/CommandLine`) |
+| Launcher command-line handling (which config to open; `--open` / bare path for double-click) | moved to autumo-ui (`ch.autumo.ui.utils.CommandLine`) |
 
 ### `ui` module (JavaFX)
 
@@ -82,16 +82,20 @@ Carries over / reimplements the UI-free logic from the reference project:
 
 ## 3.4 Process Execution Model (JavaFX)
 
-The core exposes a UI-agnostic process runner:
+**Implemented in the UI layer** (`ui/controller/ProcessController` +
+`ExternalProcessWatchdog`), not in `core`:
 
-- `core`: `ProcessRunner` starts `bin/run.sh|run.bat` with the same arguments and
-  working directory as today, merges stderr into stdout, and exposes output as a
-  stream/callback plus a timeout watchdog callback.
-- `ui`: consumes the stream on a **background thread** and marshals lines to the JavaFX
-  thread via `Platform.runLater(...)`, appending to the console view.
-- Kill/timeout is surfaced as an event that updates the UI state machine.
+- starts `bin/run.sh|run.bat` with the same arguments and working directory as the
+  reference (`config:<file>` `s` `testswitches:ROOTCALL,DEBUG`), merges stderr into stdout
+  and reads the output line by line on a background thread;
+- the console is fed via `Platform.runLater(...)` (`Console`, severity highlighting in
+  `ConsoleTokenMaker`);
+- a watchdog stops the process after the configured timeout, and the Run button becomes
+  the Kill button while the process runs;
+- the finished event updates the UI state (status bar, button states, sounds,
+  post-run root-call JSON formatting).
 
-No UI types leak into `core`.
+`core` starts no processes; it stays free of UI **and** process handling.
 
 ## 3.5 GUI State Machine
 

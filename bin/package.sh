@@ -4,9 +4,10 @@
 #  ifaceX Studio FX — create a runtime image + OS installer (jpackage).
 #
 #  Notes:
-#   - requires a JavaFX-capable JDK 25 at the path configured in
-#     ui/build.gradle (runtime.jdkHome, default: Azul Zulu FX under
-#     /Volumes/Fastdrive/...). Adjust the path there for your machine.
+#   - requires a JavaFX-capable JDK 25. ui/build.gradle selects it from the
+#     Azul path configured there (runtime.jdkHome) and falls back to the JDK
+#     Gradle runs on when that path does not exist (CI). Adjust the path there
+#     for your machine if needed.
 #   - the target platform is selected via the 'targetPlatformName' property
 #     in ui/build.gradle (mac / macArch / win / linux).
 #   - a summary of all produced artifacts is printed at the end (Gradle keeps

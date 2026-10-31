@@ -48,6 +48,7 @@ import ch.autumo.ifacex.studio.ui.RawEditor;
 import ch.autumo.ifacex.studio.ui.StudioApp;
 import ch.autumo.ifacex.studio.ui.StudioHelper;
 import ch.autumo.ifacex.studio.ui.controller.actions.SettingsActions;
+import ch.autumo.ifacex.studio.ui.controller.actions.NewConfigAction;
 import ch.autumo.ifacex.studio.ui.view.MainView;
 import ch.autumo.ui.Constants;
 import ch.autumo.ui.fx.BaseApp;
@@ -620,6 +621,8 @@ public class MainController extends BaseController {
         tbSave.setDisable(!enabled);
         tbClose.setDisable(!enabled);
         tbConfig.setDisable(!enabled);
+        // External Edit only makes sense for a configuration that has already been saved to disk.
+        tbFolder.setDisable(!enabled || sourceFile == null);
         // Run / External Edit are additionally controlled by setRunButtonsEnabled()
         updateRunButtons();
     }
@@ -632,7 +635,7 @@ public class MainController extends BaseController {
     private void updateRunButtons() {
         final boolean idle = !processRunning;
         setRunButtonRunning(processRunning);
-        tbFolder.setDisable(!idle);
+        tbFolder.setDisable(!idle || sourceFile == null);
         tbConfig.setDisable(!idle);
         miRun.setDisable(!idle);
         navTree.setDisable(!idle);
@@ -743,11 +746,36 @@ public class MainController extends BaseController {
 
     @FXML
     private void onNew() {
-        config = new IpcConfig();
+        final StudioApp app = StudioApp.get();
+        final boolean wizardEnabled = app == null
+                || !"false".equalsIgnoreCase(app.getConfigurationParameter(StudioConstants.PROP_KEY_NEW_CONFIG_WIZARD));
+        if (wizardEnabled) {
+            final NewConfigAction action = new NewConfigAction();
+            UI.showPaneAndWait(app, null, action, t("New configuration"));
+            final NewConfigAction.Result r = action.getResult();
+            if (r == null) {
+                return; // cancelled
+            }
+            config = new IpcConfig();
+            config.setSourceInterface(r.reader);
+            for (final String w : r.writers) {
+                config.destinationInterfaces().add(w);
+            }
+            config.initializeReader(config.sourceInterface());
+            for (final String w : config.destinationInterfaces()) {
+                config.initializeWriter(w);
+            }
+        } else {
+            config = new IpcConfig();
+        }
         sourceFile = null;
         loadedBaseName = null;
         rebuild();
         status(t("New configuration"));
+        // A freshly created configuration is unsaved from the start, so closing it must
+        // prompt for confirmation (see confirmDiscardChanges()).
+        modified = true;
+        discardConfirmed = false;
     }
 
     /**
@@ -1299,6 +1327,7 @@ public class MainController extends BaseController {
             buildRecentMenu();
             status(format("Saved {0}", out.getFileName().toString()));
             renderTitle();
+            updateRunButtons();
             return true;
         } catch (Exception e) {
             error(format("Could not write {0}", out.getFileName().toString()), e);

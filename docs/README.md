@@ -36,6 +36,10 @@ will be produced until explicitly instructed.
 
 ## Status
 
-> **Phase: Planning.** No implementation yet. All statements in these documents
-> reflect the current analysis/planning state and may still change based on the open
-> questions (see document 07).
+> **Phase: implementation complete through phase 6, packaging in progress (3.0.0).**
+> The application builds and runs (`./gradlew :ui:run`); native packaging is wired
+> (`ui/build.gradle`, `product/packaging/`); CI exists (`.github/workflows/build.yml`).
+> Open items: customer plugin API (dropped), TestFX (rejected in favour of JUnit),
+> aliases/anchors, version/name/coexistence, new-config wizard vs. inline add,
+> interfaces without a legacy editor, and the packaging loose ends in
+> `product/packaging/README.md`. See document 07 §7.3.

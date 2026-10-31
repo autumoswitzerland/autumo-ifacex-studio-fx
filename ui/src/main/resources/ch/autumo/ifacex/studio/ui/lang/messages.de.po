@@ -64,6 +64,12 @@ msgstr "Die obige Formel als reines Insert-Mapping [INS] hinzufügen"
 msgid "Author"
 msgstr "Autor"
 
+msgid "Available writers"
+msgstr "Verfügbare Writer"
+
+msgid "Cancel"
+msgstr "Abbrechen"
+
 msgid "Check for Updates"
 msgstr "Nach Updates suchen"
 
@@ -96,6 +102,9 @@ msgstr "{0} konnte nicht gelesen werden"
 
 msgid "Could not write {0}"
 msgstr "{0} konnte nicht geschrieben werden"
+
+msgid "Create"
+msgstr "Erstellen"
 
 msgid "Create a new, empty configuration"
 msgstr "Neue, leere Konfiguration erstellen"
@@ -322,6 +331,9 @@ msgstr "Klang abspielen?"
 msgid "Raw"
 msgstr "Roh"
 
+msgid "Reader"
+msgstr "Reader"
+
 msgid "Ready"
 msgstr "Bereit"
 
@@ -357,6 +369,9 @@ msgstr "Als .ifcx speichern"
 
 msgid "Save the configuration (.ifcx)"
 msgstr "Die Konfiguration speichern (.ifcx)"
+
+msgid "Selected writers"
+msgstr "Ausgewählte Writer"
 
 msgid "The configuration has unsaved changes.<br>Close anyway and lose them?"
 msgstr "Die Konfiguration hat ungespeicherte Änderungen.<br>Trotzdem schliessen und diese verlieren?"

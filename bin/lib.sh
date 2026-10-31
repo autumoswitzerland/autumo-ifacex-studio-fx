@@ -8,9 +8,12 @@ jdk25() {
 		jdk="$(/usr/libexec/java_home -v 25 2>/dev/null || true)"
 		[ -n "$jdk" ] && { printf '%s' "$jdk"; return 0; }
 	fi
-	if [ -d "/Library/Java/JavaVirtualMachines/zulu-25.jdk/Contents/Home" ]
+	# No hardcoded JDK path: the installation directory differs per machine
+	# (e.g. zulu25.36.205-ca-fx-jdk25.0.4.1-macosx_x64). Fall back to JAVA_HOME
+	# when java_home is unavailable or knows no JDK 25.
+	if [ -n "${JAVA_HOME:-}" ] && [ -d "$JAVA_HOME" ]
 	then
-		printf '%s' "/Library/Java/JavaVirtualMachines/zulu-25.jdk/Contents/Home"
+		printf '%s' "$JAVA_HOME"
 		return 0
 	fi
 	return 1
@@ -26,7 +29,7 @@ use_jdk25() {
 		export JAVA_HOME
 		echo "-> Using JDK 25: $JAVA_HOME"
 	else
-		echo "WARNING: no JDK 25 found (checked java_home and Zulu 25)."
+		echo "WARNING: no JDK 25 found (checked java_home and JAVA_HOME)."
 		echo "         Falling back to JAVA_HOME='${JAVA_HOME:-<unset>}'; the build will likely fail."
 	fi
 }

@@ -1,0 +1,168 @@
+###############################################################################
+#
+#  ifaceX Studio FX - GitHub Build & Release Workflow
+#  Version: 1.0
+#
+#------------------------------------------------------------------------------
+#
+#  2026 autumo GmbH
+#
+#  Private repository builds the Studio and publishes the native installers to the
+#  public repository autumoswitzerland/autumo-ifacex-studio-fx-public.
+#
+#  Layout follows the legacy ifaceX Studio workflow (release.yml): a build matrix
+#  produces per-OS artifacts, a release job downloads them and creates a GitHub
+#  Release in the public repository via softprops/action-gh-release.
+#
+###############################################################################
+
+
+
+name: Build and Release
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+    inputs:
+      package:
+        description: 'Build and publish native packages to the public repository'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  build:
+    name: Build & package (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    outputs:
+      APP_NAME: ${{ env.APP_NAME }}
+      APP_FILE_NAME: ${{ env.APP_FILE_NAME }}
+      APP_VERSION: ${{ env.APP_VERSION }}
+      RELEASE_RUN: ${{ env.RELEASE_RUN }}
+      RELEASE_BODY: ${{ env.RELEASE_BODY }}
+      RELEASE_REPO: ${{ env.RELEASE_REPO }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-13, macos-latest, windows-latest]
+
+    #--------------------------------------------------------------------------
+    # Environment Variables
+    # Customize your build and release environment settings below.
+    # Note: Ensure the application names are consistent across all variables.
+    #--------------------------------------------------------------------------
+    # Note: the jpackage parameters (icon, license, resource dir, modules, main class/jar,
+    # java options, app categories, package id, deb maintainer, ...) live in ui/build.gradle
+    # (badass-runtime jpackage block) - they are not duplicated here.
+    env:
+      # Application name
+      APP_NAME: "ifaceX Studio FX"
+      # Application name for files (must match the JAR name without version/extension)
+      APP_FILE_NAME: "ifaceX-Studio-FX"
+      # Build version (must match project.version in build.gradle)
+      APP_VERSION: "3.0.0"
+      # Run release job? Only when triggered manually with package=true
+      RELEASE_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.package == true && 'true' || 'false' }}
+      # Release notes body
+      RELEASE_BODY: |
+        ifaceX Studio FX 3.0.0 - native installers for Windows, macOS and Linux.
+      # Branch for build checkout
+      BUILD_BRANCH: master
+      # Release repository (public)
+      RELEASE_REPO: autumoswitzerland/autumo-ifacex-studio-fx-public
+      # Java version (Zulu, includes JavaFX and jpackage)
+      JAVA_VERSION: 25
+      # JPackage output directory (badass-runtime)
+      OUTPUT_DIR: ui/build/jpackage
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.BUILD_BRANCH }}
+
+      - name: Check out autumo-ui (optional)
+        uses: actions/checkout@v4
+        with:
+          repository: autumoswitzerland/autumo-ui
+          path: autumo-ui
+          continue-on-error: true
+
+      - name: Build & publish autumo-ui to mavenLocal
+        if: ${{ hashFiles('autumo-ui/build.gradle') != '' }}
+        shell: bash
+        run: |
+          cd autumo-ui
+          ./gradlew publishToMavenLocal --no-daemon
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: zulu
+          cache: gradle
+
+      - name: Build & test
+        run: ./gradlew build --no-daemon
+
+      - name: Package with jpackage
+        if: ${{ env.RELEASE_RUN == 'true' }}
+        shell: bash
+        run: |
+          set -e
+          case "${{ matrix.os }}" in
+            ubuntu-latest)   TP=linux ;;
+            macos-13)        TP=mac ;;
+            macos-latest)    TP=macArch ;;
+            windows-latest)  TP=win ;;
+          esac
+          ./gradlew :ui:runtime :ui:jpackageImage --no-daemon -PtargetPlatformName=$TP
+
+      - name: Upload UNIX/Linux Package Artifacts
+        if: ${{ env.RELEASE_RUN == 'true' && matrix.os != 'windows-latest' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.APP_FILE_NAME }}-${{ env.APP_VERSION }}-${{ matrix.os == 'ubuntu-latest' && 'amd64.deb' || (matrix.os == 'macos-13' && 'x64.pkg' || 'arm64.pkg') }}
+          path: ${{ env.OUTPUT_DIR }}
+          if-no-files-found: warn
+
+      - name: Upload Windows Package Artifacts
+        if: ${{ env.RELEASE_RUN == 'true' && matrix.os == 'windows-latest' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.APP_FILE_NAME }}-${{ env.APP_VERSION }}-windows
+          path: ${{ env.OUTPUT_DIR }}
+          if-no-files-found: warn
+
+  release:
+    name: Publish release to public repository
+    runs-on: ubuntu-latest
+    needs: build
+    if: ${{ needs.build.outputs.RELEASE_RUN == 'true' }}
+    steps:
+      - name: Checkout public repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ needs.build.outputs.RELEASE_REPO }}
+          token: ${{ secrets.PAT_TOKEN }}
+
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: v${{ needs.build.outputs.APP_VERSION }}
+
+      - name: Create GitHub release in the public repository
+        uses: softprops/action-gh-release@v2
+        with:
+          repository: ${{ needs.build.outputs.RELEASE_REPO }}
+          token: ${{ secrets.PAT_TOKEN }}
+          tag_name: v${{ needs.build.outputs.APP_VERSION }}
+          name: "${{ needs.build.outputs.APP_NAME }} ${{ needs.build.outputs.APP_VERSION }}"
+          body: ${{ needs.build.outputs.RELEASE_BODY }}
+          draft: false
+          prerelease: false
+          files: v${{ needs.build.outputs.APP_VERSION }}/**/*
+
+      - name: Clean up downloaded artifacts
+        run: rm -rf v${{ needs.build.outputs.APP_VERSION }}

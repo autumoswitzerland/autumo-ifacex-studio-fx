@@ -1,7 +1,7 @@
 # 06 — Roadmap
 
-Phased plan. Each phase ends with a clear deliverable. **Nothing is implemented until
-explicitly instructed**; this is the proposed order of work.
+Phased plan. Each phase ends with a clear deliverable. Status (2026-10-31): phases 0–6 are
+implemented; phase 7 (packaging/CI) is wired but not yet shipped.
 
 ## Phase 0 — Proof of Concept (validate the approach)
 

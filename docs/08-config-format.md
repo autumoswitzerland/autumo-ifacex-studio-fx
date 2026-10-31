@@ -29,8 +29,8 @@ Problems:
 6. **Represent wildcard defaults** (`<rw>_*_<param>` → per-reader/writer `defaults`, overridable per entity).
 7. **Represent ordered mapping rows** as an array.
 8. **Represent secrets** with an explicit encoding marker.
-9. **Dual serialization** — the Studio must still **export legacy properties for test runs**
-   until the engine supports the new format (see 9.11 / 8.7).
+9. **Dual serialization** — the Studio exports legacy properties as an explicit feature
+   (ifaceX 3.0.0 reads `.ifcx` itself; see 8.6 / 8.7).
 
 ## 8.3 Options
 
@@ -62,7 +62,7 @@ To keep YAML safe and deterministic, apply these guardrails:
 ## 8.5 Schema (YAML) — implemented
 
 > **Status: implemented** (PoC). The shape below is what `YamlConfigWriter` / `YamlConfigReader`
-> actually produce/consume; it is verified **lossless** against all 68 reference templates.
+> actually produce/consume; it is verified **lossless** against all reference templates (68 in total; 10 ship with the repo under `core/src/test/resources/templates`, the rest live in the templates repository).
 
 Design decisions that shape the schema:
 
@@ -225,22 +225,34 @@ Rules:
    - legacy properties → **convert on the fly** (properties → model → YAML).
 3. A **notice** is shown ("Legacy properties file; converting to the new format.").
 4. The model is edited in the GUI.
-5. On save, **YAML** is written (new extension — see 8.7).
+5. On save, **YAML** is written (new extension — see 8.8).
+
+**Engine side (verified 2026-10-31, confirmed by the owner).** ifaceX 3.0.0 reads a
+`.ifcx` itself: `ch.autumo.ifacex.utils.Yaml2Properties` maps the document onto the flat
+engine keys (`params` → `<rw>_<param>`, `defaults` → `<rw>_*_<param>`,
+`entities.<e>.<key>` → `<rw>_<e>_<key>`, `mapping` rows → `mapping_field_NNN` /
+`mapping_insert_NNN`, `{enc, value}` → `{mode:value}`, lists → comma separated,
+booleans → `yes`/`no`; `data_mapper_class` and `exclusion_filter_class` are omitted when
+empty). Cross-checked against the Studio's properties export for all 73 `.ifcx` files of the
+3.0.0 installation (`interfaces/`): identical keys and values, no differences. Hand-written
+or entity-scoped overrides of general parameters (e.g. `entities_url`) are carried over the
+same way, because both sides read the key as `<rw>_<entity>_<param>`.
 
 ## 8.7 ⚠ Dual serialization (critical)
 
-The external engine can only read **properties** today. Therefore the Studio needs **three
-serializers over one in-memory model**:
+The engine of ifaceX 3.0.0 reads **`.ifcx` directly** (see 8.6), so the properties export is
+no longer required for test runs; it is kept as the explicit legacy export feature. The
+Studio still has **three serializers over one in-memory model**:
 
 | Serializer | Purpose |
 | --- | --- |
 | **YAML reader/writer** | the new authoring format (load/save) |
 | **Properties reader** | import legacy `.ifacex` files (conversion) |
-| **Properties writer** | **export** an `.ifacex` for the external engine when running a test IPC |
+| **Properties writer** | **export** an `.ifacex` (legacy export, and a second view on the model) |
 
 The **in-memory model is the single source of truth**; YAML and properties are just
-representations. This keeps test execution working until ifaceX natively parses the new
-format (a later, separate task).
+representations — both writers derive from the same model, which is what keeps the
+representations semantically identical.
 
 The properties writer must reproduce the exact conventions (entity scoping, `*` wildcard,
 `mapping_field_NNN` indexing, `{mode:...}` secrets, base `cfg/ifacex.cfg` merge).
@@ -326,20 +338,20 @@ from the model (just like the current properties writer regenerates the header a
 ## 8.10 Legacy export (explicit feature)
 
 Besides the automatic conversion on load, the Studio offers a deliberate
-**"Export as legacy `.ifacex` (properties)"** action. This is the same exporter used
-internally to run test IPCs (see 8.7), exposed as a user feature.
+**"Export as legacy `.ifacex` (properties)"** action — the same exporter used by
+`PropertiesConfigWriter` (see 8.7), exposed as a user feature.
 
 ## 8.11 Open Decisions
 
 1. ~~Secret representation~~ → **resolved: Option B, structured `{enc, value}`** (8.5).
 2. ~~File extension~~ → **resolved: `.ifcx`** (8.8).
 3. **Schema tooling:** SnakeYAML Engine (YAML 1.2, safe) for reading + custom emitter for
-   writing (**recommended**, see 8.13) vs. Jackson-YAML + JSON-Schema.
+   writing — **decided** (D8i); `snakeyaml-engine 2.9` is the dependency.
 4. ~~Base/general configuration~~ → **resolved:** lives in the **test engine's** file tree
    (`ifacex.cfg` legacy / `ifacex-base.ifcx` new), raw-edited, **not** form-generated (8.12).
 5. **Aliases/anchors:** forbid in generated YAML (recommended) or allow for templating?
 6. **Round-trip fidelity:** properties → model → properties must be lossless for
-   test-run export (golden-file tests).
+   test-run export (golden-file tests) — **resolved & verified** by `RoundTripTest`.
 
 > **Resolved:** hand-written comments in a config file are **not preserved** by the editor
 > (already the case in the current Studio) — **accepted**. Only the generated
@@ -369,8 +381,8 @@ Consequences:
 
 - The base config is a **per-test-engine** artifact — not a project file and not a global
   Studio setting.
-- Since the engine still reads properties (8.7), the base config is **exported to
-  `cfg/ifacex.cfg`** for test runs when the authoring file is the YAML variant.
+- Since the engine of 3.0.0 reads `.ifcx` (8.6), the base config is used **as it is**;
+  the legacy `cfg/ifacex.cfg` is only needed for older engine versions.
 - Editing is **raw-text** (no forms); this is a technical settings file, not an IPC.
 
 ## 8.13 YAML library & schema (plain explanation)
