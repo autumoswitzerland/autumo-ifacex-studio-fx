@@ -9,6 +9,9 @@ out/
 *.ear
 *.nar
 
+# Gradle wrapper JAR is required by ./gradlew
+!gradle/wrapper/gradle-wrapper.jar
+
 # Vendored Maven repository for the private autumo artifacts
 !lib/repo/**/*.jar
 hs_err_pid*
