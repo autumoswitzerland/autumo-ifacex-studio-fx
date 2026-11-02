@@ -231,11 +231,12 @@ runtime {
 
         if (targetPlatformName == 'win') {
             imageOptions += ['--icon', 'src/main/resources/ch/autumo/ifacex/studio/ui/icons/autumo-ifacex-studio.ico']
-            imageOptions += ['--file-associations',
-                             rootProject.file('product/packaging/file-associations/ifcx.properties').absolutePath,
-                             '--file-associations',
-                             rootProject.file('product/packaging/file-associations/ifacex.properties').absolutePath]
+            // File associations belong to the installer, not the app-image.
             installerOptions += [
+                '--file-associations',
+                rootProject.file('product/packaging/file-associations/ifcx.properties').absolutePath,
+                '--file-associations',
+                rootProject.file('product/packaging/file-associations/ifacex.properties').absolutePath,
                 '--win-dir-chooser',
                 '--win-menu',
                 '--win-shortcut'
@@ -244,11 +245,12 @@ runtime {
 
         if (installerType in ['deb', 'rpm']) {
             imageOptions += ['--icon', 'src/main/resources/ch/autumo/ifacex/studio/ui/icons/app-256.png']
-            imageOptions += ['--file-associations',
-                             rootProject.file('product/packaging/file-associations/ifcx.properties').absolutePath,
-                             '--file-associations',
-                             rootProject.file('product/packaging/file-associations/ifacex.properties').absolutePath]
+            // File associations belong to the installer, not the app-image.
             installerOptions += [
+                '--file-associations',
+                rootProject.file('product/packaging/file-associations/ifcx.properties').absolutePath,
+                '--file-associations',
+                rootProject.file('product/packaging/file-associations/ifacex.properties').absolutePath,
                 '--resource-dir', 'build/jpackage/ifaceX Studio FX/lib',
                 '--license-file', file('package/LICENSE.txt').absolutePath,
                 '--linux-menu-group', 'Utility',
