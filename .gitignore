@@ -8,6 +8,9 @@ out/
 *.war
 *.ear
 *.nar
+
+# Vendored Maven repository for the private autumo artifacts
+!lib/repo/**/*.jar
 hs_err_pid*
 replay_pid*
 

@@ -51,10 +51,12 @@ jobs:
       APP_VERSION: "3.0.0"
       # Application name
       APP_NAME: "ifaceX Studio FX"
-      # Application name for the published installer files
-      APP_FILE_NAME: "ifaceX-Studio"
+      # Application name for files (must match the JAR name without version/extension)
+      APP_FILE_NAME: "ifaceX-Studio-FX"
       # Run release job? Only when triggered manually with create_release=true
       RELEASE_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.create_release == true && 'true' || 'false' }}
+      # Run Discord notification? Same switch as the release.
+      NOTIFY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.create_release == true && 'true' || 'false' }}
       # Release tag (only set for manual runs)
       RELEASE_TAG: ${{ github.event.inputs.tag }}
       # Release repository (public)
@@ -71,6 +73,7 @@ jobs:
       APP_FILE_NAME: ${{ env.APP_FILE_NAME }}
       APP_VERSION: ${{ env.APP_VERSION }}
       RELEASE_RUN: ${{ env.RELEASE_RUN }}
+      NOTIFY_RUN: ${{ env.NOTIFY_RUN }}
       RELEASE_TAG: ${{ env.RELEASE_TAG }}
       RELEASE_REPO: ${{ env.RELEASE_REPO }}
     strategy:
@@ -124,49 +127,6 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      # The Studio depends on the private autumo-ui framework and autumo-commons.
-      # They are not published to Maven Central, so install both into mavenLocal
-      # before building the Studio.
-      - name: Checkout autumo-commons
-        uses: actions/checkout@v4
-        with:
-          repository: autumoswitzerland/autumo-commons
-          token: ${{ secrets.PAT_TOKEN }}
-          path: autumo-commons
-
-      - name: Install autumo-commons
-        shell: bash
-        run: |
-          cd autumo-commons
-          mvn -B install
-
-      - name: Checkout autumo-ui
-        uses: actions/checkout@v4
-        with:
-          repository: autumoswitzerland/autumo-ui
-          token: ${{ secrets.PAT_TOKEN }}
-          path: autumo-ui
-
-      - name: Install autumo-ui
-        shell: bash
-        run: |
-          cd autumo-ui
-          chmod +x gradlew
-          ./gradlew publishToMavenLocal --no-daemon
-
-      - name: Checkout autumo-registration
-        uses: actions/checkout@v4
-        with:
-          repository: autumoswitzerland/autumo-registration
-          token: ${{ secrets.PAT_TOKEN }}
-          path: autumo-registration
-
-      - name: Install autumo-registration
-        shell: bash
-        run: |
-          cd autumo-registration
-          mvn -B install
-
       - name: Build installer
         shell: bash
         run: |
@@ -197,94 +157,16 @@ jobs:
             fi
           done
 
-      - name: Normalize macOS installer name
-        if: matrix.target == 'macos-x64' || matrix.target == 'macos-arm64'
-        shell: bash
-        run: |
-          case "${{ matrix.target }}" in
-            macos-x64) arch=x64 ;;
-            macos-arm64) arch=arm64 ;;
-            *) echo "::error::Unknown macOS target"; exit 1 ;;
-          esac
-          pkg=$(find "${{ env.OUTPUT_DIR }}" -maxdepth 1 -name '*.pkg' | head -n 1)
-          if [ -z "$pkg" ]; then
-            echo "::error::No .pkg installer found in ${{ env.OUTPUT_DIR }}"
-            exit 1
-          fi
-          mv "$pkg" "${{ env.OUTPUT_DIR }}/${APP_FILE_NAME}-${APP_VERSION}-${arch}.pkg"
-
-      - name: Normalize Linux installer name
-        if: matrix.target == 'linux-x64'
-        shell: bash
-        run: |
-          deb=$(find "${{ env.OUTPUT_DIR }}" -maxdepth 1 -name '*.deb' | head -n 1)
-          if [ -z "$deb" ]; then
-            echo "::error::No .deb installer found in ${{ env.OUTPUT_DIR }}"
-            exit 1
-          fi
-          mv "$deb" "${{ env.OUTPUT_DIR }}/${APP_FILE_NAME}-${APP_VERSION}-amd64.deb"
-
-      - name: Build Windows MSI and normalize names
-        if: matrix.target == 'windows-x64'
-        shell: pwsh
-        run: |
-          $appImage = Join-Path "${{ env.OUTPUT_DIR }}" "ifaceX Studio FX"
-          if (!(Test-Path $appImage)) {
-            throw "App image not found: $appImage"
-          }
-          jpackage --type msi `
-            --dest "${{ env.OUTPUT_DIR }}" `
-            --name "ifaceX Studio FX" `
-            --app-version "${{ env.APP_VERSION }}" `
-            --app-image "$appImage" `
-            --resource-dir "ui/build/wix-resources" `
-            --win-dir-chooser --win-menu --win-shortcut
-          $exe = Get-ChildItem "${{ env.OUTPUT_DIR }}" -Filter *.exe | Select-Object -First 1
-          if (-not $exe) { throw "EXE installer not found" }
-          Move-Item $exe.FullName (Join-Path "${{ env.OUTPUT_DIR }}" "${{ env.APP_FILE_NAME }}-${{ env.APP_VERSION }}.exe") -Force
-          $msi = Get-ChildItem "${{ env.OUTPUT_DIR }}" -Filter *.msi | Select-Object -First 1
-          if (-not $msi) { throw "MSI installer not found" }
-          Move-Item $msi.FullName (Join-Path "${{ env.OUTPUT_DIR }}" "${{ env.APP_FILE_NAME }}-${{ env.APP_VERSION }}.msi") -Force
-
-      - name: Upload macOS x64 Package Artifacts
-        if: matrix.target == 'macos-x64'
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.APP_FILE_NAME }}-${{ env.APP_VERSION }}-x64.pkg
-          path: ${{ env.OUTPUT_DIR }}/${{ env.APP_FILE_NAME }}-${{ env.APP_VERSION }}-x64.pkg
-          if-no-files-found: error
-
-      - name: Upload macOS ARM64 Package Artifacts
-        if: matrix.target == 'macos-arm64'
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ env.APP_FILE_NAME }}-${{ env.APP_VERSION }}-arm64.pkg
-          path: ${{ env.OUTPUT_DIR }}/${{ env.APP_FILE_NAME }}-${{ env.APP_VERSION }}-arm64.pkg
-          if-no-files-found: error
-
-      - name: Upload Windows EXE Package Artifacts
-        if: matrix.target == 'windows-x64'
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ env.APP_FILE_NAME }}-${{ env.APP_VERSION }}.exe
-          path: ${{ env.OUTPUT_DIR }}/${{ env.APP_FILE_NAME }}-${{ env.APP_VERSION }}.exe
-          if-no-files-found: error
-
-      - name: Upload Windows MSI Package Artifacts
-        if: matrix.target == 'windows-x64'
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ env.APP_FILE_NAME }}-${{ env.APP_VERSION }}.msi
-          path: ${{ env.OUTPUT_DIR }}/${{ env.APP_FILE_NAME }}-${{ env.APP_VERSION }}.msi
-          if-no-files-found: error
-
-      - name: Upload Linux Package Artifacts
-        if: matrix.target == 'linux-x64'
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ env.APP_FILE_NAME }}-${{ env.APP_VERSION }}-amd64.deb
-          path: ${{ env.OUTPUT_DIR }}/${{ env.APP_FILE_NAME }}-${{ env.APP_VERSION }}-amd64.deb
-          if-no-files-found: error
+          name: ${{ env.APP_FILE_NAME }}-${{ matrix.target }}
+          path: |
+            ${{ env.OUTPUT_DIR }}/*.pkg
+            ${{ env.OUTPUT_DIR }}/*.exe
+            ${{ env.OUTPUT_DIR }}/*.msi
+            ${{ env.OUTPUT_DIR }}/*.deb
+          if-no-files-found: warn
 
   # The .deb must install on Debian and Ubuntu alike. jpackage would derive the 'Depends' field
   # on the build host; the package therefore carries its own list (ui/package/control). This
@@ -304,7 +186,7 @@ jobs:
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
-          name: ${{ needs.build.outputs.APP_FILE_NAME }}-${{ needs.build.outputs.APP_VERSION }}-amd64.deb
+          name: ${{ needs.build.outputs.APP_FILE_NAME }}-linux-x64
           path: pkg
 
       - name: Install in ${{ matrix.image }} and verify libraries
@@ -363,7 +245,13 @@ jobs:
       - name: Download all build artifacts
         uses: actions/download-artifact@v4
         with:
-          path: v${{ needs.build.outputs.APP_VERSION }}
+          path: release-assets
+          pattern: ${{ needs.build.outputs.APP_FILE_NAME }}-*
+          merge-multiple: true
+
+      - name: List assets
+        shell: bash
+        run: find release-assets -type f
 
       - name: Create GitHub release in the public repository
         uses: softprops/action-gh-release@v2
@@ -373,15 +261,36 @@ jobs:
           tag_name: ${{ needs.build.outputs.RELEASE_TAG }}
           name: "${{ needs.build.outputs.APP_NAME }} ${{ needs.build.outputs.APP_VERSION }}"
           body: |
-            ifaceX Studio FX ${{ needs.build.outputs.APP_VERSION }} - native installers for Windows, macOS and Linux.
+            ## ifaceX Studio FX ${{ needs.build.outputs.RELEASE_TAG }}
+
+            Native installers for macOS (x64/arm64), Windows and Linux.
+            The installer packages are attached below as release assets.
+            The Java runtime is bundled, no separate Java installation is required.
           draft: false
           prerelease: false
-          fail_on_unmatched_files: true
-          files: |
-            v${{ needs.build.outputs.APP_VERSION }}/**/*.pkg
-            v${{ needs.build.outputs.APP_VERSION }}/**/*.exe
-            v${{ needs.build.outputs.APP_VERSION }}/**/*.msi
-            v${{ needs.build.outputs.APP_VERSION }}/**/*.deb
+          files: release-assets/*
 
       - name: Clean up downloaded artifacts
-        run: rm -rf v${{ needs.build.outputs.APP_VERSION }}
+        run: rm -rf release-assets
+
+  notify:
+    name: Notify Discord
+    needs: [build, release]
+    if: ${{ needs.build.outputs.NOTIFY_RUN == 'true' }}
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - name: Notify Users via Discord
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        uses: Ilshidur/action-discord@0.3.2
+        with:
+          args: |
+            Hi @everyone! A new release of **${{ needs.build.outputs.APP_NAME }}** has been created!
+            Version: **${{ needs.build.outputs.APP_VERSION }}**
+            Download links:
+            - <https://github.com/${{ needs.build.outputs.RELEASE_REPO }}/releases/download/${{ needs.build.outputs.RELEASE_TAG }}/${{ needs.build.outputs.APP_FILE_NAME }}-${{ needs.build.outputs.APP_VERSION }}-amd64.deb>
+            - <https://github.com/${{ needs.build.outputs.RELEASE_REPO }}/releases/download/${{ needs.build.outputs.RELEASE_TAG }}/${{ needs.build.outputs.APP_FILE_NAME }}-${{ needs.build.outputs.APP_VERSION }}-arm64.pkg>
+            - <https://github.com/${{ needs.build.outputs.RELEASE_REPO }}/releases/download/${{ needs.build.outputs.RELEASE_TAG }}/${{ needs.build.outputs.APP_FILE_NAME }}-${{ needs.build.outputs.APP_VERSION }}-x64.pkg>
+            - <https://github.com/${{ needs.build.outputs.RELEASE_REPO }}/releases/download/${{ needs.build.outputs.RELEASE_TAG }}/${{ needs.build.outputs.APP_FILE_NAME }}-${{ needs.build.outputs.APP_VERSION }}.exe>
+            - <https://github.com/${{ needs.build.outputs.RELEASE_REPO }}/releases/download/${{ needs.build.outputs.RELEASE_TAG }}/${{ needs.build.outputs.APP_FILE_NAME }}-${{ needs.build.outputs.APP_VERSION }}.msi>

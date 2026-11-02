@@ -21,8 +21,62 @@ allprojects {
     group = 'ch.autumo.ifacex.studio'
     version = '3.0.0'
     repositories {
+        // Vendored Maven repository for the private autumo-ui/autumo-commons/
+        // autumo-registration artifacts (same approach as the legacy Studio).
+        maven {
+            url = rootProject.file('lib/repo').toURI()
+        }
         mavenLocal()
         mavenCentral()
+    }
+}
+
+configurations {
+    // Only used by updateLibRepo; not part of the application build.
+    vendored {
+        canBeConsumed = false
+        canBeResolved = true
+    }
+}
+
+dependencies {
+    vendored "ch.autumo.commons:autumo-ui:${autumoUiVersion}"
+    vendored "ch.autumo.commons:autumo-commons:${autumoCommonsVersion}"
+    vendored "ch.autumo.registration:autumo-registration:${autumoRegistrationVersion}"
+}
+
+// Copies the configured private artifacts from mavenLocal into the committed
+// file repository lib/repo. Bump the versions in gradle.properties, publish the
+// new artifacts to mavenLocal, then run: ./gradlew updateLibRepo
+tasks.register('updateLibRepo') {
+    group = 'ifacex'
+    description = 'Copies the configured autumo artifacts from mavenLocal into lib/repo.'
+    doLast {
+        def m2 = new File(System.getProperty('user.home'), '.m2/repository')
+        def copied = [] as Set
+        configurations.vendored.resolvedConfiguration.resolvedArtifacts.each { artifact ->
+            def id = artifact.moduleVersion.id
+            if (!id.group.startsWith('ch.autumo.')) {
+                return
+            }
+            def key = "${id.group}:${id.name}:${id.version}"
+            if (!copied.add(key)) {
+                return
+            }
+            def groupPath = id.group.replace('.', '/')
+            def sourceDir = new File(m2, "${groupPath}/${id.name}/${id.version}")
+            if (!sourceDir.isDirectory()) {
+                throw new GradleException("Artifact not found in mavenLocal: ${sourceDir}")
+            }
+            def targetDir = new File(projectDir, "lib/repo/${groupPath}/${id.name}/${id.version}")
+            targetDir.mkdirs()
+            sourceDir.listFiles().findAll { f ->
+                f.isFile() && (f.name.endsWith('.jar') || f.name.endsWith('.pom') || f.name.endsWith('.module'))
+            }.each { f ->
+                new File(targetDir, f.name).bytes = f.bytes
+            }
+            logger.lifecycle("Vendored ${key}")
+        }
     }
 }
 

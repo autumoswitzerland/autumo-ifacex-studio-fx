@@ -37,7 +37,7 @@ dependencies {
     // Proprietary registration implementation (register test instances with a license
     // through the input mask). Deliberately NOT exposed by autumo-ui, so the Studio
     // declares it itself.
-    implementation 'ch.autumo.registration:autumo-registration:1.2.0'
+    implementation "ch.autumo.registration:autumo-registration:${autumoRegistrationVersion}"
 }
 
 application {
@@ -189,7 +189,7 @@ runtime {
             }
             // See prepareWixResources: WiX needs an absolute path for the license file.
             resourceDir = wixResourceDir.get().asFile
-            installerType = 'exe'
+            // No installerType: the badass-runtime plugin then builds both, EXE and MSI.
             installerOptions += ['--name', 'ifaceX-Studio-FX-x64']
         }
 
@@ -229,14 +229,12 @@ runtime {
             ]
         }
 
-        if (installerType == 'exe') {
+        if (targetPlatformName == 'win') {
             imageOptions += ['--icon', 'src/main/resources/ch/autumo/ifacex/studio/ui/icons/autumo-ifacex-studio.ico']
             imageOptions += ['--file-associations',
                              rootProject.file('product/packaging/file-associations/ifcx.properties').absolutePath,
                              '--file-associations',
                              rootProject.file('product/packaging/file-associations/ifacex.properties').absolutePath]
-            // Bundle identifier of the application itself (Info.plist), not of the installer.
-            imageOptions += ['--mac-package-identifier', 'ch.autumo.ifacex.studio.fx']
             installerOptions += [
                 '--win-dir-chooser',
                 '--win-menu',

@@ -1,0 +1,289 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<name>autumo-registration</name>
+	<groupId>ch.autumo.registration</groupId>
+	<artifactId>autumo-registration</artifactId>
+	<version>1.2.0</version>
+	<packaging>jar</packaging>
+
+	<properties>
+	
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		
+		<version.maven.antrun.plugin>3.2.0</version.maven.antrun.plugin>
+		<version.maven.compiler.plugin>3.16.0</version.maven.compiler.plugin>
+		<version.maven.dependency.plugin>3.11.0</version.maven.dependency.plugin>
+		<version.maven.jar.plugin>3.5.1</version.maven.jar.plugin>
+		<version.maven.javadoc.plugin>3.12.0</version.maven.javadoc.plugin>
+		<version.maven.resources.plugin>3.5.0</version.maven.resources.plugin>
+		
+		<version.autumo.commons>1.2.0</version.autumo.commons>
+		
+		<version.httpclient>4.5.14</version.httpclient>
+		<version.janino>3.1.12</version.janino>
+		<version.jcolor>5.5.1</version.jcolor>
+		<version.json>20260814</version.json>
+		<version.log4j.api>2.26.1</version.log4j.api>
+		<version.log4j.core>2.26.1</version.log4j.core>
+		<version.log4j.slf4j.impl>2.26.1</version.log4j.slf4j.impl>
+		<version.yguard>5.0.0</version.yguard>
+		<version.bcprov>1.70</version.bcprov>
+		<version.xsalsa20poly1305>0.11.0</version.xsalsa20poly1305>
+		
+		<version.junit>4.13.2</version.junit>
+	</properties>
+
+	<build>
+
+		<plugins>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jar-plugin</artifactId>
+				<version>${version.maven.jar.plugin}</version>
+				<configuration>
+					<archive>
+						<manifestEntries>
+							<Automatic-Module-Name>autumo.registration</Automatic-Module-Name>
+						</manifestEntries>
+					</archive>
+				</configuration>
+			</plugin>
+			
+			<plugin>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>${version.maven.compiler.plugin}</version>
+				<configuration>
+					<release>17</release>
+				</configuration>
+			</plugin>
+			
+			<plugin>
+			    <artifactId>maven-resources-plugin</artifactId>
+			    <version>${version.maven.resources.plugin}</version>
+			    <executions>
+					<execution>
+			            <id>copy-license</id>
+			            <phase>generate-sources</phase>
+			            <goals>
+			                <goal>copy-resources</goal>
+			            </goals>
+			            <configuration>
+			                <outputDirectory>${basedir}/target/classes/META-INF</outputDirectory>
+			                <resources>
+			                    <resource>
+			                        <include>LICENSE.html</include>
+				                    <directory>${basedir}</directory>
+			                    </resource>
+			                </resources>
+			            </configuration>
+			        </execution>
+					<execution>
+			            <id>copy-jar-resource</id>
+			            <phase>install</phase>
+			            <goals>
+			                <goal>copy-resources</goal>
+			            </goals>
+			            <configuration>
+			                <outputDirectory>${basedir}/lib</outputDirectory>
+			                <resources>
+			                    <resource>
+				                    <include>*.jar</include>
+				                    <directory>${basedir}/target</directory>
+								</resource>
+								<!--
+			                    <resource>
+				                    <include>autumo-registration-dummy-1.0.0.jar</include>
+				                    <directory>${basedir}/../autumo-registration-dummy/lib</directory>
+								</resource>
+								-->
+			                </resources>
+			            </configuration>
+			        </execution>
+			    </executions>
+			</plugin>
+						
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-javadoc-plugin</artifactId>
+				<version>${version.maven.javadoc.plugin}</version>
+				<configuration>
+					<sourcepath>src/main/java</sourcepath>
+					<stylesheetfile>${basedir}/etc/javadoc/autumo.css</stylesheetfile>
+				</configuration>
+			</plugin>
+			
+			<plugin>
+				<artifactId>maven-dependency-plugin</artifactId>
+				<version>${version.maven.dependency.plugin}</version>
+				<executions>
+					<execution>
+						<phase>install</phase>
+						<goals>
+							<goal>copy-dependencies</goal>
+						</goals>
+						<configuration>
+			                <excludeScope>compile</excludeScope>
+			                <includeScope>provided</includeScope>
+							<outputDirectory>${basedir}/lib</outputDirectory>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+									
+			<plugin>
+			    <artifactId>maven-antrun-plugin</artifactId>
+			    <version>${version.maven.antrun.plugin}</version>
+			    <executions>
+			        <execution>
+			            <id>obfuscate</id>
+			            <phase>package</phase>
+			            <goals>
+			                <goal>run</goal>
+			            </goals>
+			            <configuration>
+			                <target>&gt;
+								<property name="project.jar" value="${project.build.directory}/${project.build.finalName}.jar" />
+								<property name="project.jar.unobf" value="${project.build.directory}/${project.build.finalName}_unobf.jar" />								
+ 								<move file="${project.jar}" tofile="${project.jar.unobf}" verbose="true" />								
+			                    <property name="runtime_classpath" refid="maven.runtime.classpath" />
+			                    <taskdef name="yguard" classname="com.yworks.yguard.YGuardTask" classpath="${runtime_classpath}" />
+			                    <!-- See: https://github.com/yWorks/yguard/tree/master/examples -->
+			                    <yguard>
+			                    	<inoutpair in="${project.jar.unobf}" out="${project.jar}" />
+			                    	<rename logfile="etc/yguard/yguard-log-1.0.0.xml">
+			                    		<keep>
+			                    			<class name="ch.autumo.registration.tools.LicenseCreator" />
+			                    			<class name="ch.autumo.registration.DefaultLicenseHandler" />
+  <method class="ch.autumo.registration.DefaultLicenseHandler" name="boolean isRegistered()" map="isRegistered" />
+  <method class="ch.autumo.registration.DefaultLicenseHandler" name="java.lang.String[] getOnlineLicState(ch.autumo.commons.application.LicensedApplication, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String)" map="getOnlineLicState" />
+  <method class="ch.autumo.registration.DefaultLicenseHandler" name="java.lang.String[] getSecureOnlineLicState(ch.autumo.commons.application.LicensedApplication, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String)" map="getOnlineLicState" />
+  <method class="ch.autumo.registration.DefaultLicenseHandler" name="boolean checkOnlineLicense(ch.autumo.commons.application.LicensedApplication)" map="checkOnlineLicense" />
+  <method class="ch.autumo.registration.DefaultLicenseHandler" name="void storeLicenseInfo(ch.autumo.commons.application.LicensedApplication, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String)" map="storeLicenseInfo" />
+  <method class="ch.autumo.registration.DefaultLicenseHandler" name="boolean decreaseOnlineLicense(ch.autumo.commons.application.LicensedApplication, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String)" map="decreaseOnlineLicense" />
+  <method class="ch.autumo.registration.DefaultLicenseHandler" name="void register()" map="register" />
+  <method class="ch.autumo.registration.DefaultLicenseHandler" name="void makeLicenseKeyFile(ch.autumo.commons.application.LicensedApplication, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String)" map="makeLicenseKeyFile" />
+  <method class="ch.autumo.registration.DefaultLicenseHandler" name="void unregister()" map="unregister" />
+  <method class="ch.autumo.registration.DefaultLicenseHandler" name="java.lang.String[] getLicenseKey(ch.autumo.commons.application.LicensedApplication)" map="getLicenseKey" />
+  <method class="ch.autumo.registration.DefaultLicenseHandler" name="java.lang.String createRegKey(ch.autumo.commons.application.LicensedApplication, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String)" map="createRegKey" />
+  <method class="ch.autumo.registration.DefaultLicenseHandler" name="void runsInServerOrConsole(boolean)" map="runsInServerOrConsole" />
+  <method class="ch.autumo.registration.DefaultLicenseHandler" name="java.util.Properties loadLicenseInfo(ch.autumo.commons.application.LicensedApplication)" map="loadLicenseInfo" />
+  <method class="ch.autumo.registration.DefaultLicenseHandler" name="void runsOnDesktop(boolean)" map="runsOnDesktop" />
+  <method class="ch.autumo.registration.DefaultLicenseHandler" name="java.lang.String checkRegistration(ch.autumo.commons.application.LicensedApplication)" map="checkRegistration" />
+  <method class="ch.autumo.registration.DefaultLicenseHandler" name="void updateLicenseKeyFile(ch.autumo.commons.application.LicensedApplication, java.lang.String, java.lang.String)" map="updateLicenseKeyFile" />
+  <method class="ch.autumo.registration.DefaultLicenseHandler" name="boolean verifyLicKey(ch.autumo.commons.application.LicensedApplication, java.lang.String)" map="verifyLicKey" />
+  <method class="ch.autumo.registration.DefaultLicenseHandler" name="boolean checkRuntimeLicense(ch.autumo.commons.application.LicensedApplication, java.util.Properties, java.lang.String)" map="checkRuntimeLicense" />
+  <method class="ch.autumo.registration.DefaultLicenseHandler" name="boolean validateLicenseKey(ch.autumo.commons.application.LicensedApplication, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String)" map="validateLicenseKey" />
+			                    		</keep>			                    	
+			                    	</rename>
+			                    </yguard>
+			                </target>
+						</configuration>
+			        </execution>
+			    </executions>
+			</plugin>
+									
+		</plugins>
+	
+	</build>
+
+	<dependencies>
+		
+		<dependency>
+		    <groupId>ch.autumo.commons</groupId>
+		    <artifactId>autumo-commons</artifactId>
+		    <version>${version.autumo.commons}</version>
+		    <scope>provided</scope>
+		</dependency>
+		
+		<dependency>
+			<groupId>org.codehaus.janino</groupId>
+			<artifactId>janino</artifactId>
+			<version>${version.janino}</version>
+		    <scope>provided</scope>
+		</dependency>
+
+		<dependency>
+		    <groupId>org.json</groupId>
+		    <artifactId>json</artifactId>
+		    <version>${version.json}</version>
+		    <scope>provided</scope>
+		</dependency>
+		
+		<dependency>
+		    <groupId>org.apache.httpcomponents</groupId>
+		    <artifactId>httpclient</artifactId>
+		    <version>${version.httpclient}</version>
+		    <scope>provided</scope>
+		</dependency>
+
+		<dependency>
+    		<groupId>com.diogonunes</groupId>
+    		<artifactId>JColor</artifactId>
+		    <version>${version.jcolor}</version>
+		    <scope>provided</scope>
+		</dependency>
+
+
+  		<!-- Logging -->
+	
+		<dependency>
+		    <groupId>org.apache.logging.log4j</groupId>
+		    <artifactId>log4j-api</artifactId>
+		    <version>${version.log4j.api}</version>
+		    <scope>provided</scope>
+		</dependency>
+		
+	  	<dependency>
+		    <groupId>org.apache.logging.log4j</groupId>
+		    <artifactId>log4j-core</artifactId>
+		    <version>${version.log4j.core}</version>
+		    <scope>provided</scope>
+		</dependency>
+
+		<dependency>
+		    <groupId>org.apache.logging.log4j</groupId>
+		    <artifactId>log4j-slf4j2-impl</artifactId>
+		    <version>${version.log4j.slf4j.impl}</version>
+		    <scope>provided</scope>
+		</dependency>
+		
+		<!-- Public Key -->
+		
+		<dependency>
+		    <groupId>com.codahale</groupId>
+		    <artifactId>xsalsa20poly1305</artifactId>
+		    <version>${version.xsalsa20poly1305}</version>
+		    <scope>provided</scope>
+		</dependency>
+		
+		<dependency>
+		    <groupId>org.bouncycastle</groupId>
+		    <artifactId>bcprov-jdk15on</artifactId>
+		    <version>${version.bcprov}</version>
+		    <scope>provided</scope>
+		</dependency>
+		
+		<!-- Compile -->
+
+		<dependency>
+		    <groupId>com.yworks</groupId>
+		    <artifactId>yguard</artifactId>
+		    <version>${version.yguard}</version>
+		    <scope>compile</scope>
+		</dependency>
+
+
+		<!-- Testing -->
+		
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>${version.junit}</version>
+			<scope>test</scope>
+		</dependency>
+		
+	</dependencies>
+	
+</project>

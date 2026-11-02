@@ -1,0 +1,197 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "ch.autumo.commons",
+    "module": "autumo-ui",
+    "version": "1.2.0",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "9.7.0"
+    }
+  },
+  "variants": [
+    {
+      "name": "apiElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 25,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api"
+      },
+      "dependencies": [
+        {
+          "group": "ch.autumo.commons",
+          "module": "autumo-commons",
+          "version": {
+            "requires": "1.2.0"
+          }
+        },
+        {
+          "group": "com.fifesoft",
+          "module": "rsyntaxtextarea",
+          "version": {
+            "requires": "3.5.0"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "autumo-ui-1.2.0.jar",
+          "url": "autumo-ui-1.2.0.jar",
+          "size": 2362779,
+          "sha512": "bba197e6d83324770d7158f6f74b10b61b95cf9eb5ed8257a0746c3612429b118d83a35f6ad3f8e025e11f509f5b6376273b8b6443d2dda324c3ba656dee9c3c",
+          "sha256": "221e9f05a9e7b6f23a180553bac11922787ac9a167886824437c836f824828db",
+          "sha1": "2ae3cb95a37424d99c7758f912c2513f5cfb088d",
+          "md5": "c8ffecda385fce63809556ee060a5aa6"
+        }
+      ]
+    },
+    {
+      "name": "runtimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 25,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "org.openjfx",
+          "module": "javafx-controls",
+          "version": {
+            "requires": "25.0.4"
+          }
+        },
+        {
+          "group": "org.openjfx",
+          "module": "javafx-fxml",
+          "version": {
+            "requires": "25.0.4"
+          }
+        },
+        {
+          "group": "org.openjfx",
+          "module": "javafx-web",
+          "version": {
+            "requires": "25.0.4"
+          }
+        },
+        {
+          "group": "com.google.code.gson",
+          "module": "gson",
+          "version": {
+            "requires": "2.11.0"
+          }
+        },
+        {
+          "group": "net.synedra",
+          "module": "validatorfx",
+          "version": {
+            "requires": "1.0.0"
+          }
+        },
+        {
+          "group": "org.codehaus.janino",
+          "module": "janino",
+          "version": {
+            "requires": "3.1.12"
+          }
+        },
+        {
+          "group": "org.apache.httpcomponents",
+          "module": "httpclient",
+          "version": {
+            "requires": "4.5.14"
+          }
+        },
+        {
+          "group": "org.apache.logging.log4j",
+          "module": "log4j-api",
+          "version": {
+            "requires": "2.26.1"
+          }
+        },
+        {
+          "group": "org.apache.logging.log4j",
+          "module": "log4j-core",
+          "version": {
+            "requires": "2.26.1"
+          }
+        },
+        {
+          "group": "org.apache.logging.log4j",
+          "module": "log4j-slf4j2-impl",
+          "version": {
+            "requires": "2.26.1"
+          }
+        },
+        {
+          "group": "org.apache.commons",
+          "module": "commons-lang3",
+          "version": {
+            "requires": "3.21.0"
+          }
+        },
+        {
+          "group": "org.openjfx",
+          "module": "javafx-controls",
+          "version": {
+            "requires": "25"
+          }
+        },
+        {
+          "group": "org.openjfx",
+          "module": "javafx-fxml",
+          "version": {
+            "requires": "25"
+          }
+        },
+        {
+          "group": "org.openjfx",
+          "module": "javafx-swing",
+          "version": {
+            "requires": "25"
+          }
+        },
+        {
+          "group": "org.openjfx",
+          "module": "javafx-web",
+          "version": {
+            "requires": "25"
+          }
+        },
+        {
+          "group": "ch.autumo.commons",
+          "module": "autumo-commons",
+          "version": {
+            "requires": "1.2.0"
+          }
+        },
+        {
+          "group": "com.fifesoft",
+          "module": "rsyntaxtextarea",
+          "version": {
+            "requires": "3.5.0"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "autumo-ui-1.2.0.jar",
+          "url": "autumo-ui-1.2.0.jar",
+          "size": 2362779,
+          "sha512": "bba197e6d83324770d7158f6f74b10b61b95cf9eb5ed8257a0746c3612429b118d83a35f6ad3f8e025e11f509f5b6376273b8b6443d2dda324c3ba656dee9c3c",
+          "sha256": "221e9f05a9e7b6f23a180553bac11922787ac9a167886824437c836f824828db",
+          "sha1": "2ae3cb95a37424d99c7758f912c2513f5cfb088d",
+          "md5": "c8ffecda385fce63809556ee060a5aa6"
+        }
+      ]
+    }
+  ]
+}
