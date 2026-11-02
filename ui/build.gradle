@@ -75,7 +75,35 @@ def runtimeJdk = 'zulu25.36.205-ca-fx-jdk25.0.4.1'
 
 def jdkHomeFor(String path) {
     return providers.provider {
-        new File(path).exists() ? path : System.getProperty('java.home')
+        if (new File(path).exists()) {
+            return path
+        }
+        return javaToolchains.launcherFor {
+            languageVersion = JavaLanguageVersion.of(25)
+            vendor = JvmVendorSpec.AZUL
+        }.get().metadata.installationPath.asFile.absolutePath
+    }
+}
+
+// WiX resources: jpackage copies only a fixed set of files into the temporary WiX config dir
+// it uses as WiX base path ('light.exe -b <configDir>'). Relative license references in
+// package/main.wxs ('$(var.JpRootDir)/package/...') resolve to nothing and light.exe aborts
+// with LGHT0103 ('exited with 103 code'). The Windows installer therefore gets a generated
+// main.wxs with absolute paths.
+def wixPackageDir = file('package')
+def wixResourceDir = layout.buildDirectory.dir('wix-resources')
+
+def prepareWixResources = tasks.register('prepareWixResources') {
+    def sourceWxs = new File(wixPackageDir, 'main.wxs')
+    // WiX accepts forward slashes on Windows; backslashes are not escaped in XML attributes.
+    def packagePath = wixPackageDir.absolutePath.replace('\\', '/')
+    inputs.file(sourceWxs)
+    outputs.dir(wixResourceDir)
+    doLast {
+        File target = wixResourceDir.get().file('main.wxs').asFile
+        target.parentFile.mkdirs()
+        target.text = sourceWxs.getText('UTF-8')
+                .replace('$(var.JpRootDir)/package/', packagePath + '/')
     }
 }
 
@@ -100,13 +128,34 @@ runtime {
         // rejects. Override it with the sanitized, numeric installer version (see above).
         appVersion = installerVersion
 
-        targetPlatformName = 'mac'
+        // Workflow target = Dateinamen-Fragment (macos-x64, macos-arm64, windows-x64, linux-x64).
+        // Intern wird auf die beryx-targetPlatform-Namen (mac, macArch, win, linux) gemappt,
+        // weil beryx targetPlatformName gegen die targetPlatform(...) Blöcke prüft.
+        def workflowTarget = (project.findProperty('targetPlatform') ?: 'macos-x64').toString()
+        def beryxTarget
+        switch (workflowTarget) {
+            case 'macos-x64':
+                beryxTarget = 'mac'
+                break
+            case 'macos-arm64':
+                beryxTarget = 'macArch'
+                break
+            case 'windows-x64':
+                beryxTarget = 'win'
+                break
+            case 'linux-x64':
+                beryxTarget = 'linux'
+                break
+            default:
+                throw new GradleException("Unknown targetPlatform: ${workflowTarget}")
+        }
+        targetPlatformName = beryxTarget
         imageName = 'ifaceX Studio FX'
-        jvmArgs = ['-Djdk.gtk.version=2']
-        // The packaging resources (license texts for the installers) live in the root project's
-        // 'package/' directory - NOT in the 'ui' module, so rootProject.file() must be used here:
-        // file('package/') would resolve to 'ui/package', which does not exist.
-        resourceDir = rootProject.file('package')
+        // 'jvmArgs' intentionally not set: the former '-Djdk.gtk.version=2' is pointless since
+        // JavaFX 25 dropped GTK 2 and only printed a warning about it.
+        // Installer resources (Debian control file and WiX assets) live in the ui
+        // module's 'package/' directory; the OS installer license stays in the root package/.
+        resourceDir = file('package')
 
         installerOptions = [
             '--description', 'Modern JavaFX rebuild of the ifaceX Studio',
@@ -138,8 +187,10 @@ runtime {
             targetPlatform('win') {
                 jdkHome = jdkHomeFor('G:/Java/JDKs/Azul/' + runtimeJdk + '-win_x64')
             }
+            // See prepareWixResources: WiX needs an absolute path for the license file.
+            resourceDir = wixResourceDir.get().asFile
             installerType = 'exe'
-            installerOptions += ['--name', 'ifaceX-Studio-FX']
+            installerOptions += ['--name', 'ifaceX-Studio-FX-x64']
         }
 
         if (targetPlatformName == 'linux') {
@@ -147,9 +198,17 @@ runtime {
                 jdkHome = jdkHomeFor('/opt/java/' + runtimeJdk + '-linux_amd64')
             }
             installerType = 'deb'
-            installerOptions += ['--name', 'ifaceX-Studio-FX']
+            installerOptions += ['--name', 'ifaceX-Studio-FX-x64']
             installerOptions += ['--linux-app-category', 'Development']
             installerOptions += ['--linux-deb-maintainer', 'info@autumo.ch']
+            // jpackage silently derives 'Depends' from the build host when the custom control
+            // file is missing, which produces a package that cannot be installed on other
+            // distributions. Fail here instead of shipping such a package.
+            if (!file('package/control').isFile()) {
+                throw new GradleException("ui/package/control is missing. Without it jpackage derives " +
+                        "the Debian 'Depends' field from the build host and the package becomes " +
+                        "uninstallable on Debian/Ubuntu systems with other package names.")
+            }
         }
 
         if (installerType == 'pkg') {
@@ -166,7 +225,7 @@ runtime {
             installerOptions += [
                 // Absolute path: jpackage resolves a relative --license-file against its own
                 // working directory, which is not necessarily this project.
-                '--license-file', rootProject.file('package/LICENSE-OS-Installer.txt').absolutePath
+                '--license-file', file('package/LICENSE.txt').absolutePath
             ]
         }
 
@@ -193,7 +252,7 @@ runtime {
                              rootProject.file('product/packaging/file-associations/ifacex.properties').absolutePath]
             installerOptions += [
                 '--resource-dir', 'build/jpackage/ifaceX Studio FX/lib',
-                '--license-file', rootProject.file('LICENSE').absolutePath,
+                '--license-file', file('package/LICENSE.txt').absolutePath,
                 '--linux-menu-group', 'Utility',
                 '--linux-shortcut'
             ]
@@ -215,6 +274,58 @@ runtime {
 
 // ':ui:jpackageImage' consumes the jlink image that ':ui:runtime' produces (build/jre). Gradle 9
 // rejects that as an implicit dependency, so declare it explicitly.
+// The generated WiX resources must exist as well: 'resourceDir' is a declared input of
+// ':jpackageImage' (and of ':jpackage').
 tasks.named('jpackageImage') {
     dependsOn tasks.named('runtime')
+    dependsOn prepareWixResources
+}
+
+def patchDebianDependencies = tasks.register('patchDebianDependencies') {
+    def debDir = layout.buildDirectory.dir('jpackage')
+    def controlFile = file('package/control')
+    def isLinux = System.getProperty('os.name').toLowerCase().contains('linux')
+    outputs.upToDateWhen { false }
+    onlyIf {
+        isLinux && tasks.named('jpackage').get().state.failure == null
+    }
+    doLast {
+        if (!controlFile.isFile()) {
+            throw new GradleException("ui/package/control is missing.")
+        }
+        String depends = controlFile.readLines('UTF-8').find { it.startsWith('Depends:') }
+        if (!depends) {
+            throw new GradleException("ui/package/control has no 'Depends:' line.")
+        }
+        List<File> debs = (debDir.get().asFile.listFiles() ?: []).findAll { it.name.endsWith('.deb') }
+        debs.each { File deb ->
+            File work = new File(temporaryDir, deb.name).tap { deleteDir(); mkdirs() }
+            runTool(['dpkg-deb', '-R', deb.absolutePath, work.absolutePath])
+            File control = new File(work, 'DEBIAN/control')
+            List<String> lines = control.readLines('UTF-8')
+            int index = lines.findIndexOf { it.startsWith('Depends:') }
+            if (index < 0) {
+                lines << depends
+            } else if (lines[index] != depends) {
+                logger.lifecycle("Replacing build-host dependencies in ${deb.name}")
+                logger.lifecycle("  was: ${lines[index]}")
+                lines[index] = depends
+            }
+            control.setText(lines.join('\n') + '\n', 'UTF-8')
+            runTool(['dpkg-deb', '--root-owner-group', '-b', work.absolutePath, deb.absolutePath])
+        }
+    }
+}
+
+tasks.named('jpackage') {
+    dependsOn prepareWixResources
+    finalizedBy patchDebianDependencies
+}
+
+void runTool(List<String> command) {
+    Process process = new ProcessBuilder(command).redirectErrorStream(true).start()
+    String output = process.inputStream.text
+    if (process.waitFor() != 0) {
+        throw new GradleException("Command failed: ${command.join(' ')}\n${output}")
+    }
 }

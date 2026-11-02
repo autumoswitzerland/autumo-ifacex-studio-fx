@@ -6,8 +6,6 @@
 
 <br />
 
----
-
 # ifaceX Studio FX
 
 Modern JavaFX rebuild of the **ifaceX Studio** — the desktop tool for configuring and

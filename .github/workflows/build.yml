@@ -1,21 +1,21 @@
 ###############################################################################
 #
 #  ifaceX Studio FX - GitHub Build & Release Workflow
-#  Version: 1.0
+#  Version: 1.1
 #
 #------------------------------------------------------------------------------
 #
 #  2026 autumo GmbH
 #
-#  Private repository builds the Studio and publishes the native installers to the
-#  public repository autumoswitzerland/autumo-ifacex-studio-fx-public.
+#  Private repository builds the Studio and publishes the native installers to
+#  the public repository autumoswitzerland/autumo-ifacex-studio-fx-public.
 #
-#  Layout follows the legacy ifaceX Studio workflow (release.yml): a build matrix
-#  produces per-OS artifacts, a release job downloads them and creates a GitHub
-#  Release in the public repository via softprops/action-gh-release.
+#  Layout follows the autumo-ui-fx build workflow: a manual dispatch selects the
+#  release tag and whether a GitHub Release should be created. A build matrix
+#  produces the per-OS artifacts, and the release job publishes the installers
+#  to the public repository via softprops/action-gh-release.
 #
 ###############################################################################
-
 
 
 name: Build and Release
@@ -25,28 +25,19 @@ on:
     branches: [master]
   workflow_dispatch:
     inputs:
-      package:
-        description: 'Build and publish native packages to the public repository'
-        required: false
-        type: boolean
+      tag:
+        description: 'Release tag (must match APP_VERSION, e.g. v3.0.0)'
+        required: true
+        default: 'v3.0.0'
+        type: string
+      create_release:
+        description: 'Publish the native packages to the public repository'
+        required: true
         default: false
+        type: boolean
 
 jobs:
   build:
-    name: Build & package (${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
-    outputs:
-      APP_NAME: ${{ env.APP_NAME }}
-      APP_FILE_NAME: ${{ env.APP_FILE_NAME }}
-      APP_VERSION: ${{ env.APP_VERSION }}
-      RELEASE_RUN: ${{ env.RELEASE_RUN }}
-      RELEASE_BODY: ${{ env.RELEASE_BODY }}
-      RELEASE_REPO: ${{ env.RELEASE_REPO }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-13, macos-latest, windows-latest]
-
     #--------------------------------------------------------------------------
     # Environment Variables
     # Customize your build and release environment settings below.
@@ -56,19 +47,16 @@ jobs:
     # java options, app categories, package id, deb maintainer, ...) live in ui/build.gradle
     # (badass-runtime jpackage block) - they are not duplicated here.
     env:
-      # Application name
-      APP_NAME: "ifaceX Studio FX"
-      # Application name for files (must match the JAR name without version/extension)
-      APP_FILE_NAME: "ifaceX-Studio-FX"
       # Build version (must match project.version in build.gradle)
       APP_VERSION: "3.0.0"
-      # Run release job? Only when triggered manually with package=true
-      RELEASE_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.package == true && 'true' || 'false' }}
-      # Release notes body
-      RELEASE_BODY: |
-        ifaceX Studio FX 3.0.0 - native installers for Windows, macOS and Linux.
-      # Branch for build checkout
-      BUILD_BRANCH: master
+      # Application name
+      APP_NAME: "ifaceX Studio FX"
+      # Application name for the published installer files
+      APP_FILE_NAME: "ifaceX-Studio"
+      # Run release job? Only when triggered manually with create_release=true
+      RELEASE_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.create_release == true && 'true' || 'false' }}
+      # Release tag (only set for manual runs)
+      RELEASE_TAG: ${{ github.event.inputs.tag }}
       # Release repository (public)
       RELEASE_REPO: autumoswitzerland/autumo-ifacex-studio-fx-public
       # Java version (Zulu, includes JavaFX and jpackage)
@@ -76,64 +64,295 @@ jobs:
       # JPackage output directory (badass-runtime)
       OUTPUT_DIR: ui/build/jpackage
 
+    name: Build & package (${{ matrix.target }})
+    runs-on: ${{ matrix.os }}
+    outputs:
+      APP_NAME: ${{ env.APP_NAME }}
+      APP_FILE_NAME: ${{ env.APP_FILE_NAME }}
+      APP_VERSION: ${{ env.APP_VERSION }}
+      RELEASE_RUN: ${{ env.RELEASE_RUN }}
+      RELEASE_TAG: ${{ env.RELEASE_TAG }}
+      RELEASE_REPO: ${{ env.RELEASE_REPO }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-15-intel
+            target: macos-x64
+          - os: macos-latest
+            target: macos-arm64
+          - os: windows-latest
+            target: windows-x64
+          - os: ubuntu-latest
+            target: linux-x64
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          ref: ${{ env.BUILD_BRANCH }}
 
-      - name: Check out autumo-ui (optional)
+      - name: Validate release tag
+        if: github.event_name == 'workflow_dispatch'
+        shell: bash
+        env:
+          RELEASE_TAG_INPUT: ${{ inputs.tag }}
+        run: |
+          if [ "$RELEASE_TAG_INPUT" != "v$APP_VERSION" ]; then
+            echo "::error::Tag '$RELEASE_TAG_INPUT' does not match APP_VERSION 'v$APP_VERSION'"
+            exit 1
+          fi
+
+      - name: Setup Java (Azul Zulu 25 + JavaFX)
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'zulu'
+          java-version: '25'
+          java-package: 'jdk+fx'
+          cache: gradle
+
+      - name: Install WiX Toolset (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          choco install wixtoolset -y
+          # jpackage looks up candle.exe/light.exe on PATH. The install updates the
+          # machine PATH, which the already running runner process does not see, so
+          # the WiX bin directory is exported to the following steps explicitly.
+          $wix = Get-ChildItem 'C:\Program Files (x86)\WiX Toolset*' -Directory -ErrorAction SilentlyContinue |
+            Sort-Object Name -Descending | Select-Object -First 1
+          if ($wix) { "$($wix.FullName)\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append }
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      # The Studio depends on the private autumo-ui framework and autumo-commons.
+      # They are not published to Maven Central, so install both into mavenLocal
+      # before building the Studio.
+      - name: Checkout autumo-commons
+        uses: actions/checkout@v4
+        with:
+          repository: autumoswitzerland/autumo-commons
+          token: ${{ secrets.PAT_TOKEN }}
+          path: autumo-commons
+
+      - name: Install autumo-commons
+        shell: bash
+        run: |
+          cd autumo-commons
+          mvn -B install
+
+      - name: Checkout autumo-ui
         uses: actions/checkout@v4
         with:
           repository: autumoswitzerland/autumo-ui
+          token: ${{ secrets.PAT_TOKEN }}
           path: autumo-ui
-          continue-on-error: true
 
-      - name: Build & publish autumo-ui to mavenLocal
-        if: ${{ hashFiles('autumo-ui/build.gradle') != '' }}
+      - name: Install autumo-ui
         shell: bash
         run: |
           cd autumo-ui
+          chmod +x gradlew
           ./gradlew publishToMavenLocal --no-daemon
 
-      - name: Set up JDK
-        uses: actions/setup-java@v4
+      - name: Checkout autumo-registration
+        uses: actions/checkout@v4
         with:
-          java-version: ${{ env.JAVA_VERSION }}
-          distribution: zulu
-          cache: gradle
+          repository: autumoswitzerland/autumo-registration
+          token: ${{ secrets.PAT_TOKEN }}
+          path: autumo-registration
 
-      - name: Build & test
-        run: ./gradlew build --no-daemon
-
-      - name: Package with jpackage
-        if: ${{ env.RELEASE_RUN == 'true' }}
+      - name: Install autumo-registration
         shell: bash
         run: |
-          set -e
-          case "${{ matrix.os }}" in
-            ubuntu-latest)   TP=linux ;;
-            macos-13)        TP=mac ;;
-            macos-latest)    TP=macArch ;;
-            windows-latest)  TP=win ;;
+          cd autumo-registration
+          mvn -B install
+
+      - name: Build installer
+        shell: bash
+        run: |
+          chmod +x gradlew
+          ./gradlew :ui:runtime :ui:jpackage -PtargetPlatform=${{ matrix.target }} --no-daemon
+
+      - name: Verify Debian dependencies (Linux)
+        if: matrix.target == 'linux-x64'
+        shell: bash
+        run: |
+          # The package must carry the Depends line from ui/package/control, not one derived
+          # from the build host's package database.
+          shopt -s nullglob
+          debs=("${{ env.OUTPUT_DIR }}"/*.deb)
+          if [ ${#debs[@]} -eq 0 ]; then
+            echo "::error::No .deb package found in ${{ env.OUTPUT_DIR }}"
+            exit 1
+          fi
+
+          expected=$(grep -m1 '^Depends:' ui/package/control)
+          for deb in "${debs[@]}"; do
+            echo "== $deb"
+            actual="Depends: $(dpkg-deb -f "$deb" Depends)"
+            echo "$actual"
+            if [ "$actual" != "$expected" ]; then
+              echo "::error::$deb does not carry the Depends line of ui/package/control"
+              exit 1
+            fi
+          done
+
+      - name: Normalize macOS installer name
+        if: matrix.target == 'macos-x64' || matrix.target == 'macos-arm64'
+        shell: bash
+        run: |
+          case "${{ matrix.target }}" in
+            macos-x64) arch=x64 ;;
+            macos-arm64) arch=arm64 ;;
+            *) echo "::error::Unknown macOS target"; exit 1 ;;
           esac
-          ./gradlew :ui:runtime :ui:jpackageImage --no-daemon -PtargetPlatformName=$TP
+          pkg=$(find "${{ env.OUTPUT_DIR }}" -maxdepth 1 -name '*.pkg' | head -n 1)
+          if [ -z "$pkg" ]; then
+            echo "::error::No .pkg installer found in ${{ env.OUTPUT_DIR }}"
+            exit 1
+          fi
+          mv "$pkg" "${{ env.OUTPUT_DIR }}/${APP_FILE_NAME}-${APP_VERSION}-${arch}.pkg"
 
-      - name: Upload UNIX/Linux Package Artifacts
-        if: ${{ env.RELEASE_RUN == 'true' && matrix.os != 'windows-latest' }}
+      - name: Normalize Linux installer name
+        if: matrix.target == 'linux-x64'
+        shell: bash
+        run: |
+          deb=$(find "${{ env.OUTPUT_DIR }}" -maxdepth 1 -name '*.deb' | head -n 1)
+          if [ -z "$deb" ]; then
+            echo "::error::No .deb installer found in ${{ env.OUTPUT_DIR }}"
+            exit 1
+          fi
+          mv "$deb" "${{ env.OUTPUT_DIR }}/${APP_FILE_NAME}-${APP_VERSION}-amd64.deb"
+
+      - name: Build Windows MSI and normalize names
+        if: matrix.target == 'windows-x64'
+        shell: pwsh
+        run: |
+          $appImage = Join-Path "${{ env.OUTPUT_DIR }}" "ifaceX Studio FX"
+          if (!(Test-Path $appImage)) {
+            throw "App image not found: $appImage"
+          }
+          jpackage --type msi `
+            --dest "${{ env.OUTPUT_DIR }}" `
+            --name "ifaceX Studio FX" `
+            --app-version "${{ env.APP_VERSION }}" `
+            --app-image "$appImage" `
+            --resource-dir "ui/build/wix-resources" `
+            --win-dir-chooser --win-menu --win-shortcut
+          $exe = Get-ChildItem "${{ env.OUTPUT_DIR }}" -Filter *.exe | Select-Object -First 1
+          if (-not $exe) { throw "EXE installer not found" }
+          Move-Item $exe.FullName (Join-Path "${{ env.OUTPUT_DIR }}" "${{ env.APP_FILE_NAME }}-${{ env.APP_VERSION }}.exe") -Force
+          $msi = Get-ChildItem "${{ env.OUTPUT_DIR }}" -Filter *.msi | Select-Object -First 1
+          if (-not $msi) { throw "MSI installer not found" }
+          Move-Item $msi.FullName (Join-Path "${{ env.OUTPUT_DIR }}" "${{ env.APP_FILE_NAME }}-${{ env.APP_VERSION }}.msi") -Force
+
+      - name: Upload macOS x64 Package Artifacts
+        if: matrix.target == 'macos-x64'
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.APP_FILE_NAME }}-${{ env.APP_VERSION }}-${{ matrix.os == 'ubuntu-latest' && 'amd64.deb' || (matrix.os == 'macos-13' && 'x64.pkg' || 'arm64.pkg') }}
-          path: ${{ env.OUTPUT_DIR }}
-          if-no-files-found: warn
+          name: ${{ env.APP_FILE_NAME }}-${{ env.APP_VERSION }}-x64.pkg
+          path: ${{ env.OUTPUT_DIR }}/${{ env.APP_FILE_NAME }}-${{ env.APP_VERSION }}-x64.pkg
+          if-no-files-found: error
 
-      - name: Upload Windows Package Artifacts
-        if: ${{ env.RELEASE_RUN == 'true' && matrix.os == 'windows-latest' }}
+      - name: Upload macOS ARM64 Package Artifacts
+        if: matrix.target == 'macos-arm64'
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.APP_FILE_NAME }}-${{ env.APP_VERSION }}-windows
-          path: ${{ env.OUTPUT_DIR }}
-          if-no-files-found: warn
+          name: ${{ env.APP_FILE_NAME }}-${{ env.APP_VERSION }}-arm64.pkg
+          path: ${{ env.OUTPUT_DIR }}/${{ env.APP_FILE_NAME }}-${{ env.APP_VERSION }}-arm64.pkg
+          if-no-files-found: error
+
+      - name: Upload Windows EXE Package Artifacts
+        if: matrix.target == 'windows-x64'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.APP_FILE_NAME }}-${{ env.APP_VERSION }}.exe
+          path: ${{ env.OUTPUT_DIR }}/${{ env.APP_FILE_NAME }}-${{ env.APP_VERSION }}.exe
+          if-no-files-found: error
+
+      - name: Upload Windows MSI Package Artifacts
+        if: matrix.target == 'windows-x64'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.APP_FILE_NAME }}-${{ env.APP_VERSION }}.msi
+          path: ${{ env.OUTPUT_DIR }}/${{ env.APP_FILE_NAME }}-${{ env.APP_VERSION }}.msi
+          if-no-files-found: error
+
+      - name: Upload Linux Package Artifacts
+        if: matrix.target == 'linux-x64'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.APP_FILE_NAME }}-${{ env.APP_VERSION }}-amd64.deb
+          path: ${{ env.OUTPUT_DIR }}/${{ env.APP_FILE_NAME }}-${{ env.APP_VERSION }}-amd64.deb
+          if-no-files-found: error
+
+  # The .deb must install on Debian and Ubuntu alike. jpackage would derive the 'Depends' field
+  # on the build host; the package therefore carries its own list (ui/package/control). This
+  # job proves that list: it installs the package in a plain container of each distribution
+  # and verifies that every shared library of the installed application resolves.
+  linux-install-check:
+    name: Install check (${{ matrix.image }})
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: 'debian:trixie'
+          - image: 'ubuntu:24.04'
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.build.outputs.APP_FILE_NAME }}-${{ needs.build.outputs.APP_VERSION }}-amd64.deb
+          path: pkg
+
+      - name: Install in ${{ matrix.image }} and verify libraries
+        shell: bash
+        run: |
+          cat > check.sh <<'EOF'
+          set -euo pipefail
+          apt-get update -qq
+          # A bare container has none of the XDG directories that every desktop system provides.
+          # jpackage's postinst calls 'xdg-desktop-menu' and 'xdg-icon-resource', which require a
+          # writable system menu directory and a writable system icon directory and abort the
+          # package configuration otherwise (exit code 3).
+          mkdir -p /usr/share/applications /usr/share/desktop-directories /usr/share/icons
+          apt-get install -y -qq --no-install-recommends ./pkg/*.deb
+          # Install directory as recorded by dpkg, so a renamed package cannot make this vacuous.
+          package=$(dpkg-deb -f ./pkg/*.deb Package)
+          app=$(dpkg -L "$package" | awk -F/ '/^\/opt\// {print "/" $2 "/" $3}' | sort -u | head -n 1)
+          if [ -z "$app" ] || [ ! -d "$app" ]; then
+            echo "::error::Application directory not found in the installed package $package"
+            exit 1
+          fi
+          # The bundled libraries reference each other (e.g. libawt.so -> libjvm.so, and
+          # libfxplugins.so -> libgstreamer-lite.so), so every directory of the application that
+          # contains libraries must be on the library path.
+          libdirs=$(find "$app" -type f \( -name '*.so' -o -name '*.so.*' \) -exec dirname {} + | sort -u | paste -sd:)
+          echo "Application directory: $app ($(find "$app" -type f | wc -l) files)"
+          echo "Library path: $libdirs"
+          status=0
+          while IFS= read -r file; do
+            case "$file" in
+              # Optional JavaFX codec adapters: JavaFX picks the adapter matching the system's
+              # libavcodec at runtime via dlopen. Absent system codecs are no install error.
+              */libavplugin-*) continue ;;
+            esac
+            if LD_LIBRARY_PATH="$libdirs" ldd "$file" 2>/dev/null | grep -q 'not found'; then
+              echo "::error::Unresolved libraries for $file"
+              LD_LIBRARY_PATH="$libdirs" ldd "$file" | grep 'not found'
+              status=1
+            fi
+          done < <(find "$app" -type f \( -name '*.so' -o -name '*.so.*' -o -perm -u+x \))
+          if [ "$status" -ne 0 ]; then
+            echo "The Depends list in ui/package/control is incomplete."
+            exit 1
+          fi
+          echo "All required shared libraries resolve."
+          EOF
+          docker run --rm -v "$PWD/pkg:/pkg:ro" -v "$PWD/check.sh:/check.sh:ro" \
+            "${{ matrix.image }}" bash /check.sh
 
   release:
     name: Publish release to public repository
@@ -141,12 +360,6 @@ jobs:
     needs: build
     if: ${{ needs.build.outputs.RELEASE_RUN == 'true' }}
     steps:
-      - name: Checkout public repository
-        uses: actions/checkout@v4
-        with:
-          repository: ${{ needs.build.outputs.RELEASE_REPO }}
-          token: ${{ secrets.PAT_TOKEN }}
-
       - name: Download all build artifacts
         uses: actions/download-artifact@v4
         with:
@@ -157,12 +370,18 @@ jobs:
         with:
           repository: ${{ needs.build.outputs.RELEASE_REPO }}
           token: ${{ secrets.PAT_TOKEN }}
-          tag_name: v${{ needs.build.outputs.APP_VERSION }}
+          tag_name: ${{ needs.build.outputs.RELEASE_TAG }}
           name: "${{ needs.build.outputs.APP_NAME }} ${{ needs.build.outputs.APP_VERSION }}"
-          body: ${{ needs.build.outputs.RELEASE_BODY }}
+          body: |
+            ifaceX Studio FX ${{ needs.build.outputs.APP_VERSION }} - native installers for Windows, macOS and Linux.
           draft: false
           prerelease: false
-          files: v${{ needs.build.outputs.APP_VERSION }}/**/*
+          fail_on_unmatched_files: true
+          files: |
+            v${{ needs.build.outputs.APP_VERSION }}/**/*.pkg
+            v${{ needs.build.outputs.APP_VERSION }}/**/*.exe
+            v${{ needs.build.outputs.APP_VERSION }}/**/*.msi
+            v${{ needs.build.outputs.APP_VERSION }}/**/*.deb
 
       - name: Clean up downloaded artifacts
         run: rm -rf v${{ needs.build.outputs.APP_VERSION }}

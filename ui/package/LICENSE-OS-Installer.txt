@@ -20,16 +20,20 @@ Terms and conditions:
 	(hereinafter: Software) created and owned by Licensor, as 
 	detailed herein.
 
-	The Software is bundled with Azul's Zulu JRE including Java FX, 
-	which is part of the Zulu Community, a copyrighted software based 
-	on OpenJDK (http://openjdk.java.net/) and is 100% open source. 
-	By downloading, installing or otherwise using Zulu Community
-	builds of OpenJDK, you also hereby agree to the following terms:
-	
+	This Software is part of the autumo ifaceX platform and is a
+	configuration and development studio included for free to use 
+	with autumo ifaceX.
+
+	This Software is bundled with an Azul Zulu Build of OpenJDK
+	(Zulu Community), a copyrighted software based on OpenJDK 
+	(http://openjdk.java.net/) and is 100% open source. By 
+	downloading, installing or otherwise using Azul Zulu builds of 
+	OpenJDK, you also hereby agree to the following terms:
+
 	https://www.azul.com/products/core/openjdk-terms-of-use
-	
+
 	Azul Platform Core and Azul Zulu Third Party Licenses:
-	
+
 	https://docs.azul.com/core/tpl
 
 
