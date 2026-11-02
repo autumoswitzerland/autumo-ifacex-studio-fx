@@ -225,7 +225,7 @@ runtime {
             installerOptions += [
                 // Absolute path: jpackage resolves a relative --license-file against its own
                 // working directory, which is not necessarily this project.
-                '--license-file', file('package/LICENSE.txt').absolutePath
+                '--license-file', file('package/LICENSE-OS-Installer.txt').absolutePath
             ]
         }
 
