@@ -287,8 +287,8 @@ jobs:
             Hi @everyone! A new release of **${{ needs.build.outputs.APP_NAME }}** has been created!
             Version: **${{ needs.build.outputs.APP_VERSION }}**
             Download links:
-            - <https://github.com/${{ needs.build.outputs.RELEASE_REPO }}/releases/download/${{ needs.build.outputs.RELEASE_TAG }}/${{ needs.build.outputs.APP_FILE_NAME }}-${{ needs.build.outputs.APP_VERSION }}-amd64.deb>
-            - <https://github.com/${{ needs.build.outputs.RELEASE_REPO }}/releases/download/${{ needs.build.outputs.RELEASE_TAG }}/${{ needs.build.outputs.APP_FILE_NAME }}-${{ needs.build.outputs.APP_VERSION }}-arm64.pkg>
-            - <https://github.com/${{ needs.build.outputs.RELEASE_REPO }}/releases/download/${{ needs.build.outputs.RELEASE_TAG }}/${{ needs.build.outputs.APP_FILE_NAME }}-${{ needs.build.outputs.APP_VERSION }}-x64.pkg>
-            - <https://github.com/${{ needs.build.outputs.RELEASE_REPO }}/releases/download/${{ needs.build.outputs.RELEASE_TAG }}/${{ needs.build.outputs.APP_FILE_NAME }}-${{ needs.build.outputs.APP_VERSION }}.exe>
-            - <https://github.com/${{ needs.build.outputs.RELEASE_REPO }}/releases/download/${{ needs.build.outputs.RELEASE_TAG }}/${{ needs.build.outputs.APP_FILE_NAME }}-${{ needs.build.outputs.APP_VERSION }}.msi>
+            - <https://github.com/${{ needs.build.outputs.RELEASE_REPO }}/releases/download/${{ needs.build.outputs.RELEASE_TAG }}/ifacex-studio-fx-x64_${{ needs.build.outputs.APP_VERSION }}_amd64.deb>
+            - <https://github.com/${{ needs.build.outputs.RELEASE_REPO }}/releases/download/${{ needs.build.outputs.RELEASE_TAG }}/${{ needs.build.outputs.APP_FILE_NAME }}-arm64-${{ needs.build.outputs.APP_VERSION }}.pkg>
+            - <https://github.com/${{ needs.build.outputs.RELEASE_REPO }}/releases/download/${{ needs.build.outputs.RELEASE_TAG }}/${{ needs.build.outputs.APP_FILE_NAME }}-x64-${{ needs.build.outputs.APP_VERSION }}.pkg>
+            - <https://github.com/${{ needs.build.outputs.RELEASE_REPO }}/releases/download/${{ needs.build.outputs.RELEASE_TAG }}/${{ needs.build.outputs.APP_FILE_NAME }}-x64-${{ needs.build.outputs.APP_VERSION }}.exe>
+            - <https://github.com/${{ needs.build.outputs.RELEASE_REPO }}/releases/download/${{ needs.build.outputs.RELEASE_TAG }}/${{ needs.build.outputs.APP_FILE_NAME }}-x64-${{ needs.build.outputs.APP_VERSION }}.msi>
