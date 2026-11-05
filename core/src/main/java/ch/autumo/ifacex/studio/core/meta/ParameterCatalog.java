@@ -101,6 +101,7 @@ public final class ParameterCatalog {
                 case "os_swift_file" -> all.addAll(OS_SWIFT_FILE_READER);
                 case "azure_file" -> all.addAll(AZURE_FILE_READER);
                 case "b2_file" -> all.addAll(B2_FILE_READER);
+                case "nifi" -> all.addAll(NIFI_READER);
                 default -> {
                 }
             }
@@ -125,6 +126,7 @@ public final class ParameterCatalog {
                 case "os_swift_file" -> all.addAll(OS_SWIFT_FILE_WRITER);
                 case "azure_file" -> all.addAll(AZURE_FILE_WRITER);
                 case "b2_file" -> all.addAll(B2_FILE_WRITER);
+                case "nifi" -> all.addAll(NIFI_WRITER);
                 case "excel" -> all.addAll(EXCEL_WRITER);
                 default -> {
                 }
@@ -501,6 +503,56 @@ public final class ParameterCatalog {
             entry("api_key_id", Scope.GLOBAL, FieldType.SECRET, ""),
             entry("api_key", Scope.GLOBAL, FieldType.SECRET, ""),
             entry("bucket", Scope.GLOBAL, FieldType.TEXT, ""));
+
+    // ---------------------------------------------------------------- Apache NiFi Site-to-Site
+    // autumo-ifacex-iprw (module mod-nifi) - reader/writer parameters of the Site-to-Site client.
+    private static final List<Entry> NIFI_READER = List.of(
+            entry("url", Scope.GLOBAL, FieldType.TEXT, ""),
+            entry("transport_protocol", Scope.GLOBAL, FieldType.SELECT, "HTTP"),
+            entry("ssl", Scope.GLOBAL, FieldType.BOOLEAN, "yes"),
+            entry("keystore_file", Scope.GLOBAL, FieldType.PATH, ""),
+            entry("keystore_password", Scope.GLOBAL, FieldType.SECRET, ""),
+            entry("keystore_type", Scope.GLOBAL, FieldType.SELECT, "PKCS12"),
+            entry("truststore_file", Scope.GLOBAL, FieldType.PATH, ""),
+            entry("truststore_password", Scope.GLOBAL, FieldType.SECRET, ""),
+            entry("truststore_type", Scope.GLOBAL, FieldType.SELECT, "PKCS12"),
+            entry("timeout", Scope.GLOBAL, FieldType.INTEGER, "30"),
+            entry("batch_count", Scope.GLOBAL, FieldType.INTEGER, "100"),
+            entry("batch_size", Scope.GLOBAL, FieldType.INTEGER, "1048576"),
+            entry("batch_duration", Scope.GLOBAL, FieldType.INTEGER, "0"),
+            entry("use_compression", Scope.GLOBAL, FieldType.BOOLEAN, "no"),
+            entry("peer_persistence_file", Scope.GLOBAL, FieldType.PATH, ""),
+            entry("content_format", Scope.GLOBAL, FieldType.SELECT, "json"),
+            entry("temp_out_path", Scope.GLOBAL, FieldType.PATH, ""),
+            entry("include_attributes", Scope.GLOBAL, FieldType.BOOLEAN, "no"),
+            entry("flowfile_limit", Scope.GLOBAL, FieldType.INTEGER, "0"),
+            entry("data_path", Scope.WILDCARD, FieldType.TEXT, ""),
+            entry("sub_path", Scope.WILDCARD, FieldType.TEXT, ""),
+            entry("field_path_access", Scope.WILDCARD, FieldType.BOOLEAN, "no"),
+            entry("allow_absent_fields", Scope.WILDCARD, FieldType.BOOLEAN, "no"),
+            entry("absent_field_placeholder", Scope.WILDCARD, FieldType.TEXT, ""),
+            entry("fetchSize", Scope.WILDCARD, FieldType.INTEGER, "100"));
+
+    private static final List<Entry> NIFI_WRITER = List.of(
+            entry("url", Scope.GLOBAL, FieldType.TEXT, ""),
+            entry("transport_protocol", Scope.GLOBAL, FieldType.SELECT, "HTTP"),
+            entry("ssl", Scope.GLOBAL, FieldType.BOOLEAN, "yes"),
+            entry("keystore_file", Scope.GLOBAL, FieldType.PATH, ""),
+            entry("keystore_password", Scope.GLOBAL, FieldType.SECRET, ""),
+            entry("keystore_type", Scope.GLOBAL, FieldType.SELECT, "PKCS12"),
+            entry("truststore_file", Scope.GLOBAL, FieldType.PATH, ""),
+            entry("truststore_password", Scope.GLOBAL, FieldType.SECRET, ""),
+            entry("truststore_type", Scope.GLOBAL, FieldType.SELECT, "PKCS12"),
+            entry("timeout", Scope.GLOBAL, FieldType.INTEGER, "30"),
+            entry("use_compression", Scope.GLOBAL, FieldType.BOOLEAN, "no"),
+            entry("peer_persistence_file", Scope.GLOBAL, FieldType.PATH, ""),
+            entry("mode", Scope.GLOBAL, FieldType.SELECT, "batch"),
+            entry("attributes", Scope.GLOBAL, FieldType.TEXT, ""),
+            entry("fetchSize", Scope.WILDCARD, FieldType.INTEGER, "100"),
+            entry("data_mapper_class", Scope.ENTITY, FieldType.TEXT, ""),
+            entry("mapping_entity", Scope.ENTITY, FieldType.TEXT, ""),
+            entry("dest_unique_id_field", Scope.ENTITY, FieldType.TEXT, ""),
+            entry("dest_filter_fields", Scope.ENTITY, FieldType.TEXT, ""));
 
     // ---------------------------------------------------------------- helpers
     /** Concatenates two entry lists, keeping the order. */

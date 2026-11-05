@@ -41,10 +41,15 @@ public final class StudioConstants {
     
     /** Root folder of the configuration files, e.g. {@code /home/user/ifaceXProjects}. */
     public static final String PROP_KEY_PROJECT_ROOT = "project.root";
-
+    
     /** Folder of the ifaceX test instance whose {@code cfg/ifacex.cfg} provides the
      * encryption seed ({@code secret_key_seed}). */
     public static final String PROP_KEY_IFACEX_FOLDER = "ifaceXFolder";
+
+    /** Root folder of the private template collections, e.g. {@code /Users/Mike/Development/git}.
+     * May contain versioned subdirectories like {@code autumo-ifacex-templates-private/3.0/}.
+     * When set, the studio also scans this folder for interface templates. */
+    public static final String PROP_KEY_PRIVATE_TEMPLATES_ROOT = "private.templates.root";
 
     /** Whether the Studio plays UI sounds ({@code true}/{@code false}). */
     public static final String PROP_KEY_PLAY_SOUNDS = "play.sounds";

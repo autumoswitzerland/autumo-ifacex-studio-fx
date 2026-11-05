@@ -141,6 +141,7 @@ public final class InterfaceTypes {
         reader("os_swift_file", "OpenStack Swift File", "ch.autumo.ifacex.ip.openstack.OpenStackSwiftReader");
         reader("azure_file", "Azure Blob File", "ch.autumo.ifacex.ip.microsoft.AzureBlobStorageReader");
         reader("b2_file", "Backblaze B2 File", "ch.autumo.ifacex.ip.backblaze.B2StorageReader");
+        reader("nifi", "NiFi S2S", "ch.autumo.ifacex.ip.nifi.NiFiReader");
 
         writer("aws_file", "AWS File", "ch.autumo.ifacex.ip.amazon.AWSS3FileWriter");
         writer("gdrive_file", "Google Drive File", "ch.autumo.ifacex.ip.google.GoogleDriveWriter");
@@ -152,6 +153,7 @@ public final class InterfaceTypes {
         writer("os_swift_file", "OpenStack Swift File", "ch.autumo.ifacex.ip.openstack.OpenStackSwiftWriter");
         writer("azure_file", "Azure Blob File", "ch.autumo.ifacex.ip.microsoft.AzureBlobStorageWriter");
         writer("b2_file", "Backblaze B2 File", "ch.autumo.ifacex.ip.backblaze.B2StorageWriter");
+        writer("nifi", "NiFi S2S", "ch.autumo.ifacex.ip.nifi.NiFiWriter");
 
         // autumo-ifacex-iprw-office (201 Excel)
         writer("excel", "Excel", "ch.autumo.ifacex.ip.office.excel.ExcelWriter");

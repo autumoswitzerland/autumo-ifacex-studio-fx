@@ -32,12 +32,13 @@ class AdditionalInterfacesTest {
 
     private static final List<String> ADDITIONAL_READERS = List.of(
             "aws_file_in", "gdrive_file_in", "gstorage_file_in", "dbox_file_in", "webdav_file_in",
-            "ftp_file_in", "sftp_file_in", "os_swift_file_in", "azure_file_in", "b2_file_in");
+            "ftp_file_in", "sftp_file_in", "os_swift_file_in", "azure_file_in", "b2_file_in",
+            "nifi_in");
 
     private static final List<String> ADDITIONAL_WRITERS = List.of(
             "aws_file_out", "gdrive_file_out", "gstorage_file_out", "dbox_file_out", "webdav_file_out",
             "ftp_file_out", "sftp_file_out", "os_swift_file_out", "azure_file_out", "b2_file_out",
-            "excel_out");
+            "nifi_out", "excel_out");
 
     @Test
     void readersAreRegisteredAfterTheStandardOnes() {
