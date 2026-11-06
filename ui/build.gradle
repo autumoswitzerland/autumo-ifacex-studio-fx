@@ -244,7 +244,7 @@ runtime {
         }
 
         if (installerType in ['deb', 'rpm']) {
-            imageOptions += ['--icon', 'src/main/resources/ch/autumo/ifacex/studio/ui/icons/app-256.png']
+            imageOptions += ['--icon', 'src/main/resources/ch/autumo/ifacex/studio/ui/icons/autumo-ifacex-studio.png']
             // File associations belong to the installer, not the app-image.
             installerOptions += [
                 '--file-associations',
