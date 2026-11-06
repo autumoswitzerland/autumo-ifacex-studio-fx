@@ -47,8 +47,8 @@ import ch.autumo.ifacex.studio.ui.FormBuilder;
 import ch.autumo.ifacex.studio.ui.RawEditor;
 import ch.autumo.ifacex.studio.ui.StudioApp;
 import ch.autumo.ifacex.studio.ui.StudioHelper;
-import ch.autumo.ifacex.studio.ui.controller.actions.SettingsActions;
 import ch.autumo.ifacex.studio.ui.controller.actions.NewConfigAction;
+import ch.autumo.ifacex.studio.ui.controller.actions.SettingsActions;
 import ch.autumo.ifacex.studio.ui.view.MainView;
 import ch.autumo.ui.Constants;
 import ch.autumo.ui.fx.BaseApp;
@@ -65,6 +65,7 @@ import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ButtonType;
@@ -76,7 +77,6 @@ import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.ScrollPane;
-import javafx.scene.Node;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
@@ -278,7 +278,7 @@ public class MainController extends BaseController {
     private boolean processRunning = false;
 
     /** Fixed width of the navigation pane in pixels - it never changes with the window. */
-    private static final double NAV_WIDTH = 532;
+    private static final double DEFAULT_NAV_WIDTH = 532;
 
     /** Style class that highlights the navigation pane while a file is dragged over it. */
     private static final String DROP_TARGET = "drop-target";
@@ -289,6 +289,8 @@ public class MainController extends BaseController {
     /** The console for process output. */
     Console console;
 
+	private double splitPosition = DEFAULT_NAV_WIDTH;
+	
     private boolean navShown = false;
     
     /**
@@ -310,6 +312,14 @@ public class MainController extends BaseController {
         buildRecentMenu();
         buildRawEditor();
         buildConsole();
+        
+        final String sw = app.getConfigurationParameter(StudioConstants.PROP_KEY_SPLIT_WIDTH);
+        if (sw == null) {
+        	this.splitPosition = DEFAULT_NAV_WIDTH;
+        } else {
+        	this.splitPosition = Double.valueOf(sw).doubleValue();
+        }
+        
         keepNavigationWidth();
         // Start with the About page in the navigation pane; the tree appears once a file is loaded.
         showAboutInNav();
@@ -1825,6 +1835,16 @@ public class MainController extends BaseController {
     }
 
     /**
+     * Get split width.
+     * 
+     * @return split width
+     */
+    public double getSplitWidth() {
+        double pos = mainSplit.getDividerPositions()[0];
+        return pos * mainSplit.getWidth();
+    }
+    
+    /**
      * Keeps the navigation pane at a fixed width while the window is resized.
      *
      * <p>A {@link SplitPane} distributes a resize proportionally over its items - the divider
@@ -1854,9 +1874,8 @@ public class MainController extends BaseController {
         if (total <= 0) {
             return;
         }
-        mainSplit.setDividerPositions(NAV_WIDTH / total);
+        mainSplit.setDividerPositions(splitPosition / total);
     }
-
 
     /**
      * Makes the navigation pane the drop target for configuration files: a file dragged onto the

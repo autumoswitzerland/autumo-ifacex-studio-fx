@@ -205,7 +205,6 @@ public class StudioApp extends BaseApp {
 			}
         }
         		
-        		
         // Optional: open a configuration file handed in on the command line. Two shapes are
         // accepted, because two launchers exist:
         //   --open <file>   the development launcher "bin/run.sh some.ifacex";
@@ -219,6 +218,7 @@ public class StudioApp extends BaseApp {
             try {
                 controller.openFile(toOpen);
             } catch (Exception e) {
+            	LOG.error("Could not open " + toOpen + ": " + e);
                 System.err.println("Could not open " + toOpen + ": " + e);
             }
         }
@@ -291,6 +291,7 @@ public class StudioApp extends BaseApp {
      */
     @Override
     public void finish(Stage primaryStage) {
+    	setConfigurationParameter(StudioConstants.PROP_KEY_SPLIT_WIDTH, Double.toString(controller.getSplitWidth()));
         if (controller != null) {
             controller.disposeEditor();
         }

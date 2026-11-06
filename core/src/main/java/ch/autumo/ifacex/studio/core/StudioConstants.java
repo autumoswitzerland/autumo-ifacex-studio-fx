@@ -60,6 +60,9 @@ public final class StudioConstants {
     /** Whether the "New configuration" wizard is shown ({@code true}/{@code false}); default {@code true}. */
     public static final String PROP_KEY_NEW_CONFIG_WIZARD = "newConfigWizard.enabled";
 
+    /** Split width of window. */
+    public static final String PROP_KEY_SPLIT_WIDTH = "window.splitWidth";
+    
     /** Name of the default project root folder below the user's home directory. */
     public static final String DEFAULT_PROJECT_ROOT_FOLDER = "ifaceXProjects";
 
