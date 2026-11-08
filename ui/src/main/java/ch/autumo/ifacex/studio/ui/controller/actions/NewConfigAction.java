@@ -159,7 +159,12 @@ public class NewConfigAction extends BaseAction {
 
     	HBox.setHgrow(availableBox, Priority.ALWAYS);
     	HBox.setHgrow(selectedBox, Priority.ALWAYS);
-
+    	VBox.setVgrow(availableBox, Priority.ALWAYS);
+    	VBox.setVgrow(selectedBox, Priority.ALWAYS);
+    	
+    	VBox.setVgrow(availableWriters, Priority.ALWAYS);
+    	VBox.setVgrow(selectedWriters, Priority.ALWAYS);
+    	
     	final VBox buttonBox = new VBox(8, toSelected, toAvailable);
     	buttonBox.setAlignment(Pos.CENTER);
     	buttonBox.setTranslateY(10);
@@ -170,12 +175,15 @@ public class NewConfigAction extends BaseAction {
     	    selectedBox
     	);
     	writerLists.setMaxWidth(Double.MAX_VALUE);
+    	VBox.setVgrow(writerLists, Priority.ALWAYS);
         
         final VBox content = new VBox(10,
                 new Label(StudioHelper.t("Reader")),
                 readerList,
                 writerLists
         );
+    	VBox.setVgrow(content, Priority.ALWAYS);
+    	VBox.setVgrow(ctrl.getBody(), Priority.ALWAYS);
         
         content.setPadding(new Insets(16));
         ctrl.getBody().setCenter(content);
